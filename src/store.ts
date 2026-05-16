@@ -343,6 +343,34 @@ export type Settings = {
   // pan or zoom) — those gestures clearly imply "show me something
   // other than the playhead".
   followPlayhead: boolean
+  // === Hand video overlay =================================================
+  // A user-provided overhead clip of their hands on a real keyboard,
+  // composited into the scene (and the exported MP4) so the falling
+  // notes line up with the actual finger movement. The video bytes live
+  // in the standalone `useHandVideo` store (GPU/`<video>`-bound, not
+  // serialisable); these settings are the placement / look knobs.
+  handVideoEnabled: boolean
+  // Linear opacity [0, 1] of the overlay plane.
+  handVideoOpacity: number
+  // Brightness multiplier on the sampled video colour. 1 = unchanged,
+  // <1 darkens, >1 brightens (capped in-shader to avoid bloom blowout).
+  handVideoBrightness: number
+  // Centre position of the overlay plane in world units. The scene is
+  // ~12.22 wu wide; (0,0) is the viewport centre, the keyboard sits
+  // around y = -1.26.
+  handVideoPosX: number
+  handVideoPosY: number
+  // Plane width in world units. Height is derived from the video's
+  // native aspect ratio so the clip never distorts.
+  handVideoScale: number
+  // Timeline offset (song-time seconds) where the clip's t=0 plays —
+  // same model as `userAudioOffsetSec`, driven by dragging the hand-
+  // video clip on the timeline. Negative not supported yet (viewport).
+  handVideoOffsetSec: number
+  // Non-destructive head / tail trim in video-time seconds (offset into
+  // the source clip). `null` end = no tail trim. Only hides content.
+  handVideoTrimStartSec: number
+  handVideoTrimEndSec: number | null
 }
 
 export const defaultSettings: Settings = {
@@ -472,6 +500,15 @@ export const defaultSettings: Settings = {
   timelineAudioLaneRatio: 1,
   previewHighFps: false,
   followPlayhead: true,
+  handVideoEnabled: true,
+  handVideoOpacity: 1.0,
+  handVideoBrightness: 1.0,
+  handVideoPosX: 0,
+  handVideoPosY: 1.6,
+  handVideoScale: 6.0,
+  handVideoOffsetSec: 0,
+  handVideoTrimStartSec: 0,
+  handVideoTrimEndSec: null,
 }
 
 /**

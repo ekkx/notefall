@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   Button,
+  FileTrigger,
   Menu,
   MenuItem,
   MenuTrigger,
@@ -8,6 +9,7 @@ import {
 } from 'react-aria-components'
 import { useStore } from '../store'
 import { useUserAudio } from '../audio/userAudio'
+import { useHandVideo } from '../notes/handVideo'
 import { DEMOS, loadDemoManifestNames } from '../demos'
 import { toggleRecord as toggleRecordControl } from '../audio/recordControl'
 import { loadDemoProject, openProject } from '../projects/actions'
@@ -89,6 +91,7 @@ function EmptyState() {
   const onRecord = () => {
     void toggleRecordControl()
   }
+  const setHandVideoFile = useHandVideo((s) => s.setFromFile)
   const onPickDemo = async (label: string, url: string) => {
     const result = await loadDemoProject(label, url)
     if (result.kind === 'error') {
@@ -128,6 +131,16 @@ function EmptyState() {
           <RecordIcon className="h-3.5 w-3.5 text-rose-400" />
           Record
         </button>
+        <FileTrigger
+          acceptedFileTypes={['video/*']}
+          onSelect={async (e) => {
+            if (!e) return
+            const file = Array.from(e)[0]
+            if (file) await setHandVideoFile(file)
+          }}
+        >
+          <Button className={buttonClass}>Hand video…</Button>
+        </FileTrigger>
         {DEMOS.length > 0 && (
           <MenuTrigger>
             <Button className={buttonClass}>
@@ -247,15 +260,22 @@ export function TimelineEditor() {
   const updateSettings = useStore((s) => s.updateSettings)
   const audioBuffer = useUserAudio((s) => s.buffer)
   const audioLoaded = !!audioBuffer
-  // Auto-open the editor when an accompaniment becomes available —
-  // sync is the editor's headline feature and the user just signalled
-  // intent by loading audio. Fires on the no-audio→audio transition,
-  // so manually collapsing afterwards stays sticky.
+  const handVideoFileName = useHandVideo((s) => s.fileName)
+  const handVideoTranscoding = useHandVideo((s) => s.transcoding)
+  // The editor is usable with *any* timeline content, not just a MIDI:
+  // a hand video alone still needs the ruler / playhead so the user can
+  // scrub it into alignment.
+  const hasTimelineContent =
+    !!song || !!handVideoFileName || handVideoTranscoding
+  // Auto-open the editor when an accompaniment OR a hand video becomes
+  // available — sync is the editor's headline feature and the user
+  // just signalled intent. Fires on the none→present transition, so
+  // manually collapsing afterwards stays sticky.
   useEffect(() => {
-    if (audioLoaded) {
+    if (audioLoaded || handVideoFileName) {
       useStore.getState().updateSettings({ timelineEditorOpen: true })
     }
-  }, [audioLoaded])
+  }, [audioLoaded, handVideoFileName])
   const toggle = () => updateSettings({ timelineEditorOpen: !open })
   return (
     <div className="relative flex-shrink-0 bg-neutral-950">
@@ -297,7 +317,7 @@ export function TimelineEditor() {
       </div>
       {open && (
         <div className="pb-3 pl-4 pt-2">
-          {song ? <Timeline /> : <EmptyState />}
+          {hasTimelineContent ? <Timeline /> : <EmptyState />}
         </div>
       )}
     </div>

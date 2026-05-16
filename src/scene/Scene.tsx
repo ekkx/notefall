@@ -35,6 +35,7 @@ import { FallingNotes } from '../notes/FallingNotes'
 import { LandingFlashes } from '../notes/LandingFlashes'
 import { HitParticles } from '../notes/HitParticles'
 import { HitLine } from '../notes/HitLine'
+import { HandVideoOverlay } from './HandVideoOverlay'
 import { WHITE_KEY_LENGTH } from '../keyboard/layout'
 import { audioEngine } from '../audio/engine'
 import { pauseSong, playSong, togglePlayback } from '../audio/playback'
@@ -123,6 +124,7 @@ function SceneContents({ recState }: { recState: 'idle' | 'recording' }) {
       {s.flashEnabled && <LandingFlashes />}
       <HitParticles />
       <HitLine />
+      <HandVideoOverlay />
     </>
   )
 }

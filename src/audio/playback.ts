@@ -1,5 +1,15 @@
 import { useStore } from '../store'
 import { audioEngine } from './engine'
+import { useHandVideo } from '../notes/handVideo'
+
+/**
+ * True when a hand video is loaded and enabled — the timeline is then
+ * playable / scrubbable even with no MIDI song so the user can align
+ * the footage. Mirrors the engine's `externalMediaEndSec` gate.
+ */
+function hasHandVideoContent(): boolean {
+  return !!useHandVideo.getState().fileName
+}
 
 /**
  * Shared play/pause/toggle helpers used by the bottom transport bar and the
@@ -23,9 +33,11 @@ function resetEditorState(): void {
 
 export async function playSong(): Promise<void> {
   const { song, loadStatus, setLoadStatus, setTransport } = useStore.getState()
-  if (!song) return
+  if (!song && !hasHandVideoContent()) return
   resetEditorState()
-  if (loadStatus.state !== 'ready') {
+  // No MIDI → nothing for the sampler to voice; skip the ~60 MB sample
+  // load and just run the clock for the hand video.
+  if (song && loadStatus.state !== 'ready') {
     setLoadStatus({ state: 'loading', loaded: 0, total: 1 })
     await audioEngine.init((p) =>
       setLoadStatus({ state: 'loading', loaded: p.loaded, total: p.total }),
@@ -44,7 +56,8 @@ export function pauseSong(): void {
 
 export async function togglePlayback(): Promise<void> {
   const { transport, song, loadStatus } = useStore.getState()
-  if (!song || loadStatus.state === 'loading') return
+  if ((!song && !hasHandVideoContent()) || loadStatus.state === 'loading')
+    return
   if (transport === 'playing') pauseSong()
   else await playSong()
 }

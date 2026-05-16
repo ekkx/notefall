@@ -222,6 +222,12 @@ export class AudioEngine {
   private midiTrimEnd: number | null = null
   private userAudioTrimStart = 0
   private userAudioTrimEnd: number | null = null
+  // End of any non-audio external media on the timeline (currently the
+  // hand video) in song-time seconds. Lets the timeline be scrubbed /
+  // played to that extent even with no MIDI and no user audio loaded —
+  // otherwise `seek()` clamps to 0 and the playhead sticks at the
+  // start. 0 = nothing extra. Set from the Layout sync effect.
+  private externalMediaEndSec = 0
   // Speed automation curve. Only affects MIDI playback / scheduling;
   // user audio plays at constant rate. See `midi/speedMap.ts` for the
   // coordinate-mapping conventions.
@@ -526,6 +532,13 @@ export class AudioEngine {
     return this.userAudioOffsetSec + this.effectiveUserAudioTrimEnd()
   }
 
+  /** Timeline extent of external media (hand video). See the field
+   *  comment. Drives `seek()`'s clamp and the auto-stop window so the
+   *  timeline is navigable with only a hand video loaded. */
+  setExternalMediaEndSec(sec: number): void {
+    this.externalMediaEndSec = Math.max(0, sec)
+  }
+
   private ensureUserAudioGain(): GainNode | null {
     if (this.userAudioGain) return this.userAudioGain
     // Tone's raw AudioContext is the only running context once the user
@@ -693,7 +706,11 @@ export class AudioEngine {
   }
 
   async play(): Promise<void> {
-    if (!this.song) return
+    // Playable with no MIDI when there's external media (hand video) to
+    // run the clock against — the tick loop's note scan is already
+    // song-guarded, so it's a no-op then and only the visual clock
+    // advances.
+    if (!this.song && this.externalMediaEndSec <= 0) return
     if (Tone.getContext().state !== 'running') {
       await Tone.start()
     }
@@ -740,7 +757,11 @@ export class AudioEngine {
     // map.
     const songDur = this.song?.duration ?? 0
     const midiEndTimeline = midiToTimeline(this.speedMap, songDur)
-    const dur = midiEndTimeline + this.midiOffsetSec
+    const dur = Math.max(
+      midiEndTimeline + this.midiOffsetSec,
+      this.userAudioEndSec(),
+      this.externalMediaEndSec,
+    )
     const clamped = Math.max(0, Math.min(dur, tlAudio))
     const midiClamped = timelineToMidi(
       this.speedMap,
@@ -1217,9 +1238,17 @@ export class AudioEngine {
       // a speed curve below 1 over part of the range this stretches
       // beyond the natural song duration — auto-stop must wait for
       // the stretched end.
+      // No song → `effectiveMidiTrimEnd()` is +Infinity (no trim, no
+      // duration), which would make the auto-stop never fire. Drop the
+      // MIDI term entirely in that case so external media still bounds
+      // the timeline.
+      const midiEndPart = this.song
+        ? this.midiOffsetSec + midiToTimeline(this.speedMap, this.effectiveMidiTrimEnd())
+        : 0
       const effectiveEnd = Math.max(
-        this.midiOffsetSec + midiToTimeline(this.speedMap, this.effectiveMidiTrimEnd()),
+        midiEndPart,
         audioEnd,
+        this.externalMediaEndSec,
       )
       const endThreshold = effectiveEnd + (this.loop ? 0 : SONG_TAIL_SECONDS)
       if (songTime >= endThreshold && this.active.size === 0 && this.pedalHeld.length === 0) {

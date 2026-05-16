@@ -73,6 +73,13 @@ export type ProjectManifest = {
    * normal settings persistence path.
    */
   userAudio?: AssetRef | null
+  /**
+   * User-provided overhead "hand video" composited over the scene. The
+   * placement / look / timeline-offset knobs live inside `settings`
+   * (`handVideo*`) so they ride the normal settings persistence path;
+   * only the (H.264-normalised) media bytes need a binary asset slot.
+   */
+  handVideo?: AssetRef | null
 }
 
 /**
@@ -91,6 +98,8 @@ export type Project = {
   customTexture: { bytes: ArrayBuffer; mime: string; fileName: string } | null
   /** Bytes of the user-provided accompaniment audio. null when not in use. */
   userAudio: { bytes: ArrayBuffer; mime: string; fileName: string } | null
+  /** Bytes of the user-provided hand video (H.264). null when not in use. */
+  handVideo: { bytes: ArrayBuffer; mime: string; fileName: string } | null
 }
 
 /**

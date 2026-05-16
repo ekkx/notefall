@@ -7,6 +7,8 @@ import { VirtualClock, resetActiveClock, setActiveClock } from '../audio/clock'
 import { audioEngine } from '../audio/engine'
 import { getR3FState } from '../scene/exportBridge'
 import { AudioRenderAborted, renderSongAudio } from './renderAudio'
+import { useHandVideo } from '../notes/handVideo'
+import { createHandVideoFrameSource, type HandVideoFrameSource } from '../video/demux'
 
 /**
  * Match the audio render's tail. Falling notes already past the hit
@@ -261,6 +263,12 @@ export async function renderSongVideo(
   const videoWeight = audio ? VIDEO_PROGRESS_WEIGHT : 1
   let audioFraction = audio ? 0 : 1
   let videoFraction = 0
+  // Hand-video overlay: a forward-only decoded-frame source the loop
+  // steps in lockstep with the virtual clock, and the store hook that
+  // swaps the overlay's texture to a canvas we draw those frames into.
+  // Declared out here so the `finally` can always tear them down.
+  let handSource: HandVideoFrameSource | null = null
+  let handDraw: ((frame: VideoFrame | null) => void) | null = null
   let lastEmitted = -1
   const emitOverall = () => {
     const overall = audioWeight * audioFraction + videoWeight * videoFraction
@@ -351,12 +359,57 @@ export async function renderSongVideo(
     const usPerFrame = Math.round(1_000_000 / fps)
     const keyframeInterval = Math.max(1, Math.round(KEYFRAME_INTERVAL_SECONDS * fps))
 
+    // Hand-video setup. We only touch the store / build a decoder when
+    // the overlay is actually enabled and a clip is attached. The bytes
+    // are already H.264-normalised at import, so the source build
+    // should succeed; if it doesn't we still swap to the (blank) canvas
+    // so the overlay stays deterministic instead of freezing on a
+    // stale VideoTexture frame.
+    const hv = useHandVideo.getState()
+    const wantHandVideo = settings.handVideoEnabled && !!hv.fileBytes
+    if (wantHandVideo) {
+      handDraw = useHandVideo.getState().beginExport()
+      try {
+        handSource = await createHandVideoFrameSource(hv.fileBytes!)
+      } catch {
+        handSource = null
+      }
+    }
+    const hvOffset = settings.handVideoOffsetSec
+    const hvTrimStart = settings.handVideoTrimStartSec
+    const hvDur = handSource?.durationSec ?? hv.duration
+    const hvTrimEnd = settings.handVideoTrimEndSec ?? hvDur
+
     for (let n = 0; n < totalFrames; n++) {
       if (signal?.aborted) throw new VideoRenderAborted()
       if (videoEncoderError) throw videoEncoderError
 
       const t = n / fps
       clock.setTime(t)
+
+      // Step the hand video to the frame covering this instant before
+      // the scene renders. `srcSec` mirrors the realtime overlay:
+      // song-time minus the clip offset, gated by the trim window.
+      if (handDraw) {
+        const srcSec = t - hvOffset
+        const within =
+          srcSec >= hvTrimStart &&
+          srcSec < hvTrimEnd &&
+          srcSec >= 0 &&
+          (hvDur === 0 || srcSec <= hvDur)
+        if (handSource && within) {
+          let vf: VideoFrame | null = null
+          try {
+            vf = await handSource.frameAt(srcSec)
+          } catch {
+            vf = null
+          }
+          handDraw(vf)
+        } else {
+          handDraw(null)
+        }
+      }
+
       // Pass SECONDS to advance — see the autoStart=false comment
       // above. delta in useFrame becomes 1/fps in seconds.
       r3f.advance(t, true)
@@ -473,6 +526,18 @@ export async function renderSongVideo(
     }
     try {
       audioEngine.endExportPlayback()
+    } catch {
+      /* ignore */
+    }
+    try {
+      handSource?.close()
+    } catch {
+      /* ignore */
+    }
+    try {
+      // Only restore the realtime VideoTexture if we actually swapped
+      // it (handDraw is set iff beginExport ran).
+      if (handDraw) useHandVideo.getState().endExport()
     } catch {
       /* ignore */
     }

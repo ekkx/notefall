@@ -3,6 +3,7 @@ import { parseMidi } from '../midi/parse'
 import { serializeMidi } from '../midi/serialize'
 import { useCustomTexture } from '../notes/customTexture'
 import { useUserAudio } from '../audio/userAudio'
+import { useHandVideo } from '../notes/handVideo'
 import { useStore } from '../store'
 import { showConfirm } from '../ui/confirm'
 import {
@@ -75,6 +76,7 @@ function buildProjectFromState(name: string): Project {
   const s = useStore.getState()
   const tex = useCustomTexture.getState()
   const audio = useUserAudio.getState()
+  const video = useHandVideo.getState()
   const now = Date.now()
   return {
     // User-edited project name takes precedence over the on-disk
@@ -103,6 +105,17 @@ function buildProjectFromState(name: string): Project {
             bytes: audio.fileBytes,
             mime: audio.fileMime,
             fileName: audio.fileName,
+          }
+        : null,
+    // Same rationale as customTexture — keep the (normalised) video
+    // bytes even when the overlay is toggled off so a save doesn't
+    // drop the user's clip.
+    handVideo:
+      video.fileBytes && video.fileMime && video.fileName
+        ? {
+            bytes: video.fileBytes,
+            mime: video.fileMime,
+            fileName: video.fileName,
           }
         : null,
   }
@@ -206,6 +219,16 @@ async function applyOpenedProject(buf: ArrayBuffer, ref: FileRef | null): Promis
       .setFromBytes(project.userAudio.bytes, project.userAudio.mime, project.userAudio.fileName)
   } else {
     useUserAudio.getState().clearFromLoad()
+  }
+
+  // And the hand video. Bytes are already H.264-normalised at import
+  // time, so rehydration is a plain decode (no transcode on load).
+  if (project.handVideo) {
+    void useHandVideo
+      .getState()
+      .setFromBytes(project.handVideo.bytes, project.handVideo.mime, project.handVideo.fileName)
+  } else {
+    useHandVideo.getState().clearFromLoad()
   }
 
   // Move-to-top in the recents list. No-op on browsers without FSA
@@ -409,6 +432,8 @@ export async function newProject(): Promise<ActionResult> {
   // Same for accompaniment audio — a fresh project starts with no
   // user audio attached.
   useUserAudio.getState().clearFromLoad()
+  // And the hand video.
+  useHandVideo.getState().clearFromLoad()
   return { kind: 'ok' }
 }
 

@@ -3,6 +3,8 @@ import { Slider, SliderThumb, SliderTrack } from 'react-aria-components'
 import { useStore } from '../store'
 import { audioEngine } from '../audio/engine'
 import { useUserAudio, type UserAudioPeaks } from '../audio/userAudio'
+import { useHandVideo } from '../notes/handVideo'
+import { useHandVideoMenu } from './HandVideoContextMenu'
 import { useCurrentDisplayTime } from '../audio/useCurrentTime'
 import type { NoteEvent } from '../midi/types'
 import {
@@ -1390,10 +1392,7 @@ export function Timeline() {
     x: number
     y: number
   } | null>(null)
-  const openMenuAt = (
-    target: 'midi' | 'audio',
-    e: React.MouseEvent,
-  ) => {
+  const openMenuAt = (target: 'midi' | 'audio', e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     setMenu({ target, x: e.clientX, y: e.clientY })
@@ -1420,6 +1419,23 @@ export function Timeline() {
   )
   const midiTrimEndSec = midiTrimEndSecRaw ?? songDuration
   const audioTrimEndSec = userAudioTrimEndSecRaw ?? audioDuration
+  // Hand video clip — same offset / trim model as the audio clip, but
+  // a fixed-height lane (not part of the user-resizable divider chain)
+  // so adding it doesn't have to rework the MIDI/Speed/Audio divider
+  // permutations. Position alignment is the point; height tuning isn't.
+  const videoFileName = useHandVideo((s) => s.fileName)
+  const videoDuration = useHandVideo((s) => s.duration)
+  const videoTranscoding = useHandVideo((s) => s.transcoding)
+  const videoError = useHandVideo((s) => s.error)
+  const videoEnabled = useStore((s) => s.settings.handVideoEnabled)
+  const handVideoOffsetSec = useStore((s) => s.settings.handVideoOffsetSec)
+  const handVideoTrimStartSec = useStore(
+    (s) => s.settings.handVideoTrimStartSec,
+  )
+  const handVideoTrimEndSecRaw = useStore(
+    (s) => s.settings.handVideoTrimEndSec,
+  )
+  const videoTrimEndSec = handVideoTrimEndSecRaw ?? videoDuration
   // Speed automation — empty array means constant 1.0. The compiled
   // map is memoised against the breakpoint array reference so a
   // zustand-stable points list doesn't reshape the map every render.
@@ -1436,6 +1452,10 @@ export function Timeline() {
   const midiLaneH = laneUnit * midiLaneRatio
   const audioLaneH = laneUnit * audioLaneRatio
   const speedLaneH = laneUnit * speedLaneRatio
+  // Fixed height (one lane unit) — deliberately not divider-resizable.
+  const videoLaneH = laneUnit
+  const showVideoLane =
+    !!videoFileName || !!videoTranscoding || !!videoError
   const speedPoints = useStore((s) => s.settings.midiSpeedAutomation)
   const speedYRangeLog2 = useStore(
     (s) => s.settings.midiSpeedAutomationYRangeLog2,
@@ -1452,10 +1472,17 @@ export function Timeline() {
   // (drag, click, etc.) predictable when curves are aggressive.
   const audioEnd = audioDuration > 0 ? offsetSec + audioTrimEndSec : 0
   const midiEnd = songDuration > 0 ? midiTrimEndSec + midiOffsetSec : 0
-  const totalDuration = Math.max(0.001, midiEnd, audioEnd)
+  const videoEnd =
+    videoDuration > 0 ? handVideoOffsetSec + videoTrimEndSec : 0
+  const totalDuration = Math.max(0.001, midiEnd, audioEnd, videoEnd)
 
   const showAudioLane =
     !!audioFileName || !!audioLoading || !!audioError || !!peaks
+  // The ruler / playhead / minimap / wheel-zoom are useful with ANY
+  // timeline content, not just a MIDI — a hand video alone still needs
+  // to be scrubbed into alignment. MIDI-clip and audio-clip drag/trim
+  // gestures stay gated on their own media existing.
+  const hasTimelineContent = !!song || showVideoLane || showAudioLane
 
   useEffect(() => {
     const el = wrapRef.current
@@ -1483,7 +1510,12 @@ export function Timeline() {
   // Auto-fit anchored to the longest natural track. Speed automation
   // doesn't affect the editor's x-scale; stretching the timeline on
   // every curve edit makes coarse moves unwieldy.
-  const baseDuration = Math.max(0.001, songDuration, audioDuration)
+  const baseDuration = Math.max(
+    0.001,
+    songDuration,
+    audioDuration,
+    videoDuration,
+  )
   const fitPxPerSec = areaWidth / baseDuration
   const pxPerSec = fitPxPerSec * zoom
   const viewDuration = areaWidth > 0 ? areaWidth / pxPerSec : totalDuration
@@ -1496,14 +1528,14 @@ export function Timeline() {
     if (Math.abs(clampedScroll - scrollSec) > 0.001) setScrollSec(clampedScroll)
   }, [clampedScroll, scrollSec])
 
-  // Snap zoom back to 1 (and scroll to 0) whenever the song becomes
-  // null — a fresh / empty session shouldn't keep the prior zoom.
+  // Snap zoom back to 1 (and scroll to 0) whenever the timeline empties
+  // out — a fresh / empty session shouldn't keep the prior zoom.
   useEffect(() => {
-    if (!song) {
+    if (!hasTimelineContent) {
       setZoom(1)
       setScrollSec(0)
     }
-  }, [song])
+  }, [hasTimelineContent])
 
   const playheadInView = currentTime - clampedScroll
   const playheadVisible =
@@ -1550,6 +1582,7 @@ export function Timeline() {
     viewDuration,
     maxScroll,
     songLoaded: !!song,
+    hasContent: hasTimelineContent,
   })
   stateRef.current = {
     zoom,
@@ -1561,13 +1594,14 @@ export function Timeline() {
     viewDuration,
     maxScroll,
     songLoaded: !!song,
+    hasContent: hasTimelineContent,
   }
   useEffect(() => {
     const el = wrapRef.current
     if (!el) return
     const onWheel = (e: WheelEvent) => {
       const s = stateRef.current
-      if (!s.songLoaded || s.areaWidth <= 0) return
+      if (!s.hasContent || s.areaWidth <= 0) return
       // preventDefault stops the canvas-area wheel-to-seek listener
       // (Viewport.tsx) from firing under the timeline AND blocks the
       // browser's default page scroll. stopPropagation is belt-and-
@@ -1642,7 +1676,7 @@ export function Timeline() {
   const seekDraggingRef = useRef<boolean>(false)
   const rulerHandlers = {
     onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => {
-      if (!song) return
+      if (!hasTimelineContent) return
       // Right-click is reserved for the lane context menu; ignore so
       // we don't grab pointer capture and trigger an unwanted seek.
       if (e.button !== 0) return
@@ -1735,7 +1769,7 @@ export function Timeline() {
     null,
   )
   const onMinimapPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!song) return
+    if (!hasTimelineContent) return
     if (e.button !== 0) return
     if (areaWidth <= 0 || maxScroll <= 0) return
     disableFollowIfOn()
@@ -1782,7 +1816,7 @@ export function Timeline() {
   const onMinimapEdgePointerDown =
     (side: 'left' | 'right') =>
     (e: React.PointerEvent<HTMLDivElement>) => {
-      if (!song || e.button !== 0) return
+      if (!hasTimelineContent || e.button !== 0) return
       if (areaWidth <= 0 || totalDuration <= 0) return
       e.stopPropagation()
       disableFollowIfOn()
@@ -1957,6 +1991,108 @@ export function Timeline() {
     endEdit()
   }
 
+  // ── Hand video clip drag (positive offset only, like audio) ──
+  const videoDragRef = useRef<{
+    startX: number
+    startOffset: number
+    captured: boolean
+  } | null>(null)
+  const onVideoPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!videoFileName) return
+    if (e.button !== 0) return
+    videoDragRef.current = {
+      startX: e.clientX,
+      startOffset: handVideoOffsetSec,
+      captured: false,
+    }
+    e.currentTarget.setPointerCapture(e.pointerId)
+    videoDragRef.current.captured = true
+    beginEdit()
+  }
+  const onVideoPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const drag = videoDragRef.current
+    if (!drag || !videoFileName) return
+    if ((e.buttons & 1) === 0) {
+      onVideoPointerUp(e)
+      return
+    }
+    const dx = e.clientX - drag.startX
+    const dt = pxPerSec > 0 ? dx / pxPerSec : 0
+    const minOffset = -handVideoTrimStartSec
+    const next = Math.max(minOffset, drag.startOffset + dt)
+    if (next !== handVideoOffsetSec)
+      updateSettings({ handVideoOffsetSec: next })
+  }
+  const onVideoPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    const drag = videoDragRef.current
+    if (!drag) return
+    if (drag.captured) {
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId)
+      } catch {
+        /* capture may already be released — ignore */
+      }
+    }
+    videoDragRef.current = null
+    endEdit()
+  }
+
+  const videoTrimDragRef = useRef<{
+    side: 'left' | 'right'
+    startX: number
+    startTrimStart: number
+    startTrimEnd: number
+  } | null>(null)
+  const onVideoTrimPointerDown =
+    (side: 'left' | 'right') =>
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!videoFileName || e.button !== 0) return
+      e.stopPropagation()
+      videoTrimDragRef.current = {
+        side,
+        startX: e.clientX,
+        startTrimStart: handVideoTrimStartSec,
+        startTrimEnd: videoTrimEndSec,
+      }
+      e.currentTarget.setPointerCapture(e.pointerId)
+      beginEdit()
+    }
+  const onVideoTrimPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = videoTrimDragRef.current
+    if (!d || !videoFileName) return
+    if ((e.buttons & 1) === 0) {
+      onVideoTrimPointerUp(e)
+      return
+    }
+    e.stopPropagation()
+    const dt = pxPerSec > 0 ? (e.clientX - d.startX) / pxPerSec : 0
+    if (d.side === 'left') {
+      const max = d.startTrimEnd - MIN_CLIP_DURATION
+      const next = Math.max(0, Math.min(max, d.startTrimStart + dt))
+      if (next !== handVideoTrimStartSec) {
+        updateSettings({ handVideoTrimStartSec: next })
+      }
+    } else {
+      const min = d.startTrimStart + MIN_CLIP_DURATION
+      const next = Math.max(min, Math.min(videoDuration, d.startTrimEnd + dt))
+      const stored = next >= videoDuration - 0.001 ? null : next
+      if (stored !== handVideoTrimEndSecRaw) {
+        updateSettings({ handVideoTrimEndSec: stored })
+      }
+    }
+  }
+  const onVideoTrimPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!videoTrimDragRef.current) return
+    e.stopPropagation()
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+    } catch {
+      /* capture may already be released — ignore */
+    }
+    videoTrimDragRef.current = null
+    endEdit()
+  }
+
   // ── MIDI clip drag (positive offset only, like audio) ──
   const midiDragRef = useRef<{
     startX: number
@@ -2020,6 +2156,13 @@ export function Timeline() {
   // matches the corresponding samples in the audio file.
   const audioStartInBuffer = Math.max(0, audioVisStart - offsetSec)
 
+  const videoClipStart = handVideoOffsetSec + handVideoTrimStartSec
+  const videoClipEnd = handVideoOffsetSec + videoTrimEndSec
+  const videoVisStart = Math.max(clampedScroll, videoClipStart)
+  const videoVisEnd = Math.min(clampedScroll + viewDuration, videoClipEnd)
+  const videoClipLeft = (videoVisStart - clampedScroll) * pxPerSec
+  const videoClipWidth = Math.max(0, (videoVisEnd - videoVisStart) * pxPerSec)
+
   const midiClipStart = midiOffsetSec + midiTrimStartSec
   const midiClipEnd = midiOffsetSec + midiTrimEndSec
   const midiVisStart = Math.max(clampedScroll, midiClipStart)
@@ -2042,7 +2185,8 @@ export function Timeline() {
     ROW_GAP +
     midiLaneH +
     (showSpeedLane ? ROW_GAP + speedLaneH : 0) +
-    (showAudioLane ? ROW_GAP + audioLaneH : 0)
+    (showAudioLane ? ROW_GAP + audioLaneH : 0) +
+    (showVideoLane ? ROW_GAP + videoLaneH : 0)
 
   const onToggleMidiMute = () => {
     beginEdit()
@@ -2127,6 +2271,20 @@ export function Timeline() {
             </>
           )
         )}
+        {showVideoLane && (
+          <>
+            <div style={{ height: ROW_GAP }} />
+            <LaneHeader
+              title={videoFileName ?? 'Hand Video'}
+              height={videoLaneH}
+              onOpenMenu={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                useHandVideoMenu.getState().openAt(e.clientX, e.clientY)
+              }}
+            />
+          </>
+        )}
         <div style={{ height: ROW_GAP }} />
         <div style={{ height: MINIMAP_HEIGHT }} />
       </div>
@@ -2155,14 +2313,18 @@ export function Timeline() {
             }}
             style={{ height: RULER_HEIGHT, touchAction: 'none' }}
             className={
-              song
+              hasTimelineContent
                 ? 'relative cursor-pointer overflow-hidden rounded bg-neutral-950'
                 : 'relative overflow-hidden rounded bg-neutral-950'
             }
             aria-label="Ruler — click to seek within view"
-            title={song ? 'Drag to seek · double-click to fit' : undefined}
+            title={
+              hasTimelineContent
+                ? 'Drag to seek · double-click to fit'
+                : undefined
+            }
           >
-            {song && areaWidth > 0 && (
+            {hasTimelineContent && areaWidth > 0 && (
               <RulerCanvas
                 width={areaWidth}
                 height={RULER_HEIGHT}
@@ -2177,7 +2339,7 @@ export function Timeline() {
                 Double-clicking the ruler does the same, but that's
                 undiscoverable. Pinned to the right edge so the ruler
                 labels on the left don't compete with it. */}
-            {song && zoom > 1.001 && (
+            {hasTimelineContent && zoom > 1.001 && (
               <button
                 type="button"
                 onClick={(e) => {
@@ -2354,6 +2516,74 @@ export function Timeline() {
             </div>
           )}
 
+          {/* Hand video lane — a draggable clip purely for aligning
+              the overhead footage to the song. No waveform / preview
+              (decoding thumbnails would be a separate cost); the clip
+              shows the filename and trims like the audio clip. */}
+          {showVideoLane && (
+            <div
+              onContextMenu={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                useHandVideoMenu.getState().openAt(e.clientX, e.clientY)
+              }}
+              className="group relative overflow-hidden rounded bg-neutral-900/40"
+              style={{ height: videoLaneH }}
+            >
+              {videoFileName && areaWidth > 0 && videoClipWidth > 0 && (
+                <div
+                  onPointerDown={onVideoPointerDown}
+                  onPointerMove={onVideoPointerMove}
+                  onPointerUp={onVideoPointerUp}
+                  onPointerCancel={onVideoPointerUp}
+                  className={`absolute top-0 cursor-grab rounded bg-sky-500/15 transition-opacity active:cursor-grabbing ${
+                    videoEnabled ? '' : 'opacity-30 grayscale'
+                  }`}
+                  style={{
+                    left: videoClipLeft,
+                    width: videoClipWidth,
+                    height: videoLaneH,
+                    touchAction: 'none',
+                  }}
+                  title={`Drag to sync — offset ${handVideoOffsetSec.toFixed(2)}s`}
+                >
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 flex items-center truncate px-2 text-[10px] font-medium text-sky-100/80"
+                  >
+                    {videoFileName}
+                  </div>
+                  <TrimHandle
+                    side="left"
+                    laneHeight={videoLaneH}
+                    ariaLabel="Trim video head"
+                    onPointerDown={onVideoTrimPointerDown('left')}
+                    onPointerMove={onVideoTrimPointerMove}
+                    onPointerUp={onVideoTrimPointerUp}
+                  />
+                  <TrimHandle
+                    side="right"
+                    laneHeight={videoLaneH}
+                    ariaLabel="Trim video tail"
+                    onPointerDown={onVideoTrimPointerDown('right')}
+                    onPointerMove={onVideoTrimPointerMove}
+                    onPointerUp={onVideoTrimPointerUp}
+                  />
+                </div>
+              )}
+              {videoTranscoding && (
+                <div className="flex h-full items-center justify-center text-[10px] text-neutral-400">
+                  Converting…
+                </div>
+              )}
+              {videoError && !videoTranscoding && (
+                <div className="flex h-full items-center justify-center px-2 text-center text-[10px] text-rose-300">
+                  {videoError}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Minimap — full-song overview, pan-only. Sits below the
               lanes so the playhead in the timeline (visible-window
               scale) doesn't visually compete with the minimap's
@@ -2370,20 +2600,20 @@ export function Timeline() {
             onPointerLeave={() => setMinimapHovered(false)}
             style={{ height: MINIMAP_HEIGHT, touchAction: 'none' }}
             className={
-              song && maxScroll > 0
+              hasTimelineContent && maxScroll > 0
                 ? 'relative cursor-grab rounded bg-neutral-950 active:cursor-grabbing'
                 : 'relative rounded bg-neutral-950'
             }
             aria-label="Minimap — drag to pan"
             title={
-              song
+              hasTimelineContent
                 ? maxScroll > 0
                   ? 'Drag to pan visible range'
                   : 'Zoom in to enable panning'
                 : undefined
             }
           >
-            {song && areaWidth > 0 && totalDuration > 0 && (
+            {hasTimelineContent && areaWidth > 0 && totalDuration > 0 && (
               <>
                 <div
                   className="absolute inset-y-0 bg-neutral-700/70"
@@ -2437,7 +2667,7 @@ export function Timeline() {
             visually break. Hidden when the playhead is outside the
             visible window so it doesn't pin to an edge while the user
             has scrolled away. */}
-        {song && playheadVisible && (
+        {hasTimelineContent && playheadVisible && (
           <div
             aria-hidden
             className="pointer-events-none absolute w-px bg-sky-300 shadow-[0_0_4px_rgba(125,211,252,0.7)]"

@@ -14,6 +14,9 @@
     "upload-r2": "bash scripts/upload-r2.sh"
   },
   "dependencies": {
+    "@ffmpeg/core": "^0.12.10",
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2",
     "@react-three/drei": "^9.114.0",
     "@react-three/fiber": "^8.17.10",
     "@react-three/postprocessing": "^2.16.3",
@@ -21,6 +24,7 @@
     "clsx": "^2.1.1",
     "fflate": "^0.8.2",
     "mp4-muxer": "^5.2.2",
+    "mp4box": "^0.5.4",
     "react": "^18.3.1",
     "react-aria-components": "^1.4.1",
     "react-dom": "^18.3.1",

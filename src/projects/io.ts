@@ -74,12 +74,32 @@ function extFromAudioMime(mime: string): string {
   }
 }
 
+/** MIME → conventional file extension for the hand video. The import-time
+ * normalisation in `video/transcode.ts` keeps non-H.264 input from
+ * reaching here, but originals already in a web container pass through
+ * with their own type, so cover the common ones. */
+function extFromVideoMime(mime: string): string {
+  switch (mime) {
+    case 'video/mp4':
+      return '.mp4'
+    case 'video/quicktime':
+      return '.mov'
+    case 'video/webm':
+      return '.webm'
+    default:
+      return '.bin'
+  }
+}
+
 export function pack(project: Project): Blob {
   const customTextureRef = project.customTexture
     ? `note-texture${extFromImageMime(project.customTexture.mime)}`
     : null
   const userAudioRef = project.userAudio
     ? `user-audio${extFromAudioMime(project.userAudio.mime)}`
+    : null
+  const handVideoRef = project.handVideo
+    ? `hand-video${extFromVideoMime(project.handVideo.mime)}`
     : null
   const manifest: ProjectManifest = {
     appVersion: __APP_VERSION__,
@@ -104,6 +124,14 @@ export function pack(project: Project): Blob {
             fileName: project.userAudio.fileName,
           }
         : null,
+    handVideo:
+      project.handVideo && handVideoRef
+        ? {
+            ref: handVideoRef,
+            mime: project.handVideo.mime,
+            fileName: project.handVideo.fileName,
+          }
+        : null,
   }
   const files: Zippable = {
     'manifest.json': strToU8(JSON.stringify(manifest, null, 2)),
@@ -116,6 +144,9 @@ export function pack(project: Project): Blob {
   }
   if (project.userAudio && userAudioRef) {
     files[`assets/${userAudioRef}`] = new Uint8Array(project.userAudio.bytes)
+  }
+  if (project.handVideo && handVideoRef) {
+    files[`assets/${handVideoRef}`] = new Uint8Array(project.handVideo.bytes)
   }
   const zipped = zipSync(files)
   // Copy into a fresh ArrayBuffer so Blob's typing is satisfied regardless
@@ -196,6 +227,20 @@ export async function unpack(buf: ArrayBuffer): Promise<Project> {
     // timeline.
   }
 
+  let handVideo: Project['handVideo'] = null
+  if (manifest.handVideo) {
+    const videoBytes = files[`assets/${manifest.handVideo.ref}`]
+    if (videoBytes) {
+      handVideo = {
+        bytes: detach(videoBytes),
+        mime: manifest.handVideo.mime,
+        fileName: manifest.handVideo.fileName,
+      }
+    }
+    // Same lenient policy as customTexture / userAudio — a missing
+    // video asset doesn't fail the whole project.
+  }
+
   return {
     name: manifest.name,
     createdAt: manifest.createdAt,
@@ -204,6 +249,7 @@ export async function unpack(buf: ArrayBuffer): Promise<Project> {
     songMidi,
     customTexture,
     userAudio,
+    handVideo,
   }
 }
 

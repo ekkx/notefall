@@ -40,6 +40,7 @@ import { hasFileSystemAccess } from '../projects/io'
 import { clearAllRecent, getRecent, subscribeRecent } from '../projects/recent'
 import { DEMOS, loadDemoManifestNames } from '../demos'
 import { useUserAudio } from '../audio/userAudio'
+import { useHandVideo } from '../notes/handVideo'
 import { exportSongToWav } from '../export/exportAudio'
 import { playExportCompleteChime } from '../audio/exportChime'
 import {
@@ -398,6 +399,11 @@ export function Toolbar() {
       reportError(result.title ?? 'Could not load audio', result.message)
     }
   }
+  const onImportHandVideo = async () => {
+    const file = await pickFile('video/*,.mp4,.mov,.m4v,.webm,.mkv')
+    if (!file) return
+    await useHandVideo.getState().setFromFile(file)
+  }
   // Export the currently loaded song as a single-track Standard MIDI
   // File. `serializeMidi` collapses any multi-track structure from the
   // original source (e.g. right hand / left hand / pedal split tracks)
@@ -738,6 +744,13 @@ export function Toolbar() {
                 className={menuItemClass}
               >
                 <span>Open Audio…</span>
+              </MenuItem>
+              <MenuItem
+                onAction={() => void onImportHandVideo()}
+                textValue="Open Hand Video"
+                className={menuItemClass}
+              >
+                <span>Open Hand Video…</span>
               </MenuItem>
               <MenuItem
                 onAction={() => onSaveSongAsMidi()}

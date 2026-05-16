@@ -5,11 +5,13 @@ import { Inspector } from './Inspector'
 import { Viewport } from './Viewport'
 import { TimelineEditor } from './TimelineEditor'
 import { ConfirmModal } from './ConfirmModal'
+import { HandVideoContextMenu } from './HandVideoContextMenu'
 import { LoadingOverlay } from './LoadingOverlay'
 import { useStore } from '../store'
 import { audioEngine } from '../audio/engine'
 import { midiInput } from '../audio/midiInput'
 import { isAudioName, useUserAudio } from '../audio/userAudio'
+import { useHandVideo } from '../notes/handVideo'
 import { parseMidi } from '../midi/parse'
 import { importUserAudio, openProjectFromFile } from '../projects/actions'
 import { PROJECT_FILE_EXTENSION } from '../projects/types'
@@ -137,6 +139,23 @@ export function Layout() {
     audioEngine.setLoop(loop)
   }, [loop])
 
+  // Keep the engine's external-media extent in sync with the hand
+  // video clip so the timeline can be scrubbed / played to the clip's
+  // end even with no MIDI or accompaniment loaded. Depends on the
+  // video store (duration) AND the placement settings (offset / tail
+  // trim), so it can't ride the settings-only subscription above.
+  const hvDuration = useHandVideo((s) => s.duration)
+  const hvFileName = useHandVideo((s) => s.fileName)
+  const hvOffsetSec = useStore((s) => s.settings.handVideoOffsetSec)
+  const hvTrimEndSec = useStore((s) => s.settings.handVideoTrimEndSec)
+  useEffect(() => {
+    const end =
+      hvFileName && hvDuration > 0
+        ? hvOffsetSec + (hvTrimEndSec ?? hvDuration)
+        : 0
+    audioEngine.setExternalMediaEndSec(end)
+  }, [hvFileName, hvDuration, hvOffsetSec, hvTrimEndSec])
+
   // User audio buffer is kept outside the main store (heavy AudioBuffer);
   // subscribe to it directly so Layout doesn't re-render on settings.
   const userAudioBuffer = useUserAudio((s) => s.buffer)
@@ -243,6 +262,7 @@ export function Layout() {
       </div>
       <LoadingOverlay />
       <ConfirmModal />
+      <HandVideoContextMenu />
       {/* Drop indicator. Toggled via CSS off the DropZone's
           `data-drop-target` attribute — using a render-prop here would
           re-execute the entire Layout subtree on every focus / hover /
