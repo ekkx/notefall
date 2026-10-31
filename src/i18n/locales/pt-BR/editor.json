@@ -1,0 +1,19 @@
+{
+  "selection": {
+    "notes_one": "{{count}} nota",
+    "notes_other": "{{count}} notas",
+    "velocity": "Intensidade",
+    "velocityRange": "Intervalo de intensidade",
+    "delete_one": "Excluir nota",
+    "delete_other": "Excluir {{count}} notas",
+    "groupLabel_one": "{{count}} nota selecionada",
+    "groupLabel_other": "{{count}} notas selecionadas",
+    "hand": "Mão",
+    "finger": "Dedo",
+    "mixed": "Misto",
+    "hands": {
+      "L": "Esquerda",
+      "R": "Direita"
+    }
+  }
+}

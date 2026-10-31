@@ -1,0 +1,201 @@
+{
+  "confirm": {
+    "defaultConfirm": "OK",
+    "defaultCancel": "Cancelar"
+  },
+  "alert": {
+    "acknowledge": "OK"
+  },
+  "export": {
+    "ariaLabel": "Configurações de exportação",
+    "title": "Exportar",
+    "unsupported": "A exportação de vídeo não está disponível neste navegador. A exportação de áudio continua funcionando.",
+    "format": {
+      "label": "Formato",
+      "videoAudio": "Vídeo + áudio",
+      "videoOnly": "Somente vídeo",
+      "audioOnly": "Somente áudio"
+    },
+    "resolution": "Resolução",
+    "fps": "Taxa de quadros",
+    "fps30": "30 fps",
+    "fps60": "60 fps",
+    "quality": "Qualidade",
+    "estimatedSize": "Tamanho estimado",
+    "estimatedSizeValue": "~{{mb}} MB",
+    "playSoundOnComplete": "Tocar som ao concluir",
+    "test": "Testar",
+    "cancel": "Cancelar",
+    "submit": "Exportar",
+    "codec": {
+      "label": "Codec",
+      "h264": "H.264 + AAC (MP4) — mais compatível",
+      "vp9": "VP9 + Opus (WebM) — formato aberto",
+      "av1": "AV1 + Opus (WebM) — aberto, menor, lento",
+      "checking": "Verificando codecs suportados…"
+    },
+    "preflight": {
+      "noWebCodecs": "A exportação de vídeo precisa de WebCodecs (Chrome / Edge / Safari 16.4+). Neste navegador você ainda pode exportar \"Somente áudio\".",
+      "videoUnsupported": "Este navegador não consegue codificar vídeo {{codec}} em {{width}}×{{height}} @ {{fps}} fps. Tente {{alternatives}}, ou reduza a resolução / taxa de quadros.",
+      "audioUnsupported": "Este navegador não consegue codificar a faixa de áudio {{audioCodec}} que a exportação {{codec}} exige. Tente {{alternatives}}, exporte \"Somente vídeo\" ou exporte \"Somente áudio\".",
+      "or": " ou "
+    },
+    "advanced": "Avançado",
+    "advancedSummaryAudio": "WAV",
+    "qualityHint": "Taxa de bits do vídeo: {{mbps}} Mbps. Alta usa 1,5× a taxa de bits para bordas e brilho mais nítidos.",
+    "fileFormat": "{{codec}} · {{res}} · {{fps}} fps",
+    "wavMeta": "WAV · 44,1 kHz"
+  },
+  "progress": {
+    "note": "Isso pode levar um tempo. Não feche a aba.",
+    "cancel": "Cancelar",
+    "eta": "{{eta}} restantes",
+    "etaSeconds": "{{count}} s",
+    "etaMinutes": "{{min}} min {{sec}} s"
+  },
+  "drop": {
+    "couldNotOpenProjectTitle": "Não foi possível abrir o projeto",
+    "couldNotOpenProjectMessage": "Não foi possível carregar \"{{name}}\".\n\n{{detail}}",
+    "couldNotLoadMidiTitle": "Não foi possível carregar o MIDI",
+    "couldNotLoadMidiMessage": "Não foi possível interpretar \"{{name}}\".\n\n{{detail}}",
+    "couldNotLoadAudioTitle": "Não foi possível carregar o áudio",
+    "unsupportedTitle": "Tipo de arquivo não suportado",
+    "unsupportedMessage": "\"{{name}}\" não está em um formato suportado. Solte um projeto .nfz, um arquivo .mid / .midi ou um áudio .mp3 / .wav.",
+    "title": "Solte para abrir",
+    "hint": "MIDI, projeto do notefall ou áudio para o acompanhamento"
+  },
+  "fastForward": {
+    "rate": "2x"
+  },
+  "shortcut": {
+    "couldNotSaveTitle": "Não foi possível salvar o projeto",
+    "couldNotOpenFileTitle": "Não foi possível abrir o arquivo"
+  },
+  "actions": {
+    "discardTitle": "Descartar alterações não salvas?",
+    "discardMessage": "{{prefix}} As edições não salvas serão perdidas.",
+    "cancel": "Cancelar",
+    "discardAndOpen": "Descartar e abrir",
+    "discardAndLoad": "Descartar e carregar",
+    "discardAndNew": "Descartar e criar novo",
+    "openReplace": "Abrir um arquivo substituirá a sessão atual.",
+    "openReplaceNamed": "Abrir \"{{name}}\" substituirá a sessão atual.",
+    "loadDemoReplace": "Carregar a demonstração \"{{label}}\" substituirá a sessão atual.",
+    "newDiscardTitle": "Descartar alterações não salvas?",
+    "newDiscardMessage": "Iniciar um novo projeto descartará a sessão atual. As edições não salvas serão perdidas.",
+    "couldNotLoadMidiTitle": "Não foi possível carregar o MIDI",
+    "couldNotLoadMidiMessage": "Não foi possível interpretar \"{{name}}\".\n\n{{detail}}",
+    "midiParseFailed": "Falha ao interpretar o MIDI: {{detail}}",
+    "couldNotOpenNamed": "Não foi possível abrir \"{{name}}\". O arquivo pode ter sido movido, excluído ou o acesso foi negado.",
+    "couldNotLoadDemo": "Não foi possível carregar a demonstração: {{detail}}",
+    "unsupportedFileType": "Tipo de arquivo não suportado: \"{{name}}\". Solte um arquivo .nfz ou .mid/.midi.",
+    "loadMidiFirstTitle": "Carregue um arquivo MIDI primeiro",
+    "loadMidiFirstMessage": "O áudio só pode ser carregado como acompanhamento de uma faixa MIDI. Abra ou grave um arquivo MIDI antes de importar áudio.",
+    "couldNotLoadAudioTitle": "Não foi possível carregar o áudio",
+    "couldNotLoadAudioMessage": "Não foi possível decodificar \"{{name}}\".\n\n{{detail}}",
+    "notAudioFile": "\"{{name}}\" não é um arquivo de áudio. Escolha um arquivo MP3, WAV, OGG, M4A, AAC, FLAC ou WebM.",
+    "somethingWentWrong": "Algo deu errado"
+  },
+  "feedback": {
+    "ariaLabel": "Enviar feedback",
+    "title": "Relatar um bug ou sugerir uma funcionalidade",
+    "publicNotice": "Seu relato se torna uma issue pública no GitHub. Não inclua informações pessoais.",
+    "statusLink": "Ver relatos e o status deles",
+    "kind": "Tipo de relato",
+    "kinds": {
+      "bug": "Bug",
+      "feature": "Sugestão de funcionalidade"
+    },
+    "summary": "Resumo",
+    "optional": "(opcional)",
+    "fields": {
+      "bug": {
+        "description": "O que aconteceu?",
+        "details": "Passos para reproduzir",
+        "expected": "O que você esperava?"
+      },
+      "feature": {
+        "description": "O que você gostaria de fazer?",
+        "details": "Como poderia funcionar?"
+      }
+    },
+    "placeholders": {
+      "bug": {
+        "summary": "ex.: As notas somem depois de arrastar",
+        "description": "Descreva o que deu errado.",
+        "details": "1. Abra um projeto\n2. Arraste uma nota\n3. …"
+      },
+      "feature": {
+        "summary": "ex.: Ir direto para um compasso",
+        "description": "O problema que isso resolve ou o que você quer criar.",
+        "details": "Comportamento, interface, atalhos…"
+      }
+    },
+    "includeEnv": "Incluir informações do dispositivo",
+    "send": "Enviar relato",
+    "sending": "Enviando",
+    "cancel": "Cancelar",
+    "close": "Fechar",
+    "useGitHub": "Relatar no GitHub",
+    "openGitHub": "Abrir o formulário do GitHub",
+    "unavailable": "O formulário de relato não está disponível aqui.",
+    "errors": {
+      "verification": "A verificação antispam falhou — tente novamente.",
+      "invalid": "Preencha o resumo e a descrição.",
+      "server": "Não foi possível enviar o relato.",
+      "network": "Sem conexão — não foi possível enviar o relato."
+    },
+    "sentTitle": "Relato enviado",
+    "sentBody": "Ele foi registrado como a issue #{{number}}.",
+    "sentLink": "Acompanhe o status no GitHub (#{{number}})",
+    "envHint": "Enviado exatamente como mostrado abaixo."
+  },
+  "shortcuts": {
+    "title": "Atalhos de teclado",
+    "close": "Fechar",
+    "playback": "Reprodução",
+    "editing": "Edição",
+    "file": "Arquivo e gravação",
+    "mouse": "Mouse nas notas",
+    "play": "Tocar / pausar",
+    "scrub": "Navegar (pausado)",
+    "scrubKey": "Rolagem",
+    "ff": "Avanço rápido 2×",
+    "ffKey": "Segurar",
+    "timeline": "Mostrar/ocultar linha do tempo",
+    "undo": "Desfazer",
+    "redo": "Refazer",
+    "delete": "Excluir seleção",
+    "clear": "Limpar seleção",
+    "nudgePitch": "Mover ±1 semitom",
+    "nudgeTime": "Mover ±0,05 s",
+    "keyframe": "Adicionar keyframe (linha do tempo)",
+    "open": "Abrir",
+    "save": "Salvar",
+    "saveAs": "Salvar como",
+    "record": "Gravar",
+    "piano": "Tocar notas",
+    "pianoKeys": "Z–M, A–J, Q–P, números",
+    "select": "Selecionar e mover",
+    "selectKey": "Clicar, arrastar",
+    "rangeSelect": "Selecionar um intervalo",
+    "rangeKey": "arrastar",
+    "addSelect": "Adicionar à seleção",
+    "split": "Dividir nota",
+    "menu": "Selecionar nota",
+    "menuKey": "Clique duplo",
+    "del": "Excluir nota",
+    "delKey": "Clique direito",
+    "erase": "Apagar",
+    "eraseKey": "Arrastar com o botão direito",
+    "resize": "Redimensionar nota",
+    "resizeKey": "Arrastar uma borda",
+    "camera": "Dar zoom na câmera",
+    "cameraKey": "rolagem",
+    "click": "Clicar",
+    "dragWord": "arrastar",
+    "scroll": "rolagem",
+    "add": "Adicionar uma nota (espaço vazio)",
+    "sheet": "Mostrar estes atalhos"
+  }
+}

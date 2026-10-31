@@ -1,0 +1,26 @@
+{
+  "unsupported": {
+    "title": "Este dispositivo não é compatível",
+    "body": "Abra o notefall em um computador ou tablet na horizontal — é necessária uma tela mais larga.",
+    "copyLink": "Copiar link",
+    "copied": "Link copiado"
+  },
+  "webgl": {
+    "title": "Aceleração de hardware necessária",
+    "body": "O notefall renderiza as notas caindo com WebGL, que exige a aceleração de hardware do navegador ativada.",
+    "howToTitle": "Como ativar",
+    "chromeLabel": "Chrome / Edge:",
+    "chromeSetting": "Usar aceleração gráfica quando disponível",
+    "firefoxLabel": "Firefox:",
+    "firefoxSetting": "Usar configurações de desempenho recomendadas",
+    "safariLabel": "Safari:",
+    "safariSetting": "WebGL 2.0",
+    "reload": "Recarregar página",
+    "chromePath": "Configurações → Sistema → ativar",
+    "chromeAfter": " e reinicie o navegador.",
+    "firefoxPath": "Configurações → Abas e navegação → Desempenho → ativar",
+    "firefoxAfter": ".",
+    "safariPath": "Menu Desenvolver → Recursos Experimentais → ativar",
+    "safariAfter": " (se aparecer)."
+  }
+}

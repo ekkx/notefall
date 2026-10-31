@@ -1,0 +1,114 @@
+{
+  "editor": {
+    "title": "Editor de linha do tempo",
+    "close": "Fechar linha do tempo",
+    "resizeLanes": "Arraste para redimensionar as faixas",
+    "resizeAria": "Redimensionar editor de linha do tempo",
+    "show": "Mostrar editor de linha do tempo",
+    "hide": "Ocultar editor de linha do tempo"
+  },
+  "follow": {
+    "stop": "Parar de seguir o cursor de reprodução",
+    "start": "Seguir o cursor de reprodução durante a reprodução",
+    "label": "Seguir"
+  },
+  "lane": {
+    "midi": "MIDI",
+    "speed": "Velocidade",
+    "audio": "Áudio",
+    "options": "Opções da faixa",
+    "mute": "Silenciar",
+    "unmute": "Ativar som",
+    "resizeLanes": "Arraste para redimensionar as faixas",
+    "decoding": "Decodificando…",
+    "addAudio": "+ Adicionar áudio…",
+    "addAudioHint": "ou solte um arquivo de áudio em qualquer lugar",
+    "addAudioFailed": "Não foi possível carregar o áudio",
+    "keyframes": "Keyframes",
+    "pins": "Keyframes",
+    "pinsLabel": "keyframes",
+    "speedLabel": "velocidade"
+  },
+  "context": {
+    "volume": "Volume",
+    "mute": "Silenciar",
+    "unmute": "Ativar som",
+    "resetToUnity": "Redefinir para 0 dB",
+    "removeAudio": "Remover áudio"
+  },
+  "speed": {
+    "automationAria": "Automação de velocidade do MIDI",
+    "automationTitle": "Clique para adicionar um ponto · arraste para mover · clique direito para excluir · role sobre o ponto médio para ajustar a curva",
+    "breakpointTitle": "{{value}}× em {{time}}s — clique duplo para redefinir · clique direito para excluir",
+    "curveTitle": "curva {{curvature}} — arraste ou role para curvar · clique direito para endireitar"
+  },
+  "trim": {
+    "drag": "Arraste para cortar",
+    "midiHead": "Cortar início do MIDI",
+    "midiTail": "Cortar fim do MIDI",
+    "audioHead": "Cortar início do áudio",
+    "audioTail": "Cortar fim do áudio"
+  },
+  "ruler": {
+    "seekAria": "Régua — clique para posicionar dentro da visualização",
+    "seekTitle": "Arraste para posicionar · clique duplo para ajustar",
+    "resetZoomAria": "Redefinir zoom",
+    "resetZoomTitle": "Redefinir zoom"
+  },
+  "clip": {
+    "syncTitle": "Arraste para sincronizar — deslocamento {{offset}}s"
+  },
+  "minimap": {
+    "panAria": "Minimapa — arraste para deslocar",
+    "panTitle": "Arraste para deslocar o intervalo visível",
+    "zoomToEnable": "Aumente o zoom para habilitar o deslocamento",
+    "resizeFromLeft": "Redimensionar intervalo visível pela esquerda",
+    "resizeFromRight": "Redimensionar intervalo visível pela direita"
+  },
+  "velocityCurve": {
+    "label": "Curva de intensidade"
+  },
+  "addKeyframe": {
+    "label": "Adicionar keyframe",
+    "title": "Adicionar um keyframe no cursor de reprodução"
+  },
+  "keyframe": {
+    "laneAria": "Keyframes",
+    "laneTitle": "Keyframes capturam o visual em um ponto do tempo; a cena se mistura entre keyframes vizinhos. Clique em um espaço vazio para adicionar um, clique em um keyframe para selecioná-lo e ir até ele, arraste para mover, arraste com o botão direito para apagar.",
+    "markerTitle": "Keyframe em {{time}}"
+  },
+  "empty": {
+    "prompt": "Nenhuma música carregada — solte um arquivo .mid / .nfz ou escolha uma ação rápida",
+    "openFile": "Abrir arquivo…",
+    "record": "Gravar",
+    "demoSongs": "Músicas de demonstração",
+    "demoSongsAria": "Músicas de demonstração"
+  },
+  "error": {
+    "couldNotOpenProjectTitle": "Não foi possível abrir o projeto",
+    "couldNotLoadDemoTitle": "Não foi possível carregar a demonstração"
+  },
+  "pin": {
+    "addAtPlayheadAria": "Adicionar keyframe no cursor de reprodução",
+    "addAtPlayheadTitle": "Adicionar um keyframe no cursor de reprodução (P)",
+    "laneAria": "Keyframes de configurações",
+    "laneTitle": "Keyframes capturam as configurações visuais em um ponto do tempo — a cena se transforma entre keyframes consecutivos. Clique em um espaço vazio para adicionar · clique em um keyframe para selecionar + posicionar · arraste para mover · arraste com o botão direito para apagar.",
+    "markerTitle": "Keyframe @ {{time}} — clique para selecionar + posicionar · arraste para mover · arraste com o botão direito para apagar"
+  },
+  "transport": {
+    "rewindToStart": "Voltar ao início",
+    "rewind10": "Voltar 10 segundos",
+    "forward10": "Avançar 10 segundos",
+    "play": "Tocar",
+    "pause": "Pausar",
+    "enableLoop": "Ativar repetição",
+    "disableLoop": "Desativar repetição",
+    "volume": "Volume",
+    "speed": "Velocidade",
+    "playbackSpeed": "Velocidade de reprodução",
+    "resetCameraView": "Redefinir visão da câmera",
+    "enterFullscreen": "Entrar em tela cheia",
+    "exitFullscreen": "Sair da tela cheia",
+    "seek": "Posicionar"
+  }
+}
