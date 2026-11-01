@@ -5,7 +5,7 @@ import type { TFunction } from 'i18next'
 import clsx from 'clsx'
 import { pauseSong, playSong } from '../../audio/playback'
 import type { useRecorder } from '../../audio/useRecorder'
-import { Button, Divider, Icon, IconButton, Popover, Switch, Tooltip, showToast } from '../kit'
+import { Button, Divider, Icon, IconButton, Popover, Switch, showToast } from '../kit'
 import { showConfirm } from '../confirm'
 
 export function fmtElapsed(sec: number): string {
@@ -197,17 +197,9 @@ export function TakesPopover({
                     >
                       {isPlayingThis ? <Icon.PauseIcon /> : <Icon.PlayIcon />}
                     </IconButton>
-                    {/* labelled ".mid" so the format is visible; the tooltip says what it does */}
-                    <Tooltip label={t('recordings.saveAsMid')}>
-                      <Button
-                        size="sm"
-                        icon={<Icon.DownloadIcon />}
-                        aria-label={t('recordings.saveAsMid')}
-                        onPress={() => rec.download(r.id)}
-                      >
-                        .mid
-                      </Button>
-                    </Tooltip>
+                    <IconButton size="sm" label={t('recordings.saveAsMid')} onPress={() => rec.download(r.id)}>
+                      <Icon.DownloadIcon />
+                    </IconButton>
                     <IconButton size="sm" label={t('recordings.delete')} onPress={() => onDelete(r.id)}>
                       <Icon.TrashIcon />
                     </IconButton>
