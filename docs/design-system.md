@@ -148,7 +148,7 @@ Rules: UI animation stays under 300 ms; never animate something triggered from t
 
 - **Focus ring**: the `ink` ring from the class `nf-focus`. On react-aria controls it shows only for keyboard focus (`data-focus-visible`). A control pressed with the mouse doesn't keep focus (`useReleaseFocusAfterPointer`, mounted in `Layout`), so the next key goes to the app's shortcuts and the PC-keyboard piano and no ring appears. Text fields, sliders, menus and dialogs keep their focus.
 - **States**: hover `fill-hover`; pressed / open `fill-selected` (`aria-pressed`, `aria-expanded`, `data-selected`); disabled 40% opacity.
-- **Shortcuts**: global ones live in `src/ui/useGlobalShortcuts.ts` and are listed in the shortcut sheet (`?`). Letter keys play notes on the PC-keyboard piano, so don't add letter shortcuts. Inputs stop propagation so typing never triggers shortcuts.
+- **Shortcuts**: global ones live in `src/ui/useGlobalShortcuts.ts` and are listed in the shortcut sheet (`?`). Letter keys play notes on the PC-keyboard piano, so don't add letter shortcuts; a shortcut that needs a letter takes Shift (Shift+R record, Shift+K add keyframe). Arrow keys move selected notes the way they look on screen: ↑ / ↓ along the fall, ← / → across the keyboard. Inputs stop propagation so typing never triggers shortcuts.
 - **Mouse on notes** follows FL Studio's piano roll and does not change: click selects and drags, double-click opens the selection card, right-click deletes, right-drag erases, ⌥-click splits, ⌘-click adds to the selection, ⌘-drag selects a range, drag an edge to resize, wheel scrubs time. There is no note context menu.
 
 ---
