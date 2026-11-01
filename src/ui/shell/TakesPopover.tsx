@@ -82,6 +82,11 @@ export function TakesPopover({
       }}
     >
       <div className="relative inline-flex">
+        {/* the seam between Record and ▾, shown while the pill is hovered */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute left-0 top-1/2 h-4 w-px -translate-y-1/2 bg-glass-edge opacity-0 transition-opacity duration-150 group-has-[[data-hovered]]/split:opacity-100"
+        />
         <IconButton
           size="sm"
           tooltip={false}
@@ -90,7 +95,7 @@ export function TakesPopover({
               ? t('recordings.triggerWithNew', { count: rec.unreadCount })
               : t('recordings.trigger')
           }
-          className="aria-expanded:bg-fill-selected"
+          className="!h-control w-8 rounded-l-none pr-0.5 data-[hovered]:!bg-transparent data-[pressed]:!bg-fill-selected aria-expanded:!bg-fill-selected"
         >
           <Icon.ChevronIcon />
         </IconButton>

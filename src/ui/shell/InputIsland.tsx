@@ -144,9 +144,11 @@ export function InputIsland({
         </MenuTrigger>
       )}
 
-      <span className="inline-flex items-center">
+      {/* Split button: Record and its ▾ are one pill. Hovering either half lights the whole pill and shows the seam;
+          pressing / opening fills only that half. */}
+      <span className="group/split inline-flex items-center rounded-round transition-colors duration-150 has-[[data-hovered]]:bg-fill-hover">
         <Button
-          className="pr-2"
+          className="rounded-r-none pr-2.5 data-[hovered]:!bg-transparent data-[pressed]:!bg-fill-selected"
           aria-label={t('record.start')}
           icon={<span aria-hidden className="h-2.5 w-2.5 rounded-full bg-record" />}
           onPress={onToggleRecord}
