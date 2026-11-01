@@ -445,7 +445,8 @@
     "paste": "Paste",
     "value": "Value",
     "apply": "Press Enter to apply",
-    "back": "Back"
+    "back": "Back",
+    "click": "Click"
   },
   "panel": {
     "title": "Customize"

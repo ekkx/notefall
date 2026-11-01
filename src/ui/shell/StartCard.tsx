@@ -9,7 +9,7 @@ import { toggleRecord } from '../../audio/recordControl'
 import { loadDemoProject, openProject } from '../../projects/actions'
 import { Button, Icon, Menu, MenuItem, MenuTrigger, Popover, usePresence } from '../kit'
 import { showAlert } from '../confirm'
-import { MOD } from './platform'
+import { shortcutLabel } from './platform'
 
 // "Don't show again" on the card; kept per browser.
 const HIDE_KEY = 'nf:ui:startCardHidden'
@@ -117,7 +117,7 @@ export function StartCard() {
           <p className="text-ink-muted">{t('startCard.text')}</p>
         </div>
         <div className="grid gap-2">
-          <Button variant="field" icon={<Icon.FileIcon />} hint={`${MOD}O`} className={action} onPress={() => void onOpen()}>
+          <Button variant="field" icon={<Icon.FileIcon />} hint={shortcutLabel('O', { mod: true })} className={action} onPress={() => void onOpen()}>
             {t('startCard.open')}
           </Button>
           {DEMOS.length > 0 && (

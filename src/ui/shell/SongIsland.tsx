@@ -19,16 +19,13 @@ import type { ReportKind } from '../../feedback/report'
 import { AppMenu } from './AppMenu'
 import { useChromeHidden } from './idle'
 import { useTakeInProgress } from './takeFocus'
+import { REDO_LABEL, shortcutLabel } from './platform'
 
-// Mac gets the ⌘ / ⇧ glyphs; elsewhere "Ctrl+ / Shift+" word labels.
-const IS_MAC =
-  typeof navigator !== 'undefined' &&
-  /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent || '')
-const SHORTCUT_OPEN = IS_MAC ? '⌘O' : 'Ctrl+O'
-const SHORTCUT_SAVE = IS_MAC ? '⌘S' : 'Ctrl+S'
-const SHORTCUT_SAVE_AS = IS_MAC ? '⇧⌘S' : 'Ctrl+Shift+S'
-const SHORTCUT_UNDO = IS_MAC ? '⌘Z' : 'Ctrl+Z'
-const SHORTCUT_REDO = IS_MAC ? '⇧⌘Z' : 'Ctrl+Shift+Z'
+const SHORTCUT_OPEN = shortcutLabel('O', { mod: true })
+const SHORTCUT_SAVE = shortcutLabel('S', { mod: true })
+const SHORTCUT_SAVE_AS = shortcutLabel('S', { mod: true, shift: true })
+const SHORTCUT_UNDO = shortcutLabel('Z', { mod: true })
+const SHORTCUT_REDO = REDO_LABEL
 
 // Recent files rely on persisted `FileSystemFileHandle`s: Safari / Firefox can't reopen by
 // handle, so the submenu would be a dead end there. FSA support doesn't change at runtime.

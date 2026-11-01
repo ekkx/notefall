@@ -445,7 +445,8 @@
     "paste": "ペースト",
     "value": "値",
     "apply": "Enter で適用",
-    "back": "戻る"
+    "back": "戻る",
+    "click": "クリック"
   },
   "panel": {
     "title": "カスタマイズ"

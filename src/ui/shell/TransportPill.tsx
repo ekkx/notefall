@@ -12,7 +12,7 @@ import { Button, Divider, GEOMETRY, Icon, IconButton, KnobThumb, ToggleButton, T
 import { useChromeHidden, useIdle } from './idle'
 import { useTakeInProgress } from './takeFocus'
 import { toggleFullscreen, useIsFullscreen } from './fullscreen'
-import { MOD } from './platform'
+import { shortcutLabel } from './platform'
 import { useShell } from './uiState'
 
 const SKIP_SECONDS = 10
@@ -390,7 +390,7 @@ export function TransportPill() {
       <ToggleButton icon={<Icon.CustomizeIcon />} isSelected={lookOpen} onChange={setLookOpen}>
         {t('transport.look')}
       </ToggleButton>
-      <Tooltip label={t('transport.timeline')} shortcut={`${MOD}B`}>
+      <Tooltip label={t('transport.timeline')} shortcut={shortcutLabel('B', { mod: true })}>
         <ToggleButton
           icon={<Icon.TimelineIcon />}
           isDisabled={!hasSong}
