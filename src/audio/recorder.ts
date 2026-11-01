@@ -161,6 +161,14 @@ class RecorderManager {
     }
   }
 
+  /** Put a deleted recording back (Undo after a delete), in its place by date. */
+  restore(r: Recording): void {
+    if (this.recordings.some((x) => x.id === r.id)) return
+    this.recordings = [...this.recordings, r].sort((a, b) => b.createdAt - a.createdAt)
+    saveRecording(r)
+    this.notify()
+  }
+
   rename(id: string, name: string): void {
     const r = this.recordings.find((r) => r.id === id)
     if (!r) return

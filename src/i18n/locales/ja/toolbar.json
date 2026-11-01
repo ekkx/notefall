@@ -43,9 +43,8 @@
     "clickToRename": "クリックして名前を変更",
     "pause": "再生を一時停止",
     "loadAndPlay": "読み込んで再生",
-    "saveAsMid": ".mid として保存",
-    "confirmDelete": "録音の削除を確定",
-    "delete": "録音を削除",
+    "saveAsMid": "MIDI ファイルとしてダウンロード",
+    "delete": "テイクを削除",
     "trigger": "テイクとカウントイン",
     "triggerWithNew": "テイクとカウントイン（新着{{count}}件）",
     "today": "今日 {{time}}",
@@ -53,7 +52,9 @@
     "clearAllTitle": "すべてのテイクを消去しますか？",
     "clearAllMessage_one": "このブラウザからテイクを削除します。元に戻せません。",
     "clearAllMessage_other": "このブラウザから {{count}} 件のテイクをすべて削除します。元に戻せません。",
-    "clearAllConfirm": "すべて消去"
+    "clearAllConfirm": "すべて消去",
+    "deleted": "{{name}} を削除しました",
+    "undo": "元に戻す"
   },
   "toast": {
     "emptyRecording": "ノートがありません — 録音は空でした"

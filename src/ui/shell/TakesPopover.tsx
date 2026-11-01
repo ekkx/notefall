@@ -5,7 +5,7 @@ import type { TFunction } from 'i18next'
 import clsx from 'clsx'
 import { pauseSong, playSong } from '../../audio/playback'
 import type { useRecorder } from '../../audio/useRecorder'
-import { Button, Divider, Icon, IconButton, Popover, Switch } from '../kit'
+import { Button, Divider, Icon, IconButton, Popover, Switch, Tooltip, showToast } from '../kit'
 import { showConfirm } from '../confirm'
 
 export function fmtElapsed(sec: number): string {
@@ -27,7 +27,7 @@ function fmtCreatedAt(epochMs: number, t: TFunction<'toolbar'>, lang: string): s
 
 /**
  * The ▾ half of the Record split button: "Takes" with the count-in switch beside it, then the
- * takes list (play, rename, save as .mid, two-step delete, unread dots, clear all after a confirm).
+ * takes list (play, rename, save as .mid, delete with Undo in a toast, unread dots, clear all after a confirm).
  */
 export function TakesPopover({
   rec,
@@ -54,20 +54,15 @@ export function TakesPopover({
   const [open, setOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingDraft, setEditingDraft] = useState('')
-  // Two-step delete: the first press arms a 2.5 s window in which the second deletes.
-  const [armedId, setArmedId] = useState<string | null>(null)
-  const [armTimer, setArmTimer] = useState<number | null>(null)
-
+  // One press deletes; the toast offers Undo for a slip.
   const onDelete = (id: string) => {
-    if (armTimer !== null) clearTimeout(armTimer)
-    if (armedId === id) {
-      setArmedId(null)
-      setArmTimer(null)
-      rec.delete(id)
-    } else {
-      setArmedId(id)
-      setArmTimer(window.setTimeout(() => setArmedId(null), 2500))
-    }
+    const take = rec.recordings.find((r) => r.id === id)
+    if (!take) return
+    rec.delete(id)
+    showToast({
+      message: t('recordings.deleted', { name: take.name }),
+      action: { label: t('recordings.undo'), onAction: () => rec.restore(take) },
+    })
   }
 
   return (
@@ -75,10 +70,7 @@ export function TakesPopover({
       isOpen={open}
       onOpenChange={(next) => {
         setOpen(next)
-        if (!next) {
-          rec.markAllRead()
-          setArmedId(null)
-        }
+        if (!next) rec.markAllRead()
       }}
     >
       <div className="relative inline-flex">
@@ -123,7 +115,6 @@ export function TakesPopover({
               {rec.recordings.map((r) => {
                 const isActive = r.id === activeRecordingId
                 const isPlayingThis = isActive && transport === 'playing'
-                const armed = armedId === r.id
                 return (
                   <div
                     key={r.id}
@@ -206,15 +197,18 @@ export function TakesPopover({
                     >
                       {isPlayingThis ? <Icon.PauseIcon /> : <Icon.PlayIcon />}
                     </IconButton>
-                    <Button size="sm" aria-label={t('recordings.saveAsMid')} onPress={() => rec.download(r.id)}>
-                      .mid
-                    </Button>
-                    <IconButton
-                      size="sm"
-                      label={armed ? t('recordings.confirmDelete') : t('recordings.delete')}
-                      onPress={() => onDelete(r.id)}
-                      className={armed ? 'bg-fill-selected text-danger' : undefined}
-                    >
+                    {/* labelled ".mid" so the format is visible; the tooltip says what it does */}
+                    <Tooltip label={t('recordings.saveAsMid')}>
+                      <Button
+                        size="sm"
+                        icon={<Icon.DownloadIcon />}
+                        aria-label={t('recordings.saveAsMid')}
+                        onPress={() => rec.download(r.id)}
+                      >
+                        .mid
+                      </Button>
+                    </Tooltip>
+                    <IconButton size="sm" label={t('recordings.delete')} onPress={() => onDelete(r.id)}>
                       <Icon.TrashIcon />
                     </IconButton>
                   </div>

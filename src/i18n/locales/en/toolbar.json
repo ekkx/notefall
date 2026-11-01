@@ -43,9 +43,8 @@
     "clickToRename": "Click to rename",
     "pause": "Pause playback",
     "loadAndPlay": "Load and play",
-    "saveAsMid": "Save as .mid",
-    "confirmDelete": "Confirm delete recording",
-    "delete": "Delete recording",
+    "saveAsMid": "Download as a MIDI file",
+    "delete": "Delete take",
     "trigger": "Takes and count-in",
     "triggerWithNew": "Takes and count-in ({{count}} new)",
     "today": "Today {{time}}",
@@ -53,7 +52,9 @@
     "clearAllTitle": "Clear all takes?",
     "clearAllMessage_one": "The take is deleted from this browser. This can’t be undone.",
     "clearAllMessage_other": "All {{count}} takes are deleted from this browser. This can’t be undone.",
-    "clearAllConfirm": "Clear all takes"
+    "clearAllConfirm": "Clear all takes",
+    "deleted": "Deleted {{name}}",
+    "undo": "Undo"
   },
   "toast": {
     "emptyRecording": "No notes captured — recording was empty"
