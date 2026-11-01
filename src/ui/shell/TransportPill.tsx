@@ -315,6 +315,16 @@ export function TransportPill() {
       >
         <Icon.Forward10Icon />
       </IconButton>
+      {/* repeat is a playback mode: it sits with the transport buttons */}
+      <IconButton
+        label={loop ? t('transport.disableLoop') : t('transport.enableLoop')}
+        isDisabled={!hasSong}
+        aria-pressed={loop}
+        className={loop ? 'bg-fill-selected' : undefined}
+        onPress={() => setLoop(!loop)}
+      >
+        <Icon.LoopIcon />
+      </IconButton>
 
       <TimeNow />
       <Scrubber duration={duration} enabled={hasSong} label={t('transport.seek')} />
@@ -366,15 +376,6 @@ export function TransportPill() {
           </IconButton>
         )}
       />
-      <IconButton
-        label={loop ? t('transport.disableLoop') : t('transport.enableLoop')}
-        isDisabled={!hasSong}
-        aria-pressed={loop}
-        className={loop ? 'bg-fill-selected' : undefined}
-        onPress={() => setLoop(!loop)}
-      >
-        <Icon.LoopIcon />
-      </IconButton>
       <IconButton label={t('transport.resetCameraView')} onPress={resetCamera}>
         <Icon.ResetViewIcon />
       </IconButton>

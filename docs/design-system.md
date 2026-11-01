@@ -43,14 +43,14 @@ Everything floats over a full-window canvas (the 16:9 video is letterboxed in th
                      start card when there is no song      │ tabs  🔍    │
 ┌ Timeline (floating, optional) ───────────────────┐      │ sections…   │
 └──────────────────────────────────────────────────┘      └─────────────┘
-           ( ⏮ ⟲ ▶ ⟳  0:20 ──●──── 5:24 │ 1.0× 🔈 ⟳ ⬡ ⛶ │ Customize  Timeline )
+           ( ⏮ ⟲ ▶ ⟳ 🔁  0:20 ──●── 5:24 │ 1.0× 🔈 ⬡ ⛶ │ Customize  Timeline )
 ```
 
 | Surface | Position | Notes |
 |---|---|---|
 | Song island | top-left, `EDGE` from the edges, height `BAR` | Wordmark = the app menu (shortcuts, language, report a bug, request a feature, GitHub, analytics switch, build). Then File (New, Open…, Open recent, Demo songs · Save, Save as… · Add audio…, Save song as MIDI… · Export…), the song name (rename inline, a small dot when unsaved), Undo, Redo. |
 | Input island | top-right | MIDI device menu, Record + ▾ ("Takes" with the count-in switch beside it, the takes, Clear all… after a confirm), divider, Export (the one primary button). During the count-in the island shows the beats as dots (the current one lands with the click), "Count-in" and Cancel (Esc); while a take records it holds only that take: red dot, elapsed time, notes so far · last note, and a red Stop. From the count-in until the take stops every other surface (song island, pill, Customize) steps aside (`shell/takeFocus.ts`). |
-| Transport pill | bottom-centre, `PILL_BOTTOM` from the bottom, height `PILL` | Back to start, −10 s, play (the white disc), +10 s, time, scrubber, total │ speed, volume, loop, reset camera, fullscreen │ Customize, Timeline. |
+| Transport pill | bottom-centre, `PILL_BOTTOM` from the bottom, height `PILL` | Back to start, −10 s, play (the white disc), +10 s, loop (a playback mode, so it sits with these), time, scrubber, total │ speed, volume, reset camera, fullscreen │ Customize, Timeline. |
 | Customize panel | right edge, from under the top islands to above the pill (`GAP` between), width `PANEL` | Opens from the pill. Tabs + search, sections, footer with "Reset to defaults" and close. |
 | Timeline | left edge, above the pill, up to the right edge (or to Customize when it's open) | Floating, never docked full-width. Starts closed; ⌘B or the pill toggles it. |
 | Selection card | beside the selected notes, never over them, above the timeline / pill, left of Customize | See [Editing notes](#editing-notes). |
