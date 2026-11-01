@@ -30,10 +30,10 @@
     "label": "Record",
     "stopLabel": "Stop",
     "countIn": "Count-in",
-    "countInHint": "Count-in · Esc to cancel",
     "notes_one": "{{count}} note",
     "notes_other": "{{count}} notes",
-    "cancelLabel": "Cancel"
+    "cancelLabel": "Cancel",
+    "countInStatus": "Count-in, beat {{beat}} of {{total}}"
   },
   "recordings": {
     "unread": "Unread",

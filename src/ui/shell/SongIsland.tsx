@@ -18,6 +18,7 @@ import {
 import type { ReportKind } from '../../feedback/report'
 import { AppMenu } from './AppMenu'
 import { useChromeHidden } from './idle'
+import { useTakeInProgress } from './takeFocus'
 
 // Mac gets the ⌘ / ⇧ glyphs; elsewhere "Ctrl+ / Shift+" word labels.
 const IS_MAC =
@@ -72,8 +73,10 @@ export function SongIsland({
   const undoEdit = useStore((s) => s.undoEdit)
   const redoEdit = useStore((s) => s.redoEdit)
 
-  // Fades with the transport pill while a song plays and the pointer is idle.
-  const chromeHidden = useChromeHidden()
+  // Fades with the transport pill while a song plays and the pointer is idle, and steps aside for a take.
+  const idleHidden = useChromeHidden()
+  const takeInProgress = useTakeInProgress()
+  const chromeHidden = idleHidden || takeInProgress
   return (
     <Island className={`fixed left-4 top-4 z-30 transition-[opacity,visibility] duration-200 ${chromeHidden ? 'invisible opacity-0 [transition-delay:0s,200ms]' : 'visible opacity-100'}`}>
       <AppMenu onFeedback={onFeedback} />

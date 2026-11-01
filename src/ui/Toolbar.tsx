@@ -43,7 +43,6 @@ import { showAlert } from './confirm'
 import { FeedbackDialog } from './FeedbackDialog'
 import type { ReportKind } from '../feedback/report'
 import { ExportProgressModal, type ExportProgressState } from './ExportProgressModal'
-import { CountIn } from './shell/CountIn'
 import {
   DEFAULT_EXPORT_SETTINGS,
   ExportSettingsDialog,
@@ -512,7 +511,6 @@ export function Toolbar() {
       fallbackName={song || currentFile || dirty || projectName ? fallbackName : null}
       onFeedback={setFeedbackKind}
     />
-    <CountIn beat={countInBeat} onCancel={onToggleRecord} />
     <InputIsland
       midi={midi}
       rec={rec}

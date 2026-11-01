@@ -30,10 +30,10 @@
     "label": "録音",
     "stopLabel": "停止",
     "countIn": "カウントイン",
-    "countInHint": "カウントイン · Esc で中止",
     "notes_one": "{{count}} ノート",
     "notes_other": "{{count}} ノート",
-    "cancelLabel": "中止"
+    "cancelLabel": "中止",
+    "countInStatus": "カウントイン {{total}} 拍中 {{beat}} 拍目"
   },
   "recordings": {
     "unread": "未読",

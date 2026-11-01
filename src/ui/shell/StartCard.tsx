@@ -71,6 +71,10 @@ export function StartCard() {
       const target = e.target as Element | null
       // its own demo menu is portaled outside the card
       if (cardRef.current?.contains(target) || target?.closest('[role="menu"], [role="dialog"]')) return
+      // While the demo menu is open the page under it doesn't receive the press (the target is the body), so a
+      // press on the card itself only closes the menu: test the card's area instead of the target.
+      const r = cardRef.current?.getBoundingClientRect()
+      if (r && e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) return
       setDismissed(true)
     }
     const onKey = (e: KeyboardEvent) => {

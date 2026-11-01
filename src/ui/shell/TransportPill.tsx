@@ -10,6 +10,7 @@ import { pauseSong, playSong } from '../../audio/playback'
 import { useCurrentTime } from '../../audio/useCurrentTime'
 import { Button, Divider, GEOMETRY, Icon, IconButton, KnobThumb, ToggleButton, Tooltip } from '../kit'
 import { useChromeHidden, useIdle } from './idle'
+import { useTakeInProgress } from './takeFocus'
 import { toggleFullscreen, useIsFullscreen } from './fullscreen'
 import { MOD } from './platform'
 import { useShell } from './uiState'
@@ -247,7 +248,8 @@ export function TransportPill() {
   const endEdit = useStore((s) => s.endSettingsEdit)
   const lookOpen = useShell((s) => s.lookOpen)
   const setLookOpen = useShell((s) => s.setLookOpen)
-  const hidden = useChromeHidden()
+  const takeInProgress = useTakeInProgress()
+  const hidden = useChromeHidden() || takeInProgress
   const isFullscreen = useIsFullscreen()
   // The slider rescales when the speed curve or clip offset changes the TL_audio length.
   useStore((s) => s.settings.midiSpeedAutomation)
