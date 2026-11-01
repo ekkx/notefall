@@ -121,8 +121,9 @@ export function StartCard() {
               <Button variant="field" icon={<Icon.PlayIcon />} hint={<Icon.ChevronRightIcon className="h-4 w-4" />} className={action}>
                 {t('startCard.demo')}
               </Button>
-              <Popover placement="bottom start" className="rounded-[14px]">
-                <Menu aria-label={t('startCard.demoMenu')} className="max-h-72 min-w-[300px]">
+              {/* as wide as the row it drops from */}
+              <Popover placement="bottom start" offset={6} className="w-[--trigger-width] rounded-[14px]">
+                <Menu aria-label={t('startCard.demoMenu')} className="max-h-72 w-full">
                   {DEMOS.map((demo) => (
                     <MenuItem key={demo.url} textValue={demo.label} onAction={() => void onDemo(demo.label, demo.url)}>
                       {demo.label}

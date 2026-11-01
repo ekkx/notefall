@@ -29,7 +29,7 @@ import { useShell } from './shell/uiState'
  *   Cmd/Ctrl + Shift + S  — Save As (always opens the picker / triggers a
  *                           download depending on browser support).
  *   Cmd/Ctrl + B          — toggle the bottom Timeline editor panel.
- *   ?                     — open the keyboard shortcut sheet.
+ *   ?                     — open / close the keyboard shortcut sheet.
  *
  * Edit-mode shortcuts (song loaded AND not playing):
  *   Escape                  — clear selection (closes the selection card)
@@ -192,7 +192,9 @@ export function useGlobalShortcuts(): void {
 
       if (!e.repeat && !e.metaKey && !e.ctrlKey && !e.altKey && e.key === '?') {
         e.preventDefault()
-        useShell.getState().setShortcutsOpen(true)
+        // ? opens the sheet and closes it again
+        const shell = useShell.getState()
+        shell.setShortcutsOpen(!shell.shortcutsOpen)
         return
       }
 

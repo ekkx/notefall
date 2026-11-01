@@ -103,24 +103,6 @@ export function SongIsland({
               </MenuPopover>
             </SubmenuTrigger>
           )}
-          <MenuItem hint={SHORTCUT_SAVE} onAction={actions.onSave}>
-            {t('file.save')}
-          </MenuItem>
-          <MenuItem hint={SHORTCUT_SAVE_AS} onAction={actions.onSaveAs}>
-            {t('file.saveAs')}
-          </MenuItem>
-          <MenuSeparator />
-          <MenuItem isDisabled={!hasSong} onAction={actions.onImportAudio}>
-            {t('file.openAudio')}
-          </MenuItem>
-          <MenuItem isDisabled={!hasSong} onAction={actions.onSaveMidi}>
-            {t('file.saveSongAsMidi')}
-          </MenuItem>
-          <MenuSeparator />
-          <MenuItem isDisabled={!hasSong || exportBusy} onAction={actions.onExport}>
-            {t('file.export')}
-          </MenuItem>
-          {DEMOS.length > 0 && <MenuSeparator />}
           {DEMOS.length > 0 && (
             <SubmenuTrigger>
               <MenuItem textValue={t('file.demoSongs')}>{t('file.demoSongs')}</MenuItem>
@@ -133,6 +115,24 @@ export function SongIsland({
               </MenuPopover>
             </SubmenuTrigger>
           )}
+          <MenuSeparator />
+          <MenuItem hint={SHORTCUT_SAVE} onAction={actions.onSave}>
+            {t('file.save')}
+          </MenuItem>
+          <MenuItem hint={SHORTCUT_SAVE_AS} onAction={actions.onSaveAs}>
+            {t('file.saveAs')}
+          </MenuItem>
+          <MenuSeparator />
+          <MenuItem isDisabled={!hasSong} onAction={actions.onImportAudio}>
+            {t('file.addAudio')}
+          </MenuItem>
+          <MenuItem isDisabled={!hasSong} onAction={actions.onSaveMidi}>
+            {t('file.saveSongAsMidi')}
+          </MenuItem>
+          <MenuSeparator />
+          <MenuItem isDisabled={!hasSong || exportBusy} onAction={actions.onExport}>
+            {t('file.export')}
+          </MenuItem>
         </MenuPopover>
       </MenuTrigger>
 

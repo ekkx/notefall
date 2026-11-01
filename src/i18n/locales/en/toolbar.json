@@ -9,7 +9,7 @@
     "clearRecent": "Clear recent",
     "save": "Save",
     "saveAs": "Save as…",
-    "openAudio": "Open audio…",
+    "addAudio": "Add audio…",
     "saveSongAsMidi": "Save song as MIDI…",
     "export": "Export…",
     "demoSongs": "Demo songs",
@@ -29,13 +29,17 @@
     "start": "Start recording",
     "label": "Record",
     "stopLabel": "Stop",
-    "countIn": "Count-in"
+    "countIn": "Count-in",
+    "countInHint": "Count-in · Esc to cancel",
+    "notes_one": "{{count}} note",
+    "notes_other": "{{count}} notes",
+    "cancelLabel": "Cancel"
   },
   "recordings": {
     "unread": "Unread",
-    "heading": "Recordings",
-    "clearAll": "Clear all",
-    "empty": "No recordings yet. Press the Record button to capture your input.",
+    "heading": "Takes",
+    "clearAll": "Clear all…",
+    "empty": "No takes yet. Press Record to capture what you play.",
     "clickToRename": "Click to rename",
     "pause": "Pause playback",
     "loadAndPlay": "Load and play",
@@ -43,7 +47,13 @@
     "confirmDelete": "Confirm delete recording",
     "delete": "Delete recording",
     "trigger": "Takes and count-in",
-    "triggerWithNew": "Takes and count-in ({{count}} new)"
+    "triggerWithNew": "Takes and count-in ({{count}} new)",
+    "today": "Today {{time}}",
+    "yesterday": "Yesterday {{time}}",
+    "clearAllTitle": "Clear all takes?",
+    "clearAllMessage_one": "The take is deleted from this browser. This can’t be undone.",
+    "clearAllMessage_other": "All {{count}} takes are deleted from this browser. This can’t be undone.",
+    "clearAllConfirm": "Clear all takes"
   },
   "toast": {
     "emptyRecording": "No notes captured — recording was empty"

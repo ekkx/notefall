@@ -9,7 +9,7 @@
     "clearRecent": "履歴を消去",
     "save": "保存",
     "saveAs": "名前を付けて保存…",
-    "openAudio": "オーディオを開く…",
+    "addAudio": "オーディオを追加…",
     "saveSongAsMidi": "MIDIとして保存…",
     "export": "書き出し…",
     "demoSongs": "デモ曲",
@@ -29,13 +29,17 @@
     "start": "録音を開始",
     "label": "録音",
     "stopLabel": "停止",
-    "countIn": "カウントイン"
+    "countIn": "カウントイン",
+    "countInHint": "カウントイン · Esc で中止",
+    "notes_one": "{{count}} ノート",
+    "notes_other": "{{count}} ノート",
+    "cancelLabel": "中止"
   },
   "recordings": {
     "unread": "未読",
-    "heading": "録音",
-    "clearAll": "すべて消去",
-    "empty": "録音はまだありません。録音ボタンを押して演奏をキャプチャしてください。",
+    "heading": "テイク",
+    "clearAll": "すべて消去…",
+    "empty": "テイクはまだありません。録音ボタンを押すと演奏を記録できます。",
     "clickToRename": "クリックして名前を変更",
     "pause": "再生を一時停止",
     "loadAndPlay": "読み込んで再生",
@@ -43,7 +47,13 @@
     "confirmDelete": "録音の削除を確定",
     "delete": "録音を削除",
     "trigger": "テイクとカウントイン",
-    "triggerWithNew": "テイクとカウントイン（新着{{count}}件）"
+    "triggerWithNew": "テイクとカウントイン（新着{{count}}件）",
+    "today": "今日 {{time}}",
+    "yesterday": "昨日 {{time}}",
+    "clearAllTitle": "すべてのテイクを消去しますか？",
+    "clearAllMessage_one": "このブラウザからテイクを削除します。元に戻せません。",
+    "clearAllMessage_other": "このブラウザから {{count}} 件のテイクをすべて削除します。元に戻せません。",
+    "clearAllConfirm": "すべて消去"
   },
   "toast": {
     "emptyRecording": "ノートがありません — 録音は空でした"

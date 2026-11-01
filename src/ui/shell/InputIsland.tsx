@@ -1,6 +1,5 @@
 import { MenuTrigger } from 'react-aria-components'
 import { useTranslation } from 'react-i18next'
-import { COUNT_IN_BEATS } from '../../audio/recordControl'
 import type { useMidiInput } from '../../audio/useMidiInput'
 import type { useRecorder } from '../../audio/useRecorder'
 import { Button, Divider, Icon, Island, Menu, MenuItem, Popover } from '../kit'
@@ -37,8 +36,35 @@ export function InputIsland({
 
   // Fades with the transport pill while a song plays and the pointer is idle.
   const chromeHidden = useChromeHidden()
+  const islandClass = `fixed right-4 top-4 z-30 transition-[opacity,visibility] duration-200 ${chromeHidden ? 'invisible opacity-0 [transition-delay:0s,200ms]' : 'visible opacity-100'}`
+
+  // While a take is being recorded the island holds only that take: elapsed time, notes so far, Stop.
+  if (recording) {
+    return (
+      <Island className={islandClass}>
+        <span className="inline-flex items-center gap-2.5 pl-2.5 pr-2">
+          <span aria-hidden className="h-2.5 w-2.5 flex-none rounded-full bg-record" />
+          <span className="font-semibold tabular-nums">{fmtElapsed(rec.elapsed)}</span>
+          {rec.noteOnCount > 0 && (
+            <span className="tabular-nums text-ink-muted">
+              {t('record.notes', { count: rec.noteOnCount })}
+              {rec.lastNote ? ` · ${rec.lastNote}` : ''}
+            </span>
+          )}
+        </span>
+        <Button
+          aria-label={t('record.stop')}
+          onPress={onToggleRecord}
+          className="!bg-record text-ink data-[hovered]:brightness-110 data-[pressed]:brightness-95"
+        >
+          {t('record.stopLabel')}
+        </Button>
+      </Island>
+    )
+  }
+
   return (
-    <Island className={`fixed right-4 top-4 z-30 transition-[opacity,visibility] duration-200 ${chromeHidden ? 'invisible opacity-0 [transition-delay:0s,200ms]' : 'visible opacity-100'}`}>
+    <Island className={islandClass}>
       {midi.supported && (
         <MenuTrigger onOpenChange={(open) => open && onOpenMidiPanel()}>
           <Button icon={<Icon.MidiIcon />} aria-label={t('midi.button')}>
@@ -74,35 +100,13 @@ export function InputIsland({
       <span className="inline-flex items-center">
         <Button
           className="pr-2"
-          aria-label={
-            recording ? t('record.stop') : countInBeat > 0 ? t('record.cancelCountIn') : t('record.start')
-          }
+          aria-label={countInBeat > 0 ? t('record.cancelCountIn') : t('record.start')}
           icon={
-            recording || countInBeat > 0 ? (
-              <Icon.StopIcon />
-            ) : (
-              <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-record" />
-            )
+            countInBeat > 0 ? <Icon.StopIcon /> : <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-record" />
           }
           onPress={onToggleRecord}
         >
-          {countInBeat > 0 ? (
-            <span className="tabular-nums">
-              {countInBeat}/{COUNT_IN_BEATS}
-            </span>
-          ) : recording ? (
-            <>
-              <span className="tabular-nums">{fmtElapsed(rec.elapsed)}</span>
-              {rec.noteOnCount > 0 && (
-                <span className="font-normal text-ink-muted">
-                  {rec.lastNote} · {rec.noteOnCount}
-                </span>
-              )}
-              <span>{t('record.stopLabel')}</span>
-            </>
-          ) : (
-            t('record.label')
-          )}
+          {countInBeat > 0 ? t('record.cancelLabel') : t('record.label')}
         </Button>
         <TakesPopover
           rec={rec}

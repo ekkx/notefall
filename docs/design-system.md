@@ -48,8 +48,9 @@ Everything floats over a full-window canvas (the 16:9 video is letterboxed in th
 
 | Surface | Position | Notes |
 |---|---|---|
-| Song island | top-left, `EDGE` from the edges, height `BAR` | Wordmark = the app menu (shortcuts, language, report a bug, request a feature, GitHub, analytics switch, build). Then File, the song name (rename inline, a small dot when unsaved), Undo, Redo. |
-| Input island | top-right | MIDI device menu, Record + ▾ (takes list, count-in switch at its top), divider, Export (the one primary button). |
+| Song island | top-left, `EDGE` from the edges, height `BAR` | Wordmark = the app menu (shortcuts, language, report a bug, request a feature, GitHub, analytics switch, build). Then File (New, Open…, Open recent, Demo songs · Save, Save as… · Add audio…, Save song as MIDI… · Export…), the song name (rename inline, a small dot when unsaved), Undo, Redo. |
+| Input island | top-right | MIDI device menu, Record + ▾ ("Takes" with the count-in switch beside it, the takes, Clear all… after a confirm), divider, Export (the one primary button). While a take records, the island holds only that take: red dot, elapsed time, notes so far · last note, and a red Stop. |
+| Count-in | centre of the canvas | A glass disc counting the beats down, "Count-in · Esc to cancel" under the number (`shell/CountIn.tsx`). |
 | Transport pill | bottom-centre, `PILL_BOTTOM` from the bottom, height `PILL` | Back to start, −10 s, play (the white disc), +10 s, time, scrubber, total │ speed, volume, loop, reset camera, fullscreen │ Customize, Timeline. |
 | Customize panel | right edge, from under the top islands to above the pill (`GAP` between), width `PANEL` | Opens from the pill. Tabs + search, sections, footer with "Reset to defaults" and close. |
 | Timeline | left edge, above the pill, up to the right edge (or to Customize when it's open) | Floating, never docked full-width. Starts closed; ⌘B or the pill toggles it. |
@@ -172,7 +173,7 @@ All interactive pieces are react-aria components styled with the tokens. Import 
 | `Progress` | Determinate bar. |
 | `KnobThumb` | The slider knob for any react-aria `Slider`: centred on the track, grows on hover / drag. Put the track's centre line at `top-1/2`. |
 | `Divider` | Rule between groups inside one surface. |
-| `Popover`, `Menu`, `MenuPopover`, `MenuItem` (`icon`, `hint`, `danger`, `checked`), `MenuSeparator`, `MenuSection`, `MenuTrigger`, `SubmenuTrigger` | Menus and floating surfaces. Shortcut hints at the right edge in `ink-faint`; destructive rows `danger`. |
+| `Popover`, `Menu`, `MenuPopover`, `MenuItem` (`icon`, `hint`, `danger`, `checked`, `description`), `MenuSeparator`, `MenuSection`, `MenuTrigger`, `SubmenuTrigger` | Menus and floating surfaces. Shortcut hints at the right edge in `ink-faint`; destructive rows `danger`; `description` adds a second line under the label. A menu popover passes the menu radius as its class (see `MenuPopover`) so the row highlight stays concentric with the edge; the kit `Popover` applies `rounded-panel` only when no radius class is passed. |
 | `Dialog`, `DialogText` | Centred modal over the scrim. Actions right-aligned, primary last. `dismissable={false}` for progress and destructive confirms. |
 | `Island`, `Panel` | The glass surfaces (`strong` for read surfaces). |
 | `showToast`, `ToastHost` | One toast at a time, optional action (with a shortcut `hint`). Callable from non-React code. Hovering holds it. |

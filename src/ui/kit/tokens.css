@@ -148,6 +148,8 @@
     opacity 120ms ease;
 }
 .nf-press[data-pressed] { scale: 0.97; }
+/* react-aria keeps a menu trigger "pressed" while its menu is open; only the press itself shrinks it */
+.nf-press[data-pressed][aria-expanded="true"] { scale: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .nf-pop[data-entering], .nf-modal[data-entering] { animation-name: nf-fade-in; }

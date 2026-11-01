@@ -3,7 +3,7 @@ import { Button as AriaButton, MenuTrigger } from 'react-aria-components'
 import { useTranslation } from 'react-i18next'
 import { REPO_URL, type ReportKind } from '../../feedback/report'
 import { isAnalyticsOptedOut, setAnalyticsOptOut } from '../../usage'
-import { CONTROL_STATES, LogoMark, Menu, MenuItem, MenuSeparator, Popover } from '../kit'
+import { CONTROL_STATES, Icon, LogoMark, Menu, MenuItem, MenuSection, MenuSeparator, Popover } from '../kit'
 import { LanguageSubmenu } from '../LanguageSwitcher'
 import { useShell } from './uiState'
 
@@ -32,22 +32,31 @@ export function AppMenu({ onFeedback }: { onFeedback: (kind: ReportKind) => void
         <LogoMark className="h-[22px] w-[22px] flex-none" />
         notefall
       </AriaButton>
-      {/* Fixed width: the caption below wraps to the menu instead of widening the popover. */}
+      {/* Fixed width: the analytics note wraps inside the menu instead of widening the popover. */}
       <Popover placement="bottom start" className="w-[300px] rounded-[14px]">
         <Menu aria-label={t('app.menuLabel')} className="w-full">
-          <MenuItem hint="?" onAction={() => useShell.getState().setShortcutsOpen(true)}>
-            {t('app.shortcuts')}
-          </MenuItem>
-          <LanguageSubmenu />
+          <MenuSection title="notefall">
+            <MenuItem icon={<Icon.KeyboardIcon />} hint="?" onAction={() => useShell.getState().setShortcutsOpen(true)}>
+              {t('app.shortcuts')}
+            </MenuItem>
+            <LanguageSubmenu icon={<Icon.GlobeIcon />} />
+          </MenuSection>
           <MenuSeparator />
-          <MenuItem onAction={() => onFeedback('bug')}>{t('help.reportBug')}</MenuItem>
-          <MenuItem onAction={() => onFeedback('feature')}>{t('help.requestFeature')}</MenuItem>
-          <MenuItem onAction={() => openExternal(REPO_URL)}>{t('help.viewOnGitHub')}</MenuItem>
+          <MenuItem icon={<Icon.BugIcon />} onAction={() => onFeedback('bug')}>
+            {t('help.reportBug')}
+          </MenuItem>
+          <MenuItem icon={<Icon.PlusIcon />} onAction={() => onFeedback('feature')}>
+            {t('help.requestFeature')}
+          </MenuItem>
+          <MenuItem icon={<Icon.ExternalIcon />} onAction={() => openExternal(REPO_URL)}>
+            {t('help.viewOnGitHub')}
+          </MenuItem>
           <MenuSeparator />
           {/* Privacy preference: toggling does NOT close the menu. */}
           <MenuItem
             shouldCloseOnSelect={false}
             textValue={t('analytics.label')}
+            description={t('analytics.caption')}
             hint={
               <span
                 aria-hidden
@@ -66,11 +75,8 @@ export function AppMenu({ onFeedback }: { onFeedback: (kind: ReportKind) => void
             {t('analytics.label')}
           </MenuItem>
         </Menu>
-        {/* Caption + build id for bug reports: plain text, selectable so it can be copied. */}
-        <div className="select-text border-t border-glass-edge px-4 py-2.5 text-caption text-ink-faint">
-          <p>{t('analytics.caption')}</p>
-          <p className="mt-0.5">{t('help.build', { commit: __APP_COMMIT__ })}</p>
-        </div>
+        {/* Build id for bug reports: plain text, selectable so it can be copied. */}
+        <p className="select-text px-4 pb-2.5 pt-1 text-caption text-ink-faint">{t('help.build', { commit: __APP_COMMIT__ })}</p>
       </Popover>
     </MenuTrigger>
   )
