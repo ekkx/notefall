@@ -1,0 +1,53 @@
+{
+  "appName": "notefall",
+  "ok": "OK",
+  "cancel": "Cancelar",
+  "close": "Fechar",
+  "save": "Salvar",
+  "delete": "Excluir",
+  "confirm": "Confirmar",
+  "retry": "Tentar novamente",
+  "loading": "Carregando…",
+  "yes": "Sim",
+  "no": "Não",
+  "transport": {
+    "label": "Controles de reprodução",
+    "rewindToStart": "Voltar ao início",
+    "rewind10": "Voltar 10 segundos",
+    "forward10": "Avançar 10 segundos",
+    "play": "Tocar",
+    "pause": "Pausar",
+    "enableLoop": "Repetir a música",
+    "disableLoop": "Parar de repetir",
+    "volume": "Volume",
+    "mute": "Silenciar",
+    "unmute": "Ativar som",
+    "speed": "Velocidade",
+    "playbackSpeed": "Velocidade de reprodução",
+    "resetCameraView": "Redefinir posição da câmera",
+    "enterFullscreen": "Entrar em tela cheia",
+    "exitFullscreen": "Sair da tela cheia",
+    "seek": "Posição",
+    "look": "Personalizar",
+    "timeline": "Linha do tempo"
+  },
+  "loadingIsland": {
+    "title": "Carregando os sons do piano"
+  },
+  "startCard": {
+    "title": "Comece com uma música",
+    "text": "Solte um arquivo MIDI ou um projeto do notefall em qualquer lugar, ou escolha um abaixo.",
+    "open": "Abrir um arquivo…",
+    "demo": "Experimentar uma música de demonstração",
+    "demoMenu": "Músicas de demonstração",
+    "record": "Gravar pelo seu teclado",
+    "deviceConnected": "{{name}} conectado",
+    "note": "Tudo fica no seu computador. Nada é enviado.",
+    "couldNotOpenTitle": "Não foi possível abrir o arquivo",
+    "dontShowAgain": "Não mostrar novamente",
+    "couldNotLoadDemoTitle": "Não foi possível carregar a demonstração"
+  },
+  "pageLoader": {
+    "loading": "Carregando o notefall"
+  }
+}
