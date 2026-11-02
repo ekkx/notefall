@@ -98,7 +98,10 @@
   },
   "feedback": {
     "ariaLabel": "Enviar feedback",
-    "title": "Relatar um bug ou sugerir uma funcionalidade",
+    "title": {
+      "bug": "Relatar um bug",
+      "feature": "Sugerir uma funcionalidade"
+    },
     "publicNotice": "Seu relato se torna uma issue pública no GitHub. Não inclua informações pessoais.",
     "statusLink": "Ver relatos e o status deles",
     "kind": "Tipo de relato",
@@ -107,7 +110,7 @@
       "feature": "Sugestão de funcionalidade"
     },
     "summary": "Resumo",
-    "optional": "(opcional)",
+    "optional": "opcional",
     "fields": {
       "bug": {
         "description": "O que aconteceu?",
@@ -132,7 +135,10 @@
       }
     },
     "includeEnv": "Incluir informações do dispositivo",
-    "send": "Enviar relato",
+    "send": {
+      "bug": "Enviar relato",
+      "feature": "Enviar sugestão"
+    },
     "sending": "Enviando",
     "cancel": "Cancelar",
     "close": "Fechar",
@@ -145,10 +151,18 @@
       "server": "Não foi possível enviar o relato.",
       "network": "Sem conexão — não foi possível enviar o relato."
     },
-    "sentTitle": "Relato enviado",
+    "sentTitle": {
+      "bug": "Relato enviado",
+      "feature": "Sugestão enviada"
+    },
     "sentBody": "Ele foi registrado como a issue #{{number}}.",
     "sentLink": "Acompanhe o status no GitHub (#{{number}})",
-    "envHint": "Enviado exatamente como mostrado abaixo."
+    "envHint": "Enviado como escrito. Edite ou apague o que preferir não compartilhar.",
+    "moreDetail": "Mais detalhes",
+    "deviceInfo": "Informações do dispositivo",
+    "deviceIncluded": "incluídas",
+    "deviceLeftOut": "omitidas",
+    "envRestore": "Restaurar"
   },
   "shortcuts": {
     "title": "Atalhos de teclado",
@@ -161,14 +175,14 @@
     "scrub": "Navegar (pausado)",
     "scrubKey": "Rolagem",
     "ff": "Avanço rápido 2×",
-    "ffKey": "Segurar",
+    "ffKey": "Segurar na tela",
     "timeline": "Mostrar/ocultar linha do tempo",
     "undo": "Desfazer",
     "redo": "Refazer",
     "delete": "Excluir seleção",
     "clear": "Limpar seleção",
-    "nudgePitch": "Mover ±1 semitom",
-    "nudgeTime": "Mover ±0,05 s",
+    "nudgePitch": "Mover um semitom",
+    "nudgeTime": "Mover 0,05 s antes / depois",
     "keyframe": "Adicionar keyframe (linha do tempo)",
     "open": "Abrir",
     "save": "Salvar",
@@ -182,7 +196,7 @@
     "rangeKey": "arrastar",
     "addSelect": "Adicionar à seleção",
     "split": "Dividir nota",
-    "menu": "Selecionar nota",
+    "menu": "Intensidade, mão, dedo",
     "menuKey": "Clique duplo",
     "del": "Excluir nota",
     "delKey": "Clique direito",
