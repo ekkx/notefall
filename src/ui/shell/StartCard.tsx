@@ -9,7 +9,7 @@ import { toggleRecord } from '../../audio/recordControl'
 import { loadDemoProject, openProject } from '../../projects/actions'
 import { Button, Icon, Menu, MenuItem, MenuTrigger, Popover, usePresence } from '../kit'
 import { showAlert } from '../confirm'
-import { MOD } from './platform'
+import { shortcutLabel } from './platform'
 
 // "Don't show again" on the card; kept per browser.
 const HIDE_KEY = 'nf:ui:startCardHidden'
@@ -71,6 +71,10 @@ export function StartCard() {
       const target = e.target as Element | null
       // its own demo menu is portaled outside the card
       if (cardRef.current?.contains(target) || target?.closest('[role="menu"], [role="dialog"]')) return
+      // While the demo menu is open the page under it doesn't receive the press (the target is the body), so a
+      // press on the card itself only closes the menu: test the card's area instead of the target.
+      const r = cardRef.current?.getBoundingClientRect()
+      if (r && e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) return
       setDismissed(true)
     }
     const onKey = (e: KeyboardEvent) => {
@@ -113,7 +117,7 @@ export function StartCard() {
           <p className="text-ink-muted">{t('startCard.text')}</p>
         </div>
         <div className="grid gap-2">
-          <Button variant="field" icon={<Icon.FileIcon />} hint={`${MOD}O`} className={action} onPress={() => void onOpen()}>
+          <Button variant="field" icon={<Icon.FileIcon />} hint={shortcutLabel('O', { mod: true })} className={action} onPress={() => void onOpen()}>
             {t('startCard.open')}
           </Button>
           {DEMOS.length > 0 && (
@@ -121,8 +125,9 @@ export function StartCard() {
               <Button variant="field" icon={<Icon.PlayIcon />} hint={<Icon.ChevronRightIcon className="h-4 w-4" />} className={action}>
                 {t('startCard.demo')}
               </Button>
-              <Popover placement="bottom start" className="rounded-[14px]">
-                <Menu aria-label={t('startCard.demoMenu')} className="max-h-72 min-w-[300px]">
+              {/* as wide as the row it drops from */}
+              <Popover placement="bottom start" offset={6} className="w-[--trigger-width] rounded-[14px]">
+                <Menu aria-label={t('startCard.demoMenu')} className="max-h-72 w-full">
                   {DEMOS.map((demo) => (
                     <MenuItem key={demo.url} textValue={demo.label} onAction={() => void onDemo(demo.label, demo.url)}>
                       {demo.label}

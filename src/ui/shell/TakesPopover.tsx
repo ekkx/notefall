@@ -1,26 +1,33 @@
 import { useState } from 'react'
 import { Dialog as AriaDialog, DialogTrigger } from 'react-aria-components'
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import clsx from 'clsx'
 import { pauseSong, playSong } from '../../audio/playback'
 import type { useRecorder } from '../../audio/useRecorder'
-import { Button, Divider, Icon, IconButton, Popover, Switch } from '../kit'
+import { Button, Divider, Icon, IconButton, Popover, Switch, showToast } from '../kit'
+import { showConfirm } from '../confirm'
 
 export function fmtElapsed(sec: number): string {
   const m = Math.floor(sec / 60)
   const s = Math.floor(sec % 60)
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  return `${m}:${String(s).padStart(2, '0')}`
 }
 
-function fmtCreatedAt(epochMs: number): string {
+/** "Today 18:42", "Yesterday 18:42", else the short date and time in the UI language. */
+function fmtCreatedAt(epochMs: number, t: TFunction<'toolbar'>, lang: string): string {
   const d = new Date(epochMs)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+  const time = new Intl.DateTimeFormat(lang, { hour: 'numeric', minute: '2-digit' }).format(d)
+  const startOfDay = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime()
+  const days = Math.round((startOfDay(new Date()) - startOfDay(d)) / 86_400_000)
+  if (days === 0) return t('recordings.today', { time })
+  if (days === 1) return t('recordings.yesterday', { time })
+  return new Intl.DateTimeFormat(lang, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(d)
 }
 
 /**
- * The ▾ half of the Record split button: the count-in switch on top, then the takes list
- * (play, rename, save as .mid, two-step delete, unread dots, clear all).
+ * The ▾ half of the Record split button: "Takes" with the count-in switch beside it, then the
+ * takes list (play, rename, save as .mid, delete with Undo in a toast, unread dots, clear all after a confirm).
  */
 export function TakesPopover({
   rec,
@@ -41,26 +48,21 @@ export function TakesPopover({
   onPickRecording: (id: string, name: string) => void
   onLoadAndPlayRecording: (id: string, name: string) => void
 }) {
-  const { t } = useTranslation('toolbar')
+  const { t, i18n } = useTranslation('toolbar')
   // Controlled so the close transition can `markAllRead`: clearing on close (not open)
   // lets the user see WHICH rows are unread before the dots disappear.
   const [open, setOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingDraft, setEditingDraft] = useState('')
-  // Two-step delete: the first press arms a 2.5 s window in which the second deletes.
-  const [armedId, setArmedId] = useState<string | null>(null)
-  const [armTimer, setArmTimer] = useState<number | null>(null)
-
+  // One press deletes; the toast offers Undo for a slip.
   const onDelete = (id: string) => {
-    if (armTimer !== null) clearTimeout(armTimer)
-    if (armedId === id) {
-      setArmedId(null)
-      setArmTimer(null)
-      rec.delete(id)
-    } else {
-      setArmedId(id)
-      setArmTimer(window.setTimeout(() => setArmedId(null), 2500))
-    }
+    const take = rec.recordings.find((r) => r.id === id)
+    if (!take) return
+    rec.delete(id)
+    showToast({
+      message: t('recordings.deleted', { name: take.name }),
+      action: { label: t('recordings.undo'), onAction: () => rec.restore(take) },
+    })
   }
 
   return (
@@ -68,13 +70,15 @@ export function TakesPopover({
       isOpen={open}
       onOpenChange={(next) => {
         setOpen(next)
-        if (!next) {
-          rec.markAllRead()
-          setArmedId(null)
-        }
+        if (!next) rec.markAllRead()
       }}
     >
       <div className="relative inline-flex">
+        {/* the seam between Record and ▾, shown while the pill is hovered */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute left-0 top-1/2 h-4 w-px -translate-y-1/2 bg-glass-edge opacity-0 transition-opacity duration-150 group-has-[[data-hovered]]/split:opacity-100"
+        />
         <IconButton
           size="sm"
           tooltip={false}
@@ -83,7 +87,7 @@ export function TakesPopover({
               ? t('recordings.triggerWithNew', { count: rec.unreadCount })
               : t('recordings.trigger')
           }
-          className="aria-expanded:bg-fill-selected"
+          className="!h-control w-8 rounded-l-none pr-0.5 data-[hovered]:!bg-transparent data-[pressed]:!bg-fill-selected aria-expanded:!bg-fill-selected"
         >
           <Icon.ChevronIcon />
         </IconButton>
@@ -96,30 +100,21 @@ export function TakesPopover({
           </span>
         )}
       </div>
-      <Popover placement="bottom end">
-        <AriaDialog aria-label={t('recordings.heading')} className="flex w-[360px] flex-col outline-none">
-          <div className="px-4 py-3">
-            <Switch
-              isSelected={countInEnabled}
-              onChange={onCountInChange}
-              isDisabled={countInLocked}
-              className="w-full"
-            >
-              <span>{t('record.countIn')}</span>
+      <Popover placement="bottom end" className="rounded-[14px]">
+        <AriaDialog aria-label={t('recordings.heading')} className="flex w-[380px] flex-col p-1.5 outline-none">
+          <div className="flex items-center justify-between gap-3 px-2.5 pb-2 pt-1.5">
+            <span className="text-heading">{t('recordings.heading')}</span>
+            <Switch isSelected={countInEnabled} onChange={onCountInChange} isDisabled={countInLocked}>
+              <span className="text-ink-muted">{t('record.countIn')}</span>
             </Switch>
           </div>
-          <Divider />
-          <div className="flex items-center justify-between px-4 pb-1 pt-3">
-            <span className="text-heading">{t('recordings.heading')}</span>
-          </div>
           {rec.recordings.length === 0 ? (
-            <p className="px-4 pb-4 pt-1 text-ink-muted">{t('recordings.empty')}</p>
+            <p className="px-2.5 pb-2.5 pt-1 text-ink-muted">{t('recordings.empty')}</p>
           ) : (
-            <div className="scroll-thin flex max-h-80 flex-col gap-0.5 overflow-y-auto px-1.5 pb-1.5">
+            <div className="scroll-thin flex max-h-80 flex-col gap-0.5 overflow-y-auto">
               {rec.recordings.map((r) => {
                 const isActive = r.id === activeRecordingId
                 const isPlayingThis = isActive && transport === 'playing'
-                const armed = armedId === r.id
                 return (
                   <div
                     key={r.id}
@@ -131,7 +126,7 @@ export function TakesPopover({
                       onPickRecording(r.id, r.name)
                     }}
                     className={clsx(
-                      'flex cursor-pointer items-center gap-2 rounded-field py-1.5 pl-2.5 pr-1',
+                      'flex min-h-[52px] cursor-pointer items-center gap-3 rounded-field py-1.5 pl-2.5 pr-1',
                       isActive ? 'bg-fill-selected' : 'hover:bg-fill-hover',
                     )}
                   >
@@ -139,7 +134,7 @@ export function TakesPopover({
                     <span
                       role={r.read ? undefined : 'img'}
                       aria-label={r.read ? undefined : t('recordings.unread')}
-                      className={clsx('h-2 w-2 flex-none rounded-full', r.read ? 'bg-transparent' : 'bg-ink')}
+                      className={clsx('h-1.5 w-1.5 flex-none rounded-full', r.read ? 'bg-transparent' : 'bg-ink')}
                     />
                     <div className="flex min-w-0 flex-1 flex-col">
                       {editingId === r.id ? (
@@ -188,7 +183,7 @@ export function TakesPopover({
                         </span>
                       )}
                       <span className="text-caption text-ink-faint">
-                        {fmtCreatedAt(r.createdAt)} · {fmtElapsed(r.duration)}
+                        {fmtCreatedAt(r.createdAt, t, i18n.language)} · {fmtElapsed(r.duration)}
                       </span>
                     </div>
                     <IconButton
@@ -205,12 +200,7 @@ export function TakesPopover({
                     <IconButton size="sm" label={t('recordings.saveAsMid')} onPress={() => rec.download(r.id)}>
                       <Icon.DownloadIcon />
                     </IconButton>
-                    <IconButton
-                      size="sm"
-                      label={armed ? t('recordings.confirmDelete') : t('recordings.delete')}
-                      onPress={() => onDelete(r.id)}
-                      className={armed ? 'bg-fill-selected text-danger' : undefined}
-                    >
+                    <IconButton size="sm" label={t('recordings.delete')} onPress={() => onDelete(r.id)}>
                       <Icon.TrashIcon />
                     </IconButton>
                   </div>
@@ -220,12 +210,24 @@ export function TakesPopover({
           )}
           {rec.recordings.length > 0 && (
             <>
-              <Divider />
-              <div className="p-1.5">
-                <Button variant="danger" size="sm" className="w-full justify-start" onPress={() => rec.clearAll()}>
-                  {t('recordings.clearAll')}
-                </Button>
-              </div>
+              <Divider className="mx-1 my-1.5" />
+              <Button
+                variant="danger"
+                size="sm"
+                className="h-[34px] w-full justify-start rounded-field px-2.5"
+                onPress={async () => {
+                  setOpen(false)
+                  const ok = await showConfirm({
+                    title: t('recordings.clearAllTitle'),
+                    message: t('recordings.clearAllMessage', { count: rec.recordings.length }),
+                    confirmLabel: t('recordings.clearAllConfirm'),
+                    destructive: true,
+                  })
+                  if (ok) rec.clearAll()
+                }}
+              >
+                {t('recordings.clearAll')}
+              </Button>
             </>
           )}
         </AriaDialog>

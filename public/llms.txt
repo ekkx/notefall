@@ -1,0 +1,30 @@
+# notefall
+
+> notefall is a free piano visualizer and MIDI video maker that runs in the browser. Notes fall onto a 3D keyboard, rendered with realistic reflections and textures such as metal, water, ice or glass, and particles drift up from them like smoke. You can record from a MIDI keyboard, edit notes on screen, save as MIDI, and export video up to 4K at 60 fps with no watermark. No account; files are processed locally.
+
+App: https://notefall.app/ (desktop browsers with WebGL, window at least 1024 px wide)
+
+## Look
+- Notes are rendered in 3D, with realistic reflections and textures such as metal, water, ice, glass and marble. Light patterns move inside them.
+- Particles and soft haze rise from each note and drift like smoke.
+- Note shape, color, glow and particles are adjustable. Colors can follow the track, the hand, a gradient across the keyboard, or a random palette; the hit line, particles and key glow use the note's color.
+- Keyframes change visual settings during the song.
+
+## Record and edit MIDI
+- Record from a MIDI keyboard (Web MIDI), PC keyboard, mouse or touch. Velocity and the sustain pedal are recorded.
+- Edit notes on the falling-notes view: add, move, resize, split, delete; velocity, hand and finger per note. Undo and redo.
+- Save the song or a recorded take as a MIDI file.
+
+## Export
+- 720p, 1080p or 4K; 30 or 60 fps; MP4 (H.264) or WebM (VP9, AV1); WAV for audio only.
+- Frames are rendered one by one, so output does not depend on computer speed.
+
+## Other
+- Sampled grand piano; timeline with speed changes and an audio track; virtual hands (alpha); projects saved as .nfz files.
+
+## Privacy
+MIDI files, recordings, projects and audio never leave the browser. Anonymous usage statistics can be turned off in the app menu.
+
+## Links
+- App: https://notefall.app/
+- Source: https://github.com/ekkx/notefall

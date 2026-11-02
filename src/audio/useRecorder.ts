@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { audioEngine } from './engine'
-import { recorder } from './recorder'
+import { recorder, type Recording } from './recorder'
 import { midiToName } from '../midi/noteName'
 
 /**
@@ -69,6 +69,7 @@ export function useRecorder() {
     stop: () => recorder.stop(),
     cancel: () => recorder.cancel(),
     delete: (id: string) => recorder.delete(id),
+    restore: (r: Recording) => recorder.restore(r),
     rename: (id: string, name: string) => recorder.rename(id, name),
     clearAll: () => recorder.clearAll(),
     markAllRead: () => recorder.markAllRead(),

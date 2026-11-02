@@ -9,6 +9,7 @@ import { midiToName } from '../midi/noteName'
 import { selectionScreenRect } from '../scene/selectionBounds'
 import { Button, GEOMETRY, Icon, KnobThumb, Panel, SegmentedControl } from './kit'
 import { useShell } from './shell/uiState'
+import { KEY } from './shell/platform'
 
 const CARD_W = 252
 const GAP = 14
@@ -300,7 +301,7 @@ export function SelectionCard({ wrapEl }: { wrapEl: HTMLElement | null }) {
           variant="danger"
           className="w-full justify-start rounded-[10px]"
           icon={<Icon.TrashIcon />}
-          hint="⌫"
+          hint={KEY.del}
           onPress={doDelete}
         >
           {t('selection.delete', { count })}

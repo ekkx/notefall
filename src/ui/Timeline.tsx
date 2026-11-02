@@ -1678,12 +1678,15 @@ export function Timeline() {
       if (isEditable(e.target)) return
       const s = useStore.getState()
       if (!s.song) return
-      if (e.code === 'KeyP' && !e.repeat && !e.shiftKey) {
+      // Shift+K: plain letters play the PC-keyboard piano (P is a key), Shift is the shortcut layer.
+      if (e.code === 'KeyK' && e.shiftKey && !e.repeat) {
         e.preventDefault()
         s.addKeyframe(audioEngine.currentSongTime())
       } else if (e.key === 'Delete' || e.key === 'Backspace') {
-        // Delete the SELECTED pin (if any).
-        if (s.editingKeyframeTime !== null) {
+        // Delete the targeted keyframe, but only when no notes are selected: with a selection the
+        // key deletes the notes (useGlobalShortcuts) and must not take a keyframe with them.
+        // (defaultPrevented: the note handler ran first and already cleared the selection)
+        if (s.editingKeyframeTime !== null && s.selection.size === 0 && !e.defaultPrevented) {
           e.preventDefault()
           s.removeKeyframe(s.editingKeyframeTime)
         }

@@ -28,6 +28,7 @@ import { useBarColors, useEffectiveLook } from './look/useLookState'
 import { VelocityCurveEditor } from './VelocityCurveEditor'
 import { Button, Icon, IconButton, Panel, GEOMETRY, usePresence } from './kit'
 import { useShell } from './shell/uiState'
+import { useTakeInProgress } from './shell/takeFocus'
 import { useIdle } from './shell/idle'
 import { useCustomTexture } from '../notes/customTexture'
 import { CAMERA_LIMITS } from '../scene/cameraLimits'
@@ -1208,7 +1209,9 @@ function TabPanel({ title, active, children }: { title: string; active: boolean;
 
 export function Inspector() {
   const lookOpen = useShell((st) => st.lookOpen)
-  const { mounted, leaving } = usePresence(lookOpen)
+  // a take in progress has the screen to itself
+  const takeInProgress = useTakeInProgress()
+  const { mounted, leaving } = usePresence(lookOpen && !takeInProgress)
   if (!mounted) return null
   return <LookPanel leaving={leaving} />
 }

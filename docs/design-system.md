@@ -43,14 +43,14 @@ Everything floats over a full-window canvas (the 16:9 video is letterboxed in th
                      start card when there is no song      │ tabs  🔍    │
 ┌ Timeline (floating, optional) ───────────────────┐      │ sections…   │
 └──────────────────────────────────────────────────┘      └─────────────┘
-           ( ⏮ ⟲ ▶ ⟳  0:20 ──●──── 5:24 │ 1.0× 🔈 ⟳ ⬡ ⛶ │ Customize  Timeline )
+           ( ⏮ ⟲ ▶ ⟳ 🔁  0:20 ──●── 5:24 │ 1.0× 🔈 ⬡ ⛶ │ Customize  Timeline )
 ```
 
 | Surface | Position | Notes |
 |---|---|---|
-| Song island | top-left, `EDGE` from the edges, height `BAR` | Wordmark = the app menu (shortcuts, language, report a bug, request a feature, GitHub, analytics switch, build). Then File, the song name (rename inline, a small dot when unsaved), Undo, Redo. |
-| Input island | top-right | MIDI device menu, Record + ▾ (takes list, count-in switch at its top), divider, Export (the one primary button). |
-| Transport pill | bottom-centre, `PILL_BOTTOM` from the bottom, height `PILL` | Back to start, −10 s, play (the white disc), +10 s, time, scrubber, total │ speed, volume, loop, reset camera, fullscreen │ Customize, Timeline. |
+| Song island | top-left, `EDGE` from the edges, height `BAR` | Wordmark = the app menu (shortcuts, language, report a bug, request a feature, GitHub, analytics switch, build). Then File (New, Open…, Open recent, Demo songs · Save, Save as… · Add audio…, Save song as MIDI… · Export…), the song name (rename inline, a small dot when unsaved), Undo, Redo. |
+| Input island | top-right | MIDI device menu, Record + ▾ ("Takes" with the count-in switch beside it, the takes, Clear all… after a confirm), divider, Export (the one primary button). During the count-in the island shows the beats as dots (the current one lands with the click), "Count-in" and Cancel (Esc); while a take records it holds only that take: red dot, elapsed time, notes so far · last note, and a red Stop. From the count-in until the take stops every other surface (song island, pill, Customize) steps aside (`shell/takeFocus.ts`). |
+| Transport pill | bottom-centre, `PILL_BOTTOM` from the bottom, height `PILL` | Back to start, −10 s, play (the white disc), +10 s, loop (a playback mode, so it sits with these), time, scrubber, total │ speed, volume, reset camera, fullscreen │ Customize, Timeline. |
 | Customize panel | right edge, from under the top islands to above the pill (`GAP` between), width `PANEL` | Opens from the pill. Tabs + search, sections, footer with "Reset to defaults" and close. |
 | Timeline | left edge, above the pill, up to the right edge (or to Customize when it's open) | Floating, never docked full-width. Starts closed; ⌘B or the pill toggles it. |
 | Selection card | beside the selected notes, never over them, above the timeline / pill, left of Customize | See [Editing notes](#editing-notes). |
@@ -148,7 +148,7 @@ Rules: UI animation stays under 300 ms; never animate something triggered from t
 
 - **Focus ring**: the `ink` ring from the class `nf-focus`. On react-aria controls it shows only for keyboard focus (`data-focus-visible`). A control pressed with the mouse doesn't keep focus (`useReleaseFocusAfterPointer`, mounted in `Layout`), so the next key goes to the app's shortcuts and the PC-keyboard piano and no ring appears. Text fields, sliders, menus and dialogs keep their focus.
 - **States**: hover `fill-hover`; pressed / open `fill-selected` (`aria-pressed`, `aria-expanded`, `data-selected`); disabled 40% opacity.
-- **Shortcuts**: global ones live in `src/ui/useGlobalShortcuts.ts` and are listed in the shortcut sheet (`?`). Letter keys play notes on the PC-keyboard piano, so don't add letter shortcuts. Inputs stop propagation so typing never triggers shortcuts.
+- **Shortcuts**: global ones live in `src/ui/useGlobalShortcuts.ts` and are listed in the shortcut sheet (`?`). Letter keys play notes on the PC-keyboard piano, so don't add letter shortcuts; a shortcut that needs a letter takes Shift (Shift+R record, Shift+K add keyframe). Arrow keys move selected notes the way they look on screen: ↑ / ↓ along the fall, ← / → across the keyboard. Inputs stop propagation so typing never triggers shortcuts.
 - **Mouse on notes** follows FL Studio's piano roll and does not change: click selects and drags, double-click opens the selection card, right-click deletes, right-drag erases, ⌥-click splits, ⌘-click adds to the selection, ⌘-drag selects a range, drag an edge to resize, wheel scrubs time. There is no note context menu.
 
 ---
@@ -172,7 +172,7 @@ All interactive pieces are react-aria components styled with the tokens. Import 
 | `Progress` | Determinate bar. |
 | `KnobThumb` | The slider knob for any react-aria `Slider`: centred on the track, grows on hover / drag. Put the track's centre line at `top-1/2`. |
 | `Divider` | Rule between groups inside one surface. |
-| `Popover`, `Menu`, `MenuPopover`, `MenuItem` (`icon`, `hint`, `danger`, `checked`), `MenuSeparator`, `MenuSection`, `MenuTrigger`, `SubmenuTrigger` | Menus and floating surfaces. Shortcut hints at the right edge in `ink-faint`; destructive rows `danger`. |
+| `Popover`, `Menu`, `MenuPopover`, `MenuItem` (`icon`, `hint`, `danger`, `checked`, `description`), `MenuSeparator`, `MenuSection`, `MenuTrigger`, `SubmenuTrigger` | Menus and floating surfaces. Shortcut hints at the right edge in `ink-faint`; destructive rows `danger`; `description` adds a second line under the label. A menu popover passes the menu radius as its class (see `MenuPopover`) so the row highlight stays concentric with the edge; the kit `Popover` applies `rounded-panel` only when no radius class is passed. |
 | `Dialog`, `DialogText` | Centred modal over the scrim. Actions right-aligned, primary last. `dismissable={false}` for progress and destructive confirms. |
 | `Island`, `Panel` | The glass surfaces (`strong` for read surfaces). |
 | `showToast`, `ToastHost` | One toast at a time, optional action (with a shortcut `hint`). Callable from non-React code. Hovering holds it. |

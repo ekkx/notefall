@@ -263,6 +263,9 @@ export function Toolbar() {
     phaseLabel: string,
     progress: number,
   ) => {
+    // After Cancel (or the end), work that can't be stopped mid-flight (the offline audio render) still reports
+    // progress; drop it, or it reopens the closed progress dialog for good.
+    if (!exportAbortRef.current || exportAbortRef.current.signal.aborted) return
     const elapsedSec = (performance.now() - exportStartedAtRef.current) / 1000
     const window = exportRateWindowRef.current
     window.push({ elapsed: elapsedSec, progress })
@@ -384,7 +387,7 @@ export function Toolbar() {
           finishExport(abort.signal.aborted ? 'cancelled' : 'error')
           reportError(t('error.couldNotExportAudio'), result.message)
         } else {
-          finishExport('ok')
+          finishExport(result.kind === 'cancelled' ? 'cancelled' : 'ok')
           if (result.kind === 'ok' && values.playSoundOnComplete) {
             playExportCompleteChime()
           }
@@ -435,7 +438,7 @@ export function Toolbar() {
             t('error.videoNotSupportedShort'),
           )
         } else {
-          finishExport('ok')
+          finishExport(result.kind === 'cancelled' ? 'cancelled' : 'ok')
           if (result.kind === 'ok' && values.playSoundOnComplete) {
             playExportCompleteChime()
           }

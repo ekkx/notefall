@@ -31,6 +31,7 @@ import { useTranslation } from 'react-i18next'
 import { defaultSettings, useStore, type Settings } from '../store'
 import { isAnimatableKey, resolveSettingsAt } from '../midi/settingsKeyframes'
 import { collectSongColors } from './look/songColors'
+import { shortcutLabel } from './shell/platform'
 import { Disclosure, GEOMETRY, Icon, KnobThumb, Menu, MenuItem, MenuSeparator, Popover, SegmentedControl, Select, Switch } from './kit'
 
 /**
@@ -151,10 +152,6 @@ export function SearchableBlock({
   if (!useRowMatchesQuery(label)) return null
   return <div data-search-label={label}>{children}</div>
 }
-
-const isMacPlatform = () =>
-  typeof navigator !== 'undefined' &&
-  /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || '')
 
 /**
  * The Look panel's element: colour pickers open beside it (outside the panel, so
@@ -371,7 +368,7 @@ function SliderContextMenu({
             {defaultValue !== undefined && (
               <>
                 <MenuSeparator />
-                <MenuItem id="reset" hint={isMacPlatform() ? '⌘ Click' : 'Ctrl Click'}>
+                <MenuItem id="reset" hint={shortcutLabel(t('slider.click'), { mod: true })}>
                   {t('reset.resetToDefault')}
                   {defaultLabel !== undefined && ` (${defaultLabel})`}
                 </MenuItem>

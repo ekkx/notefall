@@ -29,7 +29,7 @@ import { useShell } from './shell/uiState'
  *   Cmd/Ctrl + Shift + S  — Save As (always opens the picker / triggers a
  *                           download depending on browser support).
  *   Cmd/Ctrl + B          — toggle the bottom Timeline editor panel.
- *   ?                     — open the keyboard shortcut sheet.
+ *   ?                     — open / close the keyboard shortcut sheet.
  *
  * Edit-mode shortcuts (song loaded AND not playing):
  *   Escape                  — clear selection (closes the selection card)
@@ -39,8 +39,8 @@ import { useShell } from './shell/uiState'
  *
  * Selection-dependent (no-op when nothing is selected):
  *   Delete / Backspace      — delete selected notes
- *   ↑ / ↓                   — nudge pitch ±1 semitone
- *   ← / →                   — nudge time ±0.05 s
+ *   ↑ / ↓                   — nudge time ±0.05 s, in the direction the notes move on screen
+ *   ← / →                   — nudge pitch ±1 semitone (left = lower, as on the keyboard)
  *
  * Velocity is not on this list — it's edited in the selection card beside
  * the selected notes (SelectionCard.tsx).
@@ -192,7 +192,9 @@ export function useGlobalShortcuts(): void {
 
       if (!e.repeat && !e.metaKey && !e.ctrlKey && !e.altKey && e.key === '?') {
         e.preventDefault()
-        useShell.getState().setShortcutsOpen(true)
+        // ? opens the sheet and closes it again
+        const shell = useShell.getState()
+        shell.setShortcutsOpen(!shell.shortcutsOpen)
         return
       }
 
@@ -247,25 +249,19 @@ export function useGlobalShortcuts(): void {
       if (e.metaKey || e.ctrlKey || e.altKey) return
       if (!state.song) return
 
-      if (e.code === 'ArrowUp') {
-        e.preventDefault()
-        state.applySongEdit(moveNotes(state.song, state.selection, 0, +1))
-        return
+      // Arrows move the notes the way they look: ↑ / ↓ along the fall (later is up when notes fall down,
+      // down when they rise), ← / → across the keyboard.
+      const up = state.settings.fallDirection === 'down' ? +TIME_NUDGE_SEC : -TIME_NUDGE_SEC
+      const nudge: Record<string, [number, number]> = {
+        ArrowUp: [up, 0],
+        ArrowDown: [-up, 0],
+        ArrowRight: [0, +1],
+        ArrowLeft: [0, -1],
       }
-      if (e.code === 'ArrowDown') {
+      const delta = nudge[e.code]
+      if (delta) {
         e.preventDefault()
-        state.applySongEdit(moveNotes(state.song, state.selection, 0, -1))
-        return
-      }
-      if (e.code === 'ArrowRight') {
-        e.preventDefault()
-        state.applySongEdit(moveNotes(state.song, state.selection, +TIME_NUDGE_SEC, 0))
-        return
-      }
-      if (e.code === 'ArrowLeft') {
-        e.preventDefault()
-        state.applySongEdit(moveNotes(state.song, state.selection, -TIME_NUDGE_SEC, 0))
-        return
+        state.applySongEdit(moveNotes(state.song, state.selection, delta[0], delta[1]))
       }
     }
 

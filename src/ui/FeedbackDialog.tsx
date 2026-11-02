@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, Dialog, DialogText, SegmentedControl, Switch } from './kit'
+import { Button, Dialog, DialogText, Disclosure, SegmentedControl, Switch } from './kit'
 import {
   ISSUES_URL,
   REPORT_LIMITS,
@@ -87,13 +87,11 @@ function Turnstile({ onToken, resetKey }: { onToken: (t: string | null) => void;
 const fieldClass =
   'nf-focus w-full rounded-field border-0 bg-fill-field px-2.5 py-2 text-body text-ink outline-none placeholder:text-ink-faint'
 
-function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
+/** Label above a control, as in the export dialog. */
+function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="grid gap-1.5">
-      <span className="text-label text-ink-muted">
-        {label}
-        {hint && <span className="ml-1 font-normal text-ink-faint">{hint}</span>}
-      </span>
+      <span className="text-label text-ink-muted">{label}</span>
       {children}
     </label>
   )
@@ -101,6 +99,18 @@ function Field({ label, children, hint }: { label: string; children: ReactNode; 
 
 const linkClass = 'nf-focus rounded-sm text-ink underline underline-offset-2'
 
+/** Mirrors the server's cap on the device block (functions/api/report.ts ENV_MAX). */
+const ENV_MAX = 2000
+
+/**
+ * In-app bug report / feature request (app menu). Posts to /api/report, which files a public GitHub
+ * issue; on success it links to that issue. Where the endpoint isn't available (dev server,
+ * unconfigured deploy) it offers GitHub's own form.
+ *
+ * Layout follows the other dialogs: one line on where it goes, the kind, summary and description,
+ * then two folded rows: more detail (optional fields) and the device info, which is sent as written
+ * and can be edited or left out.
+ */
 export function FeedbackDialog({
   kind: initialKind,
   isOpen,
@@ -118,6 +128,7 @@ export function FeedbackDialog({
   const [expected, setExpected] = useState('')
   const [website, setWebsite] = useState('') // honeypot
   const [includeEnv, setIncludeEnv] = useState(true)
+  const [generatedEnv, setGeneratedEnv] = useState('')
   const [environment, setEnvironment] = useState('')
   const [token, setToken] = useState<string | null>(null)
   const [resetKey, setResetKey] = useState(0)
@@ -127,6 +138,7 @@ export function FeedbackDialog({
   // A fresh form each time the dialog opens (the kind follows the menu item).
   useEffect(() => {
     if (!isOpen) return
+    const env = buildEnvironmentBlock()
     setKind(initialKind)
     setTitle('')
     setDescription('')
@@ -134,7 +146,8 @@ export function FeedbackDialog({
     setExpected('')
     setWebsite('')
     setIncludeEnv(true)
-    setEnvironment(buildEnvironmentBlock())
+    setGeneratedEnv(env)
+    setEnvironment(env)
     setToken(null)
     setSending(false)
     setResult(null)
@@ -142,6 +155,7 @@ export function FeedbackDialog({
 
   const needsToken = !!TURNSTILE_SITE_KEY
   const canSend = !sending && title.trim() !== '' && description.trim() !== '' && (!needsToken || token !== null)
+  const sentEnv = includeEnv ? environment.trim() : ''
 
   const send = async () => {
     setSending(true)
@@ -152,7 +166,7 @@ export function FeedbackDialog({
         description,
         details,
         expected: kind === 'bug' ? expected : '',
-        environment: includeEnv ? environment : '',
+        environment: sentEnv,
         website,
       },
       token,
@@ -163,9 +177,9 @@ export function FeedbackDialog({
     if (r.kind !== 'ok' && needsToken) setResetKey((k) => k + 1)
   }
 
-  const fallbackUrl = githubIssueUrl(kind, includeEnv ? environment : '')
-
+  const fallbackUrl = githubIssueUrl(kind, sentEnv)
   const sent = result?.kind === 'ok'
+  const hasDetail = details.trim() !== '' || (kind === 'bug' && expected.trim() !== '')
 
   return (
     <Dialog
@@ -174,8 +188,8 @@ export function FeedbackDialog({
         if (!open && !sending) onClose()
       }}
       dismissable={!sending}
-      width={500}
-      title={sent ? t('feedback.sentTitle') : t('feedback.title')}
+      width={480}
+      title={sent ? t(`feedback.sentTitle.${kind}`) : t(`feedback.title.${kind}`)}
       actions={
         sent ? (
           <Button autoFocus variant="primary" onPress={onClose}>
@@ -183,19 +197,14 @@ export function FeedbackDialog({
           </Button>
         ) : (
           <>
-            <a
-              href={fallbackUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`${linkClass} mr-auto self-center`}
-            >
+            <a href={fallbackUrl} target="_blank" rel="noopener noreferrer" className={`${linkClass} mr-auto self-center`}>
               {t('feedback.useGitHub')}
             </a>
             <Button onPress={onClose} isDisabled={sending}>
               {t('feedback.cancel')}
             </Button>
             <Button variant="primary" onPress={() => void send()} isDisabled={!canSend}>
-              {sending ? t('feedback.sending') : t('feedback.send')}
+              {sending ? t('feedback.sending') : t(`feedback.send.${kind}`)}
             </Button>
           </>
         )
@@ -238,32 +247,77 @@ export function FeedbackDialog({
           </Field>
           <Field label={t(`feedback.fields.${kind}.description`)}>
             <textarea
-              className={`${fieldClass} min-h-20 resize-y`}
+              className={`${fieldClass} min-h-24 resize-y`}
               value={description}
               maxLength={REPORT_LIMITS.text}
               onChange={(e) => setDescription(e.target.value)}
               placeholder={t(`feedback.placeholders.${kind}.description`)}
             />
           </Field>
-          <Field label={t(`feedback.fields.${kind}.details`)} hint={t('feedback.optional')}>
-            <textarea
-              className={`${fieldClass} min-h-16 resize-y`}
-              value={details}
-              maxLength={REPORT_LIMITS.text}
-              onChange={(e) => setDetails(e.target.value)}
-              placeholder={t(`feedback.placeholders.${kind}.details`)}
-            />
-          </Field>
-          {kind === 'bug' && (
-            <Field label={t('feedback.fields.bug.expected')} hint={t('feedback.optional')}>
+
+          <Disclosure
+            defaultExpanded={hasDetail}
+            label={
+              <span>
+                {t('feedback.moreDetail')}
+                <span className="text-ink-faint"> · {t('feedback.optional')}</span>
+              </span>
+            }
+          >
+            <Field label={t(`feedback.fields.${kind}.details`)}>
               <textarea
-                className={`${fieldClass} min-h-12 resize-y`}
-                value={expected}
+                className={`${fieldClass} min-h-20 resize-y`}
+                value={details}
                 maxLength={REPORT_LIMITS.text}
-                onChange={(e) => setExpected(e.target.value)}
+                onChange={(e) => setDetails(e.target.value)}
+                placeholder={t(`feedback.placeholders.${kind}.details`)}
               />
             </Field>
-          )}
+            {kind === 'bug' && (
+              <Field label={t('feedback.fields.bug.expected')}>
+                <textarea
+                  className={`${fieldClass} min-h-14 resize-y`}
+                  value={expected}
+                  maxLength={REPORT_LIMITS.text}
+                  onChange={(e) => setExpected(e.target.value)}
+                />
+              </Field>
+            )}
+          </Disclosure>
+
+          <Disclosure
+            label={
+              <span>
+                {t('feedback.deviceInfo')}
+                <span className="text-ink-faint"> · {includeEnv ? t('feedback.deviceIncluded') : t('feedback.deviceLeftOut')}</span>
+              </span>
+            }
+          >
+            <Switch isSelected={includeEnv} onChange={setIncludeEnv}>
+              <span>{t('feedback.includeEnv')}</span>
+            </Switch>
+            {includeEnv && (
+              <div className="grid gap-1.5">
+                <textarea
+                  aria-label={t('feedback.deviceInfo')}
+                  className={`${fieldClass} min-h-32 resize-y text-caption`}
+                  value={environment}
+                  maxLength={ENV_MAX}
+                  spellCheck={false}
+                  onChange={(e) => setEnvironment(e.target.value)}
+                />
+                <div className="flex items-start justify-between gap-3">
+                  <p className="m-0 text-caption text-ink-faint">{t('feedback.envHint')}</p>
+                  {environment !== generatedEnv && (
+                    <button type="button" className={`${linkClass} flex-none text-caption`} onClick={() => setEnvironment(generatedEnv)}>
+                      {t('feedback.envRestore')}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </Disclosure>
+
           {/* honeypot: hidden from people, tempting to form-filling bots */}
           <input
             tabIndex={-1}
@@ -274,20 +328,6 @@ export function FeedbackDialog({
             onChange={(e) => setWebsite(e.target.value)}
             name="website"
           />
-
-          <div className="grid gap-2">
-            <Switch isSelected={includeEnv} onChange={setIncludeEnv} className="gap-3">
-              <span className="grid">
-                <span>{t('feedback.includeEnv')}</span>
-                <span className="text-ink-muted">{t('feedback.envHint')}</span>
-              </span>
-            </Switch>
-            {includeEnv && (
-              <pre className="m-0 max-h-28 overflow-auto whitespace-pre-wrap break-all rounded-field bg-fill-well px-2.5 py-2 font-sans text-caption text-ink-muted">
-                {environment}
-              </pre>
-            )}
-          </div>
 
           {needsToken && <Turnstile onToken={setToken} resetKey={resetKey} />}
 

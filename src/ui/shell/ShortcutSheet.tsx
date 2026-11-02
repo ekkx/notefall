@@ -2,18 +2,13 @@ import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Dialog, IconButton, Icon, Kbd } from '../kit'
 import { useShell } from './uiState'
+import { IS_MAC, KEY } from './platform'
 
 // The one place that lists every keyboard shortcut and note gesture. Each row mirrors a
 // real handler: `useGlobalShortcuts.ts` (keys), `scene/EditTools.tsx` + `notes/FallingNotes.tsx`
 // (mouse on notes), `ui/Viewport.tsx` (scroll), `scene/CameraControls.tsx` (camera zoom).
 
-const IS_MAC =
-  typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || '')
-
-const MOD = IS_MAC ? '⌘' : 'Ctrl'
-const ALT = IS_MAC ? '⌥' : 'Alt'
-const SHIFT = IS_MAC ? '⇧' : 'Shift'
-const DEL = IS_MAC ? '⌫' : 'Del'
+const { mod: MOD, alt: ALT, shift: SHIFT, del: DEL } = KEY
 
 type Row = { label: string; keys: string[] }
 type Group = { title: string; rows: Row[] }
@@ -40,9 +35,9 @@ export function ShortcutSheet() {
         { label: t('shortcuts.redo'), keys: IS_MAC ? [SHIFT, MOD, 'Z'] : [MOD, 'Y'] },
         { label: t('shortcuts.delete'), keys: [DEL] },
         { label: t('shortcuts.clear'), keys: ['Esc'] },
-        { label: t('shortcuts.nudgePitch'), keys: ['↑', '↓'] },
-        { label: t('shortcuts.nudgeTime'), keys: ['←', '→'] },
-        { label: t('shortcuts.keyframe'), keys: ['P'] },
+        { label: t('shortcuts.nudgeTime'), keys: ['↑', '↓'] },
+        { label: t('shortcuts.nudgePitch'), keys: ['←', '→'] },
+        { label: t('shortcuts.keyframe'), keys: [SHIFT, 'K'] },
       ],
     },
     {
@@ -50,7 +45,7 @@ export function ShortcutSheet() {
       rows: [
         { label: t('shortcuts.open'), keys: [MOD, 'O'] },
         { label: t('shortcuts.save'), keys: [MOD, 'S'] },
-        { label: t('shortcuts.saveAs'), keys: [SHIFT, MOD, 'S'] },
+        { label: t('shortcuts.saveAs'), keys: IS_MAC ? [SHIFT, MOD, 'S'] : [MOD, SHIFT, 'S'] },
         { label: t('shortcuts.record'), keys: [SHIFT, 'R'] },
         { label: t('shortcuts.sheet'), keys: ['?'] },
       ],

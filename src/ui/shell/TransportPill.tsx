@@ -10,8 +10,9 @@ import { pauseSong, playSong } from '../../audio/playback'
 import { useCurrentTime } from '../../audio/useCurrentTime'
 import { Button, Divider, GEOMETRY, Icon, IconButton, KnobThumb, ToggleButton, Tooltip } from '../kit'
 import { useChromeHidden, useIdle } from './idle'
+import { useTakeInProgress } from './takeFocus'
 import { toggleFullscreen, useIsFullscreen } from './fullscreen'
-import { MOD } from './platform'
+import { shortcutLabel } from './platform'
 import { useShell } from './uiState'
 
 const SKIP_SECONDS = 10
@@ -247,7 +248,8 @@ export function TransportPill() {
   const endEdit = useStore((s) => s.endSettingsEdit)
   const lookOpen = useShell((s) => s.lookOpen)
   const setLookOpen = useShell((s) => s.setLookOpen)
-  const hidden = useChromeHidden()
+  const takeInProgress = useTakeInProgress()
+  const hidden = useChromeHidden() || takeInProgress
   const isFullscreen = useIsFullscreen()
   // The slider rescales when the speed curve or clip offset changes the TL_audio length.
   useStore((s) => s.settings.midiSpeedAutomation)
@@ -313,6 +315,16 @@ export function TransportPill() {
       >
         <Icon.Forward10Icon />
       </IconButton>
+      {/* repeat is a playback mode: it sits with the transport buttons */}
+      <IconButton
+        label={loop ? t('transport.disableLoop') : t('transport.enableLoop')}
+        isDisabled={!hasSong}
+        aria-pressed={loop}
+        className={loop ? 'bg-fill-selected' : undefined}
+        onPress={() => setLoop(!loop)}
+      >
+        <Icon.LoopIcon />
+      </IconButton>
 
       <TimeNow />
       <Scrubber duration={duration} enabled={hasSong} label={t('transport.seek')} />
@@ -364,15 +376,6 @@ export function TransportPill() {
           </IconButton>
         )}
       />
-      <IconButton
-        label={loop ? t('transport.disableLoop') : t('transport.enableLoop')}
-        isDisabled={!hasSong}
-        aria-pressed={loop}
-        className={loop ? 'bg-fill-selected' : undefined}
-        onPress={() => setLoop(!loop)}
-      >
-        <Icon.LoopIcon />
-      </IconButton>
       <IconButton label={t('transport.resetCameraView')} onPress={resetCamera}>
         <Icon.ResetViewIcon />
       </IconButton>
@@ -388,7 +391,7 @@ export function TransportPill() {
       <ToggleButton icon={<Icon.CustomizeIcon />} isSelected={lookOpen} onChange={setLookOpen}>
         {t('transport.look')}
       </ToggleButton>
-      <Tooltip label={t('transport.timeline')} shortcut={`${MOD}B`}>
+      <Tooltip label={t('transport.timeline')} shortcut={shortcutLabel('B', { mod: true })}>
         <ToggleButton
           icon={<Icon.TimelineIcon />}
           isDisabled={!hasSong}

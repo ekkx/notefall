@@ -98,7 +98,10 @@
   },
   "feedback": {
     "ariaLabel": "Send feedback",
-    "title": "Report a bug or request a feature",
+    "title": {
+      "bug": "Report a bug",
+      "feature": "Request a feature"
+    },
     "publicNotice": "Your report becomes a public GitHub issue. Please do not include personal information.",
     "statusLink": "See reports and their status",
     "kind": "Report type",
@@ -107,7 +110,7 @@
       "feature": "Feature request"
     },
     "summary": "Summary",
-    "optional": "(optional)",
+    "optional": "optional",
     "fields": {
       "bug": {
         "description": "What happened?",
@@ -132,7 +135,10 @@
       }
     },
     "includeEnv": "Include device info",
-    "send": "Send report",
+    "send": {
+      "bug": "Send report",
+      "feature": "Send request"
+    },
     "sending": "Sending",
     "cancel": "Cancel",
     "close": "Close",
@@ -145,10 +151,18 @@
       "server": "The report couldn't be sent.",
       "network": "No connection — the report couldn't be sent."
     },
-    "sentTitle": "Report sent",
+    "sentTitle": {
+      "bug": "Report sent",
+      "feature": "Request sent"
+    },
     "sentBody": "It was filed as issue #{{number}}.",
     "sentLink": "Follow its status on GitHub (#{{number}})",
-    "envHint": "Sent exactly as shown below."
+    "envHint": "Sent as written. Edit or delete anything you’d rather not share.",
+    "moreDetail": "More detail",
+    "deviceInfo": "Device info",
+    "deviceIncluded": "included",
+    "deviceLeftOut": "left out",
+    "envRestore": "Restore"
   },
   "shortcuts": {
     "title": "Keyboard shortcuts",
@@ -161,14 +175,14 @@
     "scrub": "Scrub (paused)",
     "scrubKey": "Scroll",
     "ff": "Fast-forward 2×",
-    "ffKey": "Hold",
+    "ffKey": "Hold the picture",
     "timeline": "Toggle timeline",
     "undo": "Undo",
     "redo": "Redo",
     "delete": "Delete selection",
     "clear": "Clear selection",
-    "nudgePitch": "Move ±1 semitone",
-    "nudgeTime": "Move ±0.05 s",
+    "nudgePitch": "Move a semitone",
+    "nudgeTime": "Move 0.05 s earlier / later",
     "keyframe": "Add keyframe (timeline)",
     "open": "Open",
     "save": "Save",
@@ -182,7 +196,7 @@
     "rangeKey": "drag",
     "addSelect": "Add to selection",
     "split": "Split note",
-    "menu": "Select note",
+    "menu": "Velocity, hand, finger",
     "menuKey": "Double-click",
     "del": "Delete note",
     "delKey": "Right-click",

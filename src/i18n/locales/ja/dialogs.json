@@ -98,7 +98,10 @@
   },
   "feedback": {
     "ariaLabel": "フィードバックを送る",
-    "title": "不具合の報告・機能のリクエスト",
+    "title": {
+      "bug": "不具合を報告",
+      "feature": "機能をリクエスト"
+    },
     "publicNotice": "送信した内容は GitHub の Issue として公開されます。個人情報は書かないでください。",
     "statusLink": "これまでの報告と対応状況",
     "kind": "報告の種類",
@@ -107,7 +110,7 @@
       "feature": "機能のリクエスト"
     },
     "summary": "概要",
-    "optional": "（任意）",
+    "optional": "任意",
     "fields": {
       "bug": {
         "description": "何が起きましたか？",
@@ -132,7 +135,10 @@
       }
     },
     "includeEnv": "端末情報を含める",
-    "send": "報告を送る",
+    "send": {
+      "bug": "報告を送る",
+      "feature": "リクエストを送る"
+    },
     "sending": "送信中",
     "cancel": "キャンセル",
     "close": "閉じる",
@@ -145,10 +151,18 @@
       "server": "送信できませんでした。",
       "network": "接続できないため送信できませんでした。"
     },
-    "sentTitle": "送信しました",
+    "sentTitle": {
+      "bug": "報告を送りました",
+      "feature": "リクエストを送りました"
+    },
     "sentBody": "Issue #{{number}} として登録されました。",
     "sentLink": "対応状況は GitHub で確認できます（#{{number}}）",
-    "envHint": "下の内容がそのまま送られます。"
+    "envHint": "書かれている内容がそのまま送られます。共有したくない部分は書き換えたり消したりできます。",
+    "moreDetail": "詳しく書く",
+    "deviceInfo": "端末情報",
+    "deviceIncluded": "含める",
+    "deviceLeftOut": "含めない",
+    "envRestore": "元に戻す"
   },
   "shortcuts": {
     "title": "キーボードショートカット",
@@ -161,14 +175,14 @@
     "scrub": "シーク（一時停止中）",
     "scrubKey": "スクロール",
     "ff": "2倍速で早送り",
-    "ffKey": "長押し",
+    "ffKey": "画面を長押し",
     "timeline": "タイムラインの表示切替",
     "undo": "元に戻す",
     "redo": "やり直す",
     "delete": "選択を削除",
     "clear": "選択を解除",
-    "nudgePitch": "±1半音ずらす",
-    "nudgeTime": "±0.05秒ずらす",
+    "nudgePitch": "半音ずらす",
+    "nudgeTime": "0.05 秒ずらす",
     "keyframe": "キーフレームを追加（タイムライン）",
     "open": "開く",
     "save": "保存",
@@ -182,7 +196,7 @@
     "rangeKey": "ドラッグ",
     "addSelect": "選択に追加",
     "split": "ノートを分割",
-    "menu": "ノートを選択",
+    "menu": "ベロシティ・手・指",
     "menuKey": "ダブルクリック",
     "del": "ノートを削除",
     "delKey": "右クリック",

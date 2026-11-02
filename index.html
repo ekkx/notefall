@@ -6,14 +6,14 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
     <!-- Primary meta -->
-    <title>notefall — Piano MIDI Visualizer in Your Browser</title>
+    <title>notefall — Free Piano Visualizer and MIDI Video Maker</title>
     <meta
       name="description"
-      content="A free browser-based piano visualizer. Load a MIDI, fix the notes right on the falling-notes view, and export a piano video. Play live or record from a MIDI keyboard. Free, no sign-up, and your files never leave your browser."
+      content="Make piano videos from MIDI in your browser. Notes are rendered in 3D with realistic reflections and textures like metal, water or glass. Record and edit MIDI, and export video up to 4K at 60 fps. Free, no watermark."
     />
     <meta
       name="keywords"
-      content="piano visualizer, MIDI visualizer, falling notes, piano roll, browser piano, MIDI player, 88-key keyboard, MIDI to video"
+      content="piano visualizer, MIDI visualizer, MIDI to video, piano video maker, MIDI editor, MIDI recorder, falling notes"
     />
     <meta name="theme-color" content="#05060a" />
     <meta name="robots" content="index, follow" />
@@ -22,10 +22,10 @@
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="notefall" />
-    <meta property="og:title" content="notefall — Piano MIDI Visualizer in Your Browser" />
+    <meta property="og:title" content="notefall — Free Piano Visualizer and MIDI Video Maker" />
     <meta
       property="og:description"
-      content="Load a MIDI, fix the notes right on the falling-notes view, and export a piano video. Play live or record from a MIDI keyboard. Free, no sign-up, and your files never leave your browser."
+      content="Make piano videos from MIDI in your browser. Notes are rendered in 3D with realistic reflections and textures like metal, water or glass. Record and edit MIDI, and export video up to 4K at 60 fps. Free, no watermark."
     />
     <meta property="og:url" content="https://notefall.app/" />
     <meta property="og:image" content="https://notefall.app/og-image.png" />
@@ -33,22 +33,22 @@
     <meta property="og:image:height" content="630" />
     <meta
       property="og:image:alt"
-      content="notefall: glassy blue notes falling onto a piano keyboard, with the line “Load a MIDI, fix the notes, export the video. Free, no sign-up.”"
+      content="A beautiful piano visualization: clear, ice-like notes with bright reflections fall onto a 3D piano keyboard, and particles drift up like smoke from a glowing blue hit line. Beside them are the notefall logo and the line “Load a MIDI, fix the notes, export the video. Free, no sign-up.”"
     />
     <meta property="og:locale" content="en_US" />
     <meta property="og:locale:alternate" content="ja_JP" />
 
     <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="notefall — Piano MIDI Visualizer in Your Browser" />
+    <meta name="twitter:title" content="notefall — Free Piano Visualizer and MIDI Video Maker" />
     <meta
       name="twitter:description"
-      content="Load a MIDI, fix the notes right on the falling-notes view, and export a piano video. Play live or record from a MIDI keyboard. Free, no sign-up, and your files never leave your browser."
+      content="Make piano videos from MIDI in your browser. Notes are rendered in 3D with realistic reflections and textures like metal, water or glass. Record and edit MIDI, and export video up to 4K at 60 fps. Free, no watermark."
     />
     <meta name="twitter:image" content="https://notefall.app/og-image.png" />
     <meta
       name="twitter:image:alt"
-      content="notefall: glassy blue notes falling onto a piano keyboard, with the line “Load a MIDI, fix the notes, export the video. Free, no sign-up.”"
+      content="A beautiful piano visualization: clear, ice-like notes with bright reflections fall onto a 3D piano keyboard, and particles drift up like smoke from a glowing blue hit line. Beside them are the notefall logo and the line “Load a MIDI, fix the notes, export the video. Free, no sign-up.”"
     />
 
     <!-- Structured data -->
@@ -58,7 +58,17 @@
         "@type": "WebApplication",
         "name": "notefall",
         "url": "https://notefall.app/",
-        "description": "A free browser-based piano visualizer. Watch MIDI notes fall onto a 3D 88-key keyboard, play live, record, edit on the canvas, and export to video. All content is processed client-side and never uploaded.",
+        "description": "A free piano visualizer and MIDI video maker that runs in the browser. Notes fall onto a 3D keyboard, rendered with realistic reflections and textures such as metal, water, ice or glass, and particles drift up from them like smoke. Record from a MIDI keyboard, edit notes on screen, save as MIDI, and export video up to 4K at 60 fps. Files are processed in the browser and never uploaded.",
+        "featureList": [
+          "Notes rendered in 3D, with realistic reflections and textures such as metal, water, ice and glass",
+          "Particles that drift up from each note like smoke",
+          "Note colors by track, hand, gradient or random palette",
+          "Keyframes that change colors, camera and background during the song",
+          "Recording from a MIDI keyboard, with velocity and sustain pedal",
+          "Note editing on screen, and saving as a MIDI file",
+          "Video export up to 4K at 60 fps (MP4 or WebM), no watermark"
+        ],
+        "isAccessibleForFree": true,
         "applicationCategory": "MultimediaApplication",
         "operatingSystem": "Web browser",
         "browserRequirements": "Requires WebGL and a viewport at least 1024px wide.",
@@ -74,6 +84,13 @@
   </head>
   <body class="bg-neutral-950">
     <div id="root"></div>
+    <noscript>
+      <p>
+        notefall is a free piano visualizer and MIDI video maker. Notes are rendered in 3D with realistic
+        reflections and textures like metal, water or glass. Record and edit MIDI, and export video up to 4K
+        at 60 fps. It needs JavaScript and WebGL.
+      </p>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

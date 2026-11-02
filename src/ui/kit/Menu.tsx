@@ -21,7 +21,12 @@ export function Popover({ className, ...props }: Omit<AriaPopoverProps, 'classNa
     <AriaPopover
       offset={8}
       {...props}
-      className={clsx('nf-glass-strong nf-pop z-[90] rounded-panel text-body text-ink outline-none', className)}
+      // a caller's own radius (menus: 14px) replaces the panel default; with both classes the panel one won
+      className={clsx(
+        'nf-glass-strong nf-pop z-[90] text-body text-ink outline-none',
+        !/(^|\s)rounded-/.test(className ?? '') && 'rounded-panel',
+        className,
+      )}
     />
   )
 }
@@ -59,17 +64,20 @@ export type MenuItemProps = Omit<AriaMenuItemProps, 'className' | 'children'> & 
   danger?: boolean
   /** Reserve the check column and show a check when true (radio / toggle rows). */
   checked?: boolean
+  /** A second line under the label, in `ink-faint` (the row grows to fit). */
+  description?: ReactNode
   children: ReactNode
 }
 
-export function MenuItem({ icon, hint, danger, checked, children, ...props }: MenuItemProps) {
+export function MenuItem({ icon, hint, danger, checked, description, children, ...props }: MenuItemProps) {
   const textValue = props.textValue ?? (typeof children === 'string' ? children : undefined)
   return (
     <AriaMenuItem
       {...props}
       textValue={textValue}
       className={clsx(
-        'flex h-[34px] cursor-default select-none items-center gap-2.5 whitespace-nowrap rounded-field px-2.5 outline-none data-[focused]:bg-fill-selected data-[open]:bg-fill-selected data-[disabled]:text-ink-faint',
+        'flex cursor-default select-none items-center gap-2.5 rounded-field px-2.5 outline-none data-[focused]:bg-fill-selected data-[open]:bg-fill-selected data-[disabled]:text-ink-faint',
+        description ? 'py-2' : 'h-[34px] whitespace-nowrap',
         danger ? 'text-danger' : 'text-ink',
       )}
     >
@@ -79,7 +87,14 @@ export function MenuItem({ icon, hint, danger, checked, children, ...props }: Me
             <span className="grid w-4 flex-none place-items-center">{checked && <CheckIcon className="h-4 w-4" />}</span>
           )}
           {icon && <span className="grid h-4 w-4 flex-none place-items-center [&>svg]:h-full [&>svg]:w-full">{icon}</span>}
-          <span className="min-w-0 flex-1 truncate">{children}</span>
+          {description ? (
+            <span className="grid min-w-0 flex-1 gap-0.5">
+              <span>{children}</span>
+              <span className="text-caption text-ink-faint">{description}</span>
+            </span>
+          ) : (
+            <span className="min-w-0 flex-1 truncate">{children}</span>
+          )}
           {hint && <span className="ml-auto pl-6 text-ink-faint">{hint}</span>}
           {hasSubmenu && (
             <svg viewBox="0 0 24 24" className="ml-auto h-4 w-4 flex-none text-ink-muted" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
