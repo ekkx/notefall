@@ -14,13 +14,13 @@
     "firefoxLabel": "Firefox:",
     "firefoxSetting": "Usar configurações de desempenho recomendadas",
     "safariLabel": "Safari:",
-    "safariSetting": "WebGL 2.0",
+    "safariSetting": "WebGL",
     "reload": "Recarregar página",
     "chromePath": "Configurações → Sistema → ativar",
     "chromeAfter": " e reinicie o navegador.",
     "firefoxPath": "Configurações → Abas e navegação → Desempenho → ativar",
     "firefoxAfter": ".",
-    "safariPath": "Menu Desenvolver → Recursos Experimentais → ativar",
+    "safariPath": "Menu Desenvolver → ativar",
     "safariAfter": " (se aparecer)."
   }
 }
