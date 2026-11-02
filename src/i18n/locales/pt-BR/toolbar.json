@@ -9,7 +9,7 @@
     "clearRecent": "Limpar recentes",
     "save": "Salvar",
     "saveAs": "Salvar como…",
-    "openAudio": "Abrir áudio…",
+    "addAudio": "Adicionar áudio…",
     "saveSongAsMidi": "Salvar música como MIDI…",
     "export": "Exportar…",
     "demoSongs": "Músicas de demonstração",
@@ -29,21 +29,32 @@
     "start": "Iniciar gravação",
     "label": "Gravar",
     "stopLabel": "Parar",
-    "countIn": "Pré-contagem"
+    "countIn": "Pré-contagem",
+    "notes_one": "{{count}} nota",
+    "notes_other": "{{count}} notas",
+    "cancelLabel": "Cancelar",
+    "countInStatus": "Pré-contagem, tempo {{beat}} de {{total}}"
   },
   "recordings": {
     "unread": "Não lida",
     "heading": "Gravações",
-    "clearAll": "Limpar tudo",
-    "empty": "Nenhuma gravação ainda. Pressione o botão \"Gravar\" para capturar o que você tocar.",
+    "clearAll": "Limpar tudo…",
+    "empty": "Nenhuma gravação ainda. Pressione Gravar para capturar o que você tocar.",
     "clickToRename": "Clique para renomear",
     "pause": "Pausar reprodução",
     "loadAndPlay": "Carregar e tocar",
-    "saveAsMid": "Salvar como .mid",
-    "confirmDelete": "Confirmar exclusão da gravação",
+    "saveAsMid": "Baixar como arquivo MIDI",
     "delete": "Excluir gravação",
     "trigger": "Gravações e pré-contagem",
-    "triggerWithNew": "Gravações e pré-contagem ({{count}} novas)"
+    "triggerWithNew": "Gravações e pré-contagem ({{count}} novas)",
+    "today": "Hoje {{time}}",
+    "yesterday": "Ontem {{time}}",
+    "clearAllTitle": "Limpar todas as gravações?",
+    "clearAllMessage_one": "A gravação será excluída deste navegador. Isso não pode ser desfeito.",
+    "clearAllMessage_other": "Todas as {{count}} gravações serão excluídas deste navegador. Isso não pode ser desfeito.",
+    "clearAllConfirm": "Limpar todas as gravações",
+    "deleted": "{{name}} excluída",
+    "undo": "Desfazer"
   },
   "toast": {
     "emptyRecording": "Nenhuma nota capturada — a gravação ficou vazia"
