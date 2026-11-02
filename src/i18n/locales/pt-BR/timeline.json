@@ -1,16 +1,14 @@
 {
   "editor": {
-    "title": "Editor de linha do tempo",
+    "title": "Linha do tempo",
     "close": "Fechar linha do tempo",
     "resizeLanes": "Arraste para redimensionar as faixas",
-    "resizeAria": "Redimensionar editor de linha do tempo",
-    "show": "Mostrar editor de linha do tempo",
-    "hide": "Ocultar editor de linha do tempo"
+    "resizeAria": "Redimensionar editor de linha do tempo"
   },
   "follow": {
     "stop": "Parar de seguir o cursor de reprodução",
     "start": "Seguir o cursor de reprodução durante a reprodução",
-    "label": "Seguir"
+    "label": "Seguir cursor"
   },
   "lane": {
     "midi": "MIDI",
@@ -21,13 +19,10 @@
     "unmute": "Ativar som",
     "resizeLanes": "Arraste para redimensionar as faixas",
     "decoding": "Decodificando…",
-    "addAudio": "+ Adicionar áudio…",
+    "addAudio": "Adicionar áudio…",
     "addAudioHint": "ou solte um arquivo de áudio em qualquer lugar",
     "addAudioFailed": "Não foi possível carregar o áudio",
-    "keyframes": "Keyframes",
-    "pins": "Keyframes",
-    "pinsLabel": "keyframes",
-    "speedLabel": "velocidade"
+    "keyframes": "Keyframes"
   },
   "context": {
     "volume": "Volume",
@@ -76,39 +71,5 @@
     "laneAria": "Keyframes",
     "laneTitle": "Keyframes capturam o visual em um ponto do tempo; a cena se mistura entre keyframes vizinhos. Clique em um espaço vazio para adicionar um, clique em um keyframe para selecioná-lo e ir até ele, arraste para mover, arraste com o botão direito para apagar.",
     "markerTitle": "Keyframe em {{time}}"
-  },
-  "empty": {
-    "prompt": "Nenhuma música carregada — solte um arquivo .mid / .nfz ou escolha uma ação rápida",
-    "openFile": "Abrir arquivo…",
-    "record": "Gravar",
-    "demoSongs": "Músicas de demonstração",
-    "demoSongsAria": "Músicas de demonstração"
-  },
-  "error": {
-    "couldNotOpenProjectTitle": "Não foi possível abrir o projeto",
-    "couldNotLoadDemoTitle": "Não foi possível carregar a demonstração"
-  },
-  "pin": {
-    "addAtPlayheadAria": "Adicionar keyframe no cursor de reprodução",
-    "addAtPlayheadTitle": "Adicionar um keyframe no cursor de reprodução (P)",
-    "laneAria": "Keyframes de configurações",
-    "laneTitle": "Keyframes capturam as configurações visuais em um ponto do tempo — a cena se transforma entre keyframes consecutivos. Clique em um espaço vazio para adicionar · clique em um keyframe para selecionar + posicionar · arraste para mover · arraste com o botão direito para apagar.",
-    "markerTitle": "Keyframe @ {{time}} — clique para selecionar + posicionar · arraste para mover · arraste com o botão direito para apagar"
-  },
-  "transport": {
-    "rewindToStart": "Voltar ao início",
-    "rewind10": "Voltar 10 segundos",
-    "forward10": "Avançar 10 segundos",
-    "play": "Tocar",
-    "pause": "Pausar",
-    "enableLoop": "Ativar repetição",
-    "disableLoop": "Desativar repetição",
-    "volume": "Volume",
-    "speed": "Velocidade",
-    "playbackSpeed": "Velocidade de reprodução",
-    "resetCameraView": "Redefinir visão da câmera",
-    "enterFullscreen": "Entrar em tela cheia",
-    "exitFullscreen": "Sair da tela cheia",
-    "seek": "Posicionar"
   }
 }

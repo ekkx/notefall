@@ -1,7 +1,7 @@
 {
   "unsupported": {
-    "title": "Este dispositivo não é compatível",
-    "body": "Abra o notefall em um computador ou tablet na horizontal — é necessária uma tela mais larga.",
+    "title": "Abra o notefall em um computador",
+    "body": "O notefall precisa de uma tela mais larga: um computador ou um tablet na horizontal. Envie o link para você mesmo e abra por lá.",
     "copyLink": "Copiar link",
     "copied": "Link copiado"
   },

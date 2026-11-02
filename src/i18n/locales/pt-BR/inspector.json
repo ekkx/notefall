@@ -177,7 +177,7 @@
     "close": "Fechar pesquisa"
   },
   "reset": {
-    "button": "Redefinir",
+    "button": "Restaurar padrões",
     "keyframe": "Redefinir este keyframe",
     "tooltip": "Redefinir todas as configurações para o padrão",
     "tooltipKeyframe": "Redefinir este keyframe para os padrões",

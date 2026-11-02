@@ -1,10 +1,10 @@
 {
   "confirm": {
-    "defaultConfirm": "OK",
+    "defaultConfirm": "Continuar",
     "defaultCancel": "Cancelar"
   },
   "alert": {
-    "acknowledge": "OK"
+    "acknowledge": "Fechar"
   },
   "export": {
     "ariaLabel": "Configurações de exportação",
@@ -24,7 +24,7 @@
     "estimatedSize": "Tamanho estimado",
     "estimatedSizeValue": "~{{mb}} MB",
     "playSoundOnComplete": "Tocar som ao concluir",
-    "test": "Testar",
+    "test": "Prévia do som",
     "cancel": "Cancelar",
     "submit": "Exportar",
     "codec": {
@@ -32,12 +32,12 @@
       "h264": "H.264 + AAC (MP4) — mais compatível",
       "vp9": "VP9 + Opus (WebM) — formato aberto",
       "av1": "AV1 + Opus (WebM) — aberto, menor, lento",
-      "checking": "Verificando codecs suportados…"
+      "checking": "Verificando codecs suportados"
     },
     "preflight": {
-      "noWebCodecs": "A exportação de vídeo precisa de WebCodecs (Chrome / Edge / Safari 16.4+). Neste navegador você ainda pode exportar \"Somente áudio\".",
+      "noWebCodecs": "A exportação de vídeo precisa de WebCodecs (Chrome, Edge ou Safari 16.4 e posteriores). Neste navegador você ainda pode exportar somente o áudio (WAV).",
       "videoUnsupported": "Este navegador não consegue codificar vídeo {{codec}} em {{width}}×{{height}} @ {{fps}} fps. Tente {{alternatives}}, ou reduza a resolução / taxa de quadros.",
-      "audioUnsupported": "Este navegador não consegue codificar a faixa de áudio {{audioCodec}} que a exportação {{codec}} exige. Tente {{alternatives}}, exporte \"Somente vídeo\" ou exporte \"Somente áudio\".",
+      "audioUnsupported": "Este navegador não consegue codificar a faixa de áudio {{audioCodec}} que a exportação {{codec}} exige. Tente {{alternatives}}, exporte somente o vídeo ou exporte somente o áudio (WAV).",
       "or": " ou "
     },
     "advanced": "Avançado",
@@ -47,8 +47,8 @@
     "wavMeta": "WAV · 44,1 kHz"
   },
   "progress": {
-    "note": "Isso pode levar um tempo. Não feche a aba.",
-    "cancel": "Cancelar",
+    "note": "Mantenha esta aba aberta até terminar.",
+    "cancel": "Cancelar exportação",
     "eta": "{{eta}} restantes",
     "etaSeconds": "{{count}} s",
     "etaMinutes": "{{min}} min {{sec}} s"
