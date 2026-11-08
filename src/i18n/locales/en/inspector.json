@@ -18,7 +18,7 @@
     "style": "Style",
     "noteLabels": "Note labels",
     "keyLabels": "Key names",
-    "hands": "Hands (alpha)"
+    "hands": "Hands (beta)"
   },
   "camera": {
     "distance": "Distance",
@@ -124,7 +124,6 @@
     "reverbHiCut": "High cut (Hz)",
     "reverbLowCut": "Low cut (Hz)",
     "preDelay": "Pre-Delay (ms)",
-    "handsHumanize": "Humanize",
     "handsFlashLight": "Flash light",
     "handsMotionBlur": "Motion blur",
     "handsBlurSamples": "Blur samples (max)"
@@ -427,7 +426,11 @@
     }
   },
   "hands": {
-    "hint": "Experimental: virtual hands play the loaded song on the keyboard. Positions and fingering are estimated from the notes, so expect mistakes. Fast or dense pieces are likely to show missed keys and impossible movements."
+    "hint": "Virtual hands play the loaded song. The first time, about 22 MB of motion data is downloaded. Hands and fingers you set on notes are followed; the rest are guessed, so some movements may look wrong.",
+    "download": "Downloading hand motion… {{pct}}%",
+    "prepare": "Preparing hand motion… {{pct}}%",
+    "working": "Making the hands' motion for this song… {{pct}}%",
+    "error": "Couldn't load the hand motion. Turn Hands off and on to try again."
   },
   "keyframes": {
     "title": "Keyframe at {{time}}",

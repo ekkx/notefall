@@ -16,6 +16,7 @@ import { assertEncodersSupported } from './codec/preflight'
 import type { AudioTrackConfig, VideoCodec } from './codec/types'
 import { createAvRenderProgress } from './progress'
 import { enterSceneExportMode } from './sceneExportMode'
+import { handsSettled } from '../hands/motion'
 
 export { VIDEO_CODECS, isVideoExportSupported, probeVideoCodecs }
 export type { AudioTrackConfig }
@@ -96,6 +97,8 @@ export async function renderSongVideo(
   }
 
   onProgress?.({ phase: 'preparing' })
+  // The hands (when on) must have the current song's motion and their meshes before frame 0.
+  await raceWithAbort(handsSettled(), signal, onAbort)
 
   const restoreScene = enterSceneExportMode(r3f, width, height)
   setExportFps(fps) // nominal frame duration for the hands' motion blur

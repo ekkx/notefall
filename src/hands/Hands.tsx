@@ -1,15 +1,13 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import { EffectComposerContext } from '@react-three/postprocessing'
-import { useContext, useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
+import { useContext, useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { audioEngine } from '../audio/engine'
 import { getResolvedSettings } from '../scene/automatedSettings'
 import { buildSpeedMap } from '../midi/speedMap'
 import { useSettingsSlice, useStore } from '../store'
-import { buildSongHandMotion } from './build'
-import { subscribeTuning, tuningVersion } from './tuning'
 import { createMeshHands } from './meshHand'
-import { poseAt, type HandMotion } from './pose'
+import { retainHandsRuntime, songHandNotes, synthHandMotion, trackHandsWork, type ReadyMotion } from './motion'
 import { getExportFps } from '../scene/exportBridge'
 import {
   BLUR_MIN_PX, BLUR_PX_STEP, BLUR_SHUTTER, HandsBlurPass, PREVIEW_FRAME_SECONDS, blurBridge, blurOffsets, getMotionBlur, handBounds,
@@ -17,12 +15,13 @@ import {
 } from './motionBlur'
 import type { HandPoses } from './types'
 
-// Virtual piano hands (alpha). Poses come from `poseAt(motion, audioEngine.currentSongTime())` — the same clock
+// Virtual piano hands (beta). The motion comes from the hand runtime (motion.ts) and is remade (debounced, in its Worker)
+// when the song or the timeline mapping changes; until the new one is ready the previous one keeps playing (edits), or
+// no hands show (another song). Poses come from `poseAt(motion, audioEngine.currentSongTime())` — the same clock
 // FallingNotes uses, routed through `audio/clock.ts` — so the offline exporter's frame-stepped render draws the same
-// hands as the live preview. The motion itself is rebuilt (debounced) when the song or the timeline mapping changes.
+// hands as the live preview (it waits for `handsSettled()` first).
 
 const HAND_KEYS = [
-  'handsHumanize',
   'handsFlashLight',
   'handsMotionBlur',
   'handsBlurSamples',
@@ -48,8 +47,6 @@ function resetBlurFrame() {
 export function Hands() {
   const s = useSettingsSlice(HAND_KEYS)
   const song = useStore((st) => st.song)
-  // Dev tuning sliders (src/hands/tuning.ts) bump this to rebuild the motion live; stays 0 in production.
-  const tv = useSyncExternalStore(subscribeTuning, tuningVersion)
   const invalidate = useThree((st) => st.invalidate)
   const gl = useThree((st) => st.gl)
   const camera = useThree((st) => st.camera)
@@ -59,11 +56,14 @@ export function Hands() {
     return g
   }, [])
   const meshRef = useRef<ReturnType<typeof createMeshHands> | null>(null)
-  const motionRef = useRef<HandMotion | null>(null)
+  const motionRef = useRef<(ReadyMotion & { song: string }) | null>(null)
+
+  useEffect(() => retainHandsRuntime(), [])
 
   useEffect(() => {
     const mesh = createMeshHands(group)
     meshRef.current = mesh
+    trackHandsWork(mesh.loaded)
     // Hands must never take part in picking (editor clicks / key presses go through them).
     mesh.loaded.then(() => group.traverse((o) => { o.raycast = () => {} })).catch(() => {})
     return () => {
@@ -78,32 +78,45 @@ export function Hands() {
       motionRef.current = null
       return
     }
+    // Edits keep the song's name: the previous motion plays on until the new one is ready. Another song: no hands meanwhile.
+    if (motionRef.current && motionRef.current.song !== song.name) motionRef.current = null
+    const ctl = new AbortController()
     const run = () => {
-      motionRef.current = buildSongHandMotion(
-        song,
-        {
-          speedMap,
-          midiOffsetSec: s.midiOffsetSec,
-          trimStartSec: s.midiTrimStartSec,
-          trimEndSec: s.midiTrimEndSec ?? song.duration,
-          transpose: s.transpose,
-        },
-        { humanize: s.handsHumanize },
-      )
-      invalidate()
+      const notes = songHandNotes(song, {
+        speedMap,
+        midiOffsetSec: s.midiOffsetSec,
+        trimStartSec: s.midiTrimStartSec,
+        trimEndSec: s.midiTrimEndSec ?? song.duration,
+        transpose: s.transpose,
+      })
+      if (!notes.length) {
+        motionRef.current = null
+        invalidate()
+        return
+      }
+      synthHandMotion(notes, ctl.signal)
+        .then((m) => {
+          motionRef.current = { ...m, song: song.name }
+          invalidate()
+        })
+        .catch(() => {}) // cancelled by a newer request, or failed (the status says so)
     }
     const id = window.setTimeout(run, motionRef.current ? REBUILD_DEBOUNCE_MS : 0)
-    return () => window.clearTimeout(id)
-  }, [song, speedMap, s.midiOffsetSec, s.midiTrimStartSec, s.midiTrimEndSec, s.transpose, s.handsHumanize, tv, invalidate])
+    return () => {
+      window.clearTimeout(id)
+      ctl.abort()
+    }
+  }, [song, speedMap, s.midiOffsetSec, s.midiTrimStartSec, s.midiTrimEndSec, s.transpose, invalidate])
 
   useFrame(() => {
     resetBlurFrame()
     const mesh = meshRef.current
     if (!mesh) return
-    const motion = motionRef.current
+    const ready = motionRef.current
     mesh.setLighting(getResolvedSettings().keyboardBrightness, s.handsFlashLight)
-    mesh.setVisible(!!motion)
-    if (!motion || !mesh.ready) return
+    mesh.setVisible(!!ready)
+    if (!ready || !mesh.ready) return
+    const { motion, poseAt } = ready
     const t = audioEngine.currentSongTime()
     const poses = poseAt(motion, t)
     mesh.update(poses, false)

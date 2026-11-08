@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode, useLayoutEffect } from 'react'
+import { useEffect, useRef, useState, type ReactNode, useLayoutEffect, useSyncExternalStore } from 'react'
 import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
 import { useStore, defaultSettings, type Settings } from '../store'
@@ -32,6 +32,7 @@ import { useTakeInProgress } from './shell/takeFocus'
 import { useIdle } from './shell/idle'
 import { useCustomTexture } from '../notes/customTexture'
 import { CAMERA_LIMITS } from '../scene/cameraLimits'
+import { getHandsStatus, subscribeHandsStatus } from '../hands/motion'
 import {
   STAGE_BACKGROUND_ACCEPTED_TYPES,
   useStageBackground,
@@ -1207,6 +1208,21 @@ function TabPanel({ title, active, children }: { title: string; active: boolean;
   )
 }
 
+
+/** What the hands are waiting for (download / preparing / making the motion), or why they are missing. Nothing once ready. */
+function HandsStatusLine() {
+  const { t } = useTranslation('inspector')
+  const st = useSyncExternalStore(subscribeHandsStatus, getHandsStatus)
+  const pct = (f: number) => Math.round(Math.max(0, Math.min(1, f)) * 100)
+  const text =
+    st.state === 'loading' ? t(st.stage === 'download' ? 'hands.download' : 'hands.prepare', { pct: pct(st.fraction) })
+    : st.state === 'working' ? t('hands.working', { pct: pct(st.fraction) })
+    : st.state === 'error' ? t('hands.error')
+    : null
+  if (!text) return null
+  return <p className={clsx('text-caption tabular-nums', st.state === 'error' ? 'text-danger' : 'text-ink-muted')}>{text}</p>
+}
+
 export function Inspector() {
   const lookOpen = useShell((st) => st.lookOpen)
   // a take in progress has the screen to itself
@@ -1485,7 +1501,7 @@ function LookPanel({ leaving }: { leaving: boolean }) {
               </Section>
               <Section title={t('section.hands')} enabledKey="handsEnabled">
                 <p className="text-caption text-ink-faint">{t('hands.hint')}</p>
-                <BoundSliderRow label={t('row.handsHumanize')} settingKey="handsHumanize" min={0} max={1} step={0.01} />
+                <HandsStatusLine />
                 <BoundSliderRow label={t('row.handsFlashLight')} settingKey="handsFlashLight" min={0} max={2} step={0.05} />
                 <BoundSwitchRow label={t('row.handsMotionBlur')} settingKey="handsMotionBlur" />
                 <BoundSliderRow label={t('row.handsBlurSamples')} settingKey="handsBlurSamples" min={2} max={16} step={1} />
