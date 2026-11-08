@@ -427,11 +427,11 @@
     }
   },
   "hands": {
-    "hint": "Virtual hands play the loaded song. The first time, about 22 MB of motion data is downloaded. Hands and fingers you set on notes are followed; the rest are guessed, so some movements may look wrong.",
+    "hint": "The first time, about 22 MB of hand motion data is downloaded. Notes without a hand or finger are assigned automatically.",
     "download": "Downloading hand motion… {{pct}}%",
     "prepare": "Preparing hand motion… {{pct}}%",
-    "working": "Making the hands' motion for this song… {{pct}}%",
-    "error": "Couldn't load the hand motion. Turn Hands off and on to try again."
+    "working": "Generating hand motion… {{pct}}%",
+    "error": "Couldn't load the hand motion. Turn Hands off and on again to reload."
   },
   "keyframes": {
     "title": "Keyframe at {{time}}",
