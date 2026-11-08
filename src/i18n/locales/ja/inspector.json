@@ -124,6 +124,7 @@
     "reverbHiCut": "高域カット（Hz）",
     "reverbLowCut": "低域カット（Hz）",
     "preDelay": "残響までの遅延（ms）",
+    "handsBrightness": "明るさ",
     "handsFlashLight": "フラッシュの照り返し",
     "handsMotionBlur": "モーションブラー",
     "handsBlurSamples": "ブラーのサンプル数（上限）"

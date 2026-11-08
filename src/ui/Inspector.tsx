@@ -1502,6 +1502,7 @@ function LookPanel({ leaving }: { leaving: boolean }) {
               <Section title={t('section.hands')} enabledKey="handsEnabled">
                 <p className="text-caption text-ink-faint">{t('hands.hint')}</p>
                 <HandsStatusLine />
+                <BoundSliderRow label={t('row.handsBrightness')} settingKey="handsBrightness" min={0} max={3} step={0.05} />
                 <BoundSliderRow label={t('row.handsFlashLight')} settingKey="handsFlashLight" min={0} max={2} step={0.05} />
                 <BoundSwitchRow label={t('row.handsMotionBlur')} settingKey="handsMotionBlur" />
                 <BoundSliderRow label={t('row.handsBlurSamples')} settingKey="handsBlurSamples" min={2} max={16} step={1} />

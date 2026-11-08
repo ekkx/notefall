@@ -22,6 +22,7 @@ import type { HandPoses } from './types'
 // hands as the live preview (it waits for `handsSettled()` first).
 
 const HAND_KEYS = [
+  'handsBrightness',
   'handsFlashLight',
   'handsMotionBlur',
   'handsBlurSamples',
@@ -113,7 +114,7 @@ export function Hands() {
     const mesh = meshRef.current
     if (!mesh) return
     const ready = motionRef.current
-    mesh.setLighting(getResolvedSettings().keyboardBrightness, s.handsFlashLight)
+    mesh.setLighting(getResolvedSettings().keyboardBrightness, s.handsBrightness, s.handsFlashLight)
     mesh.setVisible(!!ready)
     if (!ready || !mesh.ready) return
     const { motion, poseAt } = ready

@@ -124,6 +124,7 @@
     "reverbHiCut": "High cut (Hz)",
     "reverbLowCut": "Low cut (Hz)",
     "preDelay": "Pre-Delay (ms)",
+    "handsBrightness": "Brightness",
     "handsFlashLight": "Flash light",
     "handsMotionBlur": "Motion blur",
     "handsBlurSamples": "Blur samples (max)"
