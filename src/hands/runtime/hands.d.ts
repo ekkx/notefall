@@ -31,7 +31,7 @@ export declare class HandsRuntime {
   load(url: string, onProgress?: (stage: string, fraction: number) => void): Promise<void>
   cancelLoad(): void
   synth(notes: HandsNote[], opt?: SynthOptions): Promise<HandsMotion>
-  /** pure in t; a hand waits over the keys before its first note, settles onto them, and rises back after its last (null only for a hand with no notes) */
+  /** pure in t; a hand is off the keys before its first note and comes up in time, and goes down after its last (null only for a hand with no notes) */
   poseAt(motion: HandsMotion, t: number): HandPoses
   dispose(): void
 }
