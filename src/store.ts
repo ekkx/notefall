@@ -733,7 +733,7 @@ export const defaultSettings: Settings = {
   handsEnabled: false,
   handsBrightness: 1.3,
   handsFlashLight: 1,
-  handsMotionBlur: true,
+  handsMotionBlur: false,
   handsBlurSamples: 8,
   keyLabelsEnabled: false,
   keyLabelsMode: 'c',
