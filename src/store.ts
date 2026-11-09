@@ -731,7 +731,7 @@ export const defaultSettings: Settings = {
   noteLabelPosition: 'keyboard',
   noteLabelOffset: 0,
   handsEnabled: false,
-  handsBrightness: 1.3,
+  handsBrightness: 1.2,
   handsFlashLight: 1,
   handsMotionBlur: false,
   handsBlurSamples: 8,
