@@ -5,10 +5,13 @@ import { useStore, type Settings } from '../../store'
 import { BoundColorRow, effectiveSettingOf, useRowMatchesQuery } from '../controls'
 import { Icon } from '../kit'
 
+/** pointer travel (px) before a press on a row becomes a drag */
+const DRAG_PX = 4
+
 type ColorKey = { [K in keyof Settings]: Settings[K] extends string ? K : never }[keyof Settings]
 
 /**
- * Colour rows whose ORDER can be changed: drag a row by the grip in the left margin (or focus the grip and press ↑ / ↓).
+ * Colour rows whose ORDER can be changed: drag a row anywhere but its buttons (the grip in the left margin shows on hover), or focus the grip and press ↑ / ↓.
  * Only the colours move between the slots (a gradient's stop positions stay where they are); the whole move is one
  * undo entry and edits what the rows show (the targeted keyframe, else the default look).
  */
@@ -54,31 +57,39 @@ export function ReorderColorRows({
     return to
   }
 
+  // A press on the row (not on its buttons / fields) or on the grip arms a drag; it starts after DRAG_PX of movement, so a click or the label's
+  // double-click (reset) still work as before.
   const onDown = (i: number) => (e: PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return
-    const rows = Array.from(listRef.current?.children ?? []) as HTMLElement[]
-    const heights = rows.map((r) => r.getBoundingClientRect().height + 12) // + the stack's gap
-    const y0 = e.clientY
-    try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* (no active pointer: synthetic events) */ }
-    setDrag({ from: i, to: i, dy: 0, heights })
-    const el = e.currentTarget
+    const target = e.target as HTMLElement
+    if (!target.closest('[data-grip]') && target.closest('button, input, [role="button"], [role="slider"]')) return
+    const el = e.currentTarget, y0 = e.clientY, id = e.pointerId
     const onMove = (ev: globalThis.PointerEvent) => {
-      const d = dragRef.current
-      if (!d) return
       const dy = ev.clientY - y0
+      let d = dragRef.current
+      if (!d) {
+        if (Math.abs(dy) < DRAG_PX) return
+        // (captured only now: capturing at the press would take the label's double-click away)
+        try { el.setPointerCapture(id) } catch { /* (no active pointer: synthetic events) */ }
+        const rows = Array.from(listRef.current?.children ?? []) as HTMLElement[]
+        d = { from: i, to: i, dy: 0, heights: rows.map((r) => r.getBoundingClientRect().height + 12) } // + the stack's gap
+      }
+      ev.preventDefault()
       setDrag({ ...d, dy, to: targetOf(d.from, dy, d.heights) })
     }
     const onUp = () => {
-      el.removeEventListener('pointermove', onMove)
-      el.removeEventListener('pointerup', onUp)
-      el.removeEventListener('pointercancel', onUp)
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
       const d = dragRef.current
+      if (!d) return
       setDrag(null)
-      if (d) move(d.from, d.to)
+      move(d.from, d.to)
     }
-    el.addEventListener('pointermove', onMove)
-    el.addEventListener('pointerup', onUp)
-    el.addEventListener('pointercancel', onUp)
+    // (on the window: before the drag starts the pointer is not captured and may leave the row)
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
   }
 
   const onKey = (i: number) => (e: KeyboardEvent<HTMLDivElement>) => {
@@ -138,7 +149,8 @@ function Row({
   if (!useRowMatchesQuery(label)) return null
   return (
     <div
-      className={clsx('group relative', dragging ? 'z-10' : 'transition-transform duration-150 ease-[var(--ease-out)]')}
+      onPointerDown={onGripDown}
+      className={clsx('group relative touch-none', dragging ? 'z-10 cursor-grabbing' : 'cursor-grab transition-transform duration-150 ease-[var(--ease-out)]')}
       style={{ translate: shift ? `0 ${shift}px` : undefined }}
     >
       <div
@@ -147,11 +159,10 @@ function Row({
         tabIndex={0}
         aria-label={gripLabel}
         title={gripLabel}
-        onPointerDown={onGripDown}
         onKeyDown={onGripKey}
         className={clsx(
-          'nf-focus absolute -left-4 top-0 grid h-[26px] w-4 touch-none place-items-center rounded-field text-ink-faint outline-none',
-          dragging ? 'cursor-grabbing text-ink' : 'cursor-grab opacity-0 hover:text-ink-muted group-hover:opacity-100 focus-visible:opacity-100',
+          'nf-focus absolute -left-4 top-0 grid h-[26px] w-4 place-items-center rounded-field text-ink-faint outline-none',
+          dragging ? 'text-ink' : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100',
           active && !dragging && 'opacity-0',
         )}
       >
