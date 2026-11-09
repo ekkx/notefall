@@ -7,7 +7,7 @@ import { recorder } from '../../audio/recorder'
 import { midiInput } from '../../audio/midiInput'
 import { toggleRecord } from '../../audio/recordControl'
 import { loadDemoProject, openProject } from '../../projects/actions'
-import { Button, Icon, Menu, MenuItem, MenuTrigger, Popover, usePresence } from '../kit'
+import { Button, Icon, IconButton, Menu, MenuItem, MenuTrigger, Popover, usePresence } from '../kit'
 import { showAlert } from '../confirm'
 import { shortcutLabel } from './platform'
 
@@ -111,9 +111,15 @@ export function StartCard() {
         className={`nf-glass nf-enter-fade ${leaving ? 'nf-leaving' : ''} pointer-events-auto box-border grid w-[520px] max-w-full gap-4 rounded-panel px-7 py-[26px] text-body text-ink`}
       >
         <div className="grid gap-2">
-          <h2 id="nf-start-title" className="text-display">
-            {t('startCard.title')}
-          </h2>
+          {/* Close: the way out for someone with no file or MIDI keyboard at hand (a press outside or Esc does the same) */}
+          <div className="flex items-start justify-between gap-3">
+            <h2 id="nf-start-title" className="text-display">
+              {t('startCard.title')}
+            </h2>
+            <IconButton label={t('close')} shortcut="Esc" size="sm" className="-mr-2 -mt-1" onPress={() => setDismissed(true)}>
+              <Icon.CloseIcon />
+            </IconButton>
+          </div>
           <p className="text-ink-muted">{t('startCard.text')}</p>
         </div>
         <div className="grid gap-2">

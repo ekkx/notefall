@@ -12,6 +12,10 @@ export type HandsMotion = {
   holds: Record<Hand, [number, number][][]>
   /** per input note: the hand / finger that plays it; hand null = dropped (no finger plays it) */
   plan: { hand: (Hand | null)[]; finger: number[] }
+  /** per hand: the frame runs [first, last] with motion */
+  runs: Record<Hand, [number, number][]>
+  /** per hand: its first note's onset and last note's release (s), null without notes */
+  span: Record<Hand, [number, number] | null>
 }
 export type SynthOptions = {
   S?: Partial<Record<Hand, number>>
@@ -27,7 +31,7 @@ export declare class HandsRuntime {
   load(url: string, onProgress?: (stage: string, fraction: number) => void): Promise<void>
   cancelLoad(): void
   synth(notes: HandsNote[], opt?: SynthOptions): Promise<HandsMotion>
-  /** pure in t; null for a hand outside its motion */
+  /** pure in t; a hand comes in from below the keys before its first note and slides away after its last (null only for a hand with no notes) */
   poseAt(motion: HandsMotion, t: number): HandPoses
   dispose(): void
 }

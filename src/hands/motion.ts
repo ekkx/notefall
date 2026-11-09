@@ -83,7 +83,7 @@ function startRuntime(): Promise<HandsRuntime> {
     const rt = await HandsRuntime.create({ worker: workerUrl, wasm: wasmUrl })
     try {
       await rt.load(DB_URL, (stage, f) =>
-        setStatus({ state: 'loading', stage: stage === 'download' ? 'download' : 'prepare', fraction: stage === 'download' ? f : stage === 'decode' ? 0.15 * f : f }),
+        setStatus({ state: 'loading', stage: stage === 'download' ? 'download' : 'prepare', fraction: f }), // (decode and build report one 0..1 between them)
       )
     } catch (e) {
       rt.dispose()

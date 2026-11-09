@@ -23,6 +23,7 @@ import {
 } from './controls'
 import { GradientStops, removeGradientStop } from './look/GradientStops'
 import { PresetSwatch } from './look/PresetSwatch'
+import { ReorderColorRows } from './look/ReorderColorRows'
 import { ImagePicker } from './look/ImagePicker'
 import { useBarColors, useEffectiveLook } from './look/useLookState'
 import { VelocityCurveEditor } from './VelocityCurveEditor'
@@ -329,9 +330,7 @@ function NoteColorControls() {
           />
           <BoundSliderRow label={t('coloring.seed')} settingKey="noteRandomSeed" min={0} max={99} step={1} />
           <BoundCountRow label={t('coloring.paletteSize')} settingKey="noteRandomCount" min={1} max={5} />
-          {RANDOM_COLOR_KEYS.slice(0, count).map((k, i) => (
-            <BoundColorRow key={k} label={t('coloring.paletteColor', { n: i + 1 })} settingKey={k} />
-          ))}
+          <ReorderColorRows keys={RANDOM_COLOR_KEYS.slice(0, count)} label={(i) => t('coloring.paletteColor', { n: i + 1 })} />
         </SubGroup>
       )}
     </>
@@ -996,14 +995,11 @@ function GradientStopRows({
   const { t } = useTranslation('inspector')
   return (
     <>
-      {colorKeys.slice(0, count).map((k, i) => (
-        <BoundColorRow
-          key={k}
-          label={t('coloring.stopColor', { n: i + 1 })}
-          settingKey={k}
-          onRemove={count > 2 ? () => removeGradientStop(colorKeys, posKeys, countKey, i) : undefined}
-        />
-      ))}
+      <ReorderColorRows
+        keys={colorKeys.slice(0, count)}
+        label={(i) => t('coloring.stopColor', { n: i + 1 })}
+        onRemove={count > 2 ? (i) => removeGradientStop(colorKeys, posKeys, countKey, i) : undefined}
+      />
     </>
   )
 }
@@ -1209,18 +1205,12 @@ function TabPanel({ title, active, children }: { title: string; active: boolean;
 }
 
 
-/** What the hands are waiting for (download / preparing / making the motion), or why they are missing. Nothing once ready. */
+/** Why the hands are missing, when their motion could not be loaded (progress shows in the loading island). */
 function HandsStatusLine() {
   const { t } = useTranslation('inspector')
   const st = useSyncExternalStore(subscribeHandsStatus, getHandsStatus)
-  const pct = (f: number) => Math.round(Math.max(0, Math.min(1, f)) * 100)
-  const text =
-    st.state === 'loading' ? t(st.stage === 'download' ? 'hands.download' : 'hands.prepare', { pct: pct(st.fraction) })
-    : st.state === 'working' ? t('hands.working', { pct: pct(st.fraction) })
-    : st.state === 'error' ? t('hands.error')
-    : null
-  if (!text) return null
-  return <p className={clsx('text-caption tabular-nums', st.state === 'error' ? 'text-danger' : 'text-ink-muted')}>{text}</p>
+  if (st.state !== 'error') return null
+  return <p className="text-caption text-danger">{t('hands.error')}</p>
 }
 
 export function Inspector() {

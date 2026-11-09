@@ -365,7 +365,8 @@
     "stopHandle": "Stop {{n}}",
     "leftHand": "Left hand",
     "rightHand": "Right hand",
-    "noHand": "No hand set"
+    "noHand": "No hand set",
+    "moveColor": "Move {{label}} (drag, or ↑ / ↓)"
   },
   "tab": {
     "label": "Settings areas",
@@ -428,9 +429,6 @@
   },
   "hands": {
     "hint": "The first time, about 22 MB of hand motion data is downloaded. Notes without a hand or finger are assigned automatically.",
-    "download": "Downloading hand motion… {{pct}}%",
-    "prepare": "Preparing hand motion… {{pct}}%",
-    "working": "Generating hand motion… {{pct}}%",
     "error": "Couldn't load the hand motion. Turn Hands off and on again to reload."
   },
   "keyframes": {

@@ -36,9 +36,9 @@ notefall makes falling-notes piano videos. The picture is the product: falling n
 Everything floats over a full-window canvas (the 16:9 video is letterboxed in the middle). Positions and heights come from `GEOMETRY` (`EDGE`, `BAR`, `PILL`, `PILL_BOTTOM`, `PANEL`, `GAP`); use it, not literals.
 
 ```
-┌ song island ──────────────┐   loading island    ┌ input island ───────────────┐
+┌ song island ──────────────┐                     ┌ input island ───────────────┐
 │ ◆notefall  File  name ●  ↶ ↷│                     │ MIDI input ▾  ● Record ▾ │ Export │
-└───────────────────────────┘                     └─────────────────────────────┘
+└───────────────────────────┘   loading island    └─────────────────────────────┘
                      canvas (16:9, letterboxed)           ┌ Customize ─┐
                      start card when there is no song      │ tabs  🔍    │
 ┌ Timeline (floating, optional) ───────────────────┐      │ sections…   │
@@ -55,8 +55,8 @@ Everything floats over a full-window canvas (the 16:9 video is letterboxed in th
 | Timeline | left edge, above the pill, up to the right edge (or to Customize when it's open) | Floating, never docked full-width. Starts closed; ⌘B or the pill toggles it. |
 | Selection card | beside the selected notes, never over them, above the timeline / pill, left of Customize | See [Editing notes](#editing-notes). |
 | Toast | centred, just above the pill | One at a time. |
-| Loading island | top-centre | "Loading piano sounds" + progress. The app stays usable. |
-| Start card | centre of the canvas, when there is no song | Open a file, demo songs, record. Goes away on any press outside it or Esc. |
+| Loading island | top-centre, under the top islands | What is being prepared + progress: the piano sounds, the hands' motion (downloading / preparing its data, making a song's motion; one row each when both run). The app stays usable. |
+| Start card | centre of the canvas, when there is no song | Open a file, demo songs, record. Closes with its × (top right), any press outside it or Esc. |
 | Dialogs | centred over `scrim` | Export, confirmations, feedback, shortcut sheet. |
 
 **Behaviour of the chrome**
