@@ -18,7 +18,7 @@
     "style": "Estilo",
     "noteLabels": "Rótulos das notas",
     "keyLabels": "Nomes das teclas",
-    "hands": "Mãos (alfa)"
+    "hands": "Mãos (beta)"
   },
   "camera": {
     "distance": "Distância",
@@ -124,7 +124,7 @@
     "reverbHiCut": "Corte de agudos (Hz)",
     "reverbLowCut": "Corte de graves (Hz)",
     "preDelay": "Pré-atraso (ms)",
-    "handsHumanize": "Humanizar",
+    "handsBrightness": "Brilho",
     "handsFlashLight": "Luz de contato",
     "handsMotionBlur": "Desfoque de movimento",
     "handsBlurSamples": "Amostras de desfoque (máx.)"
@@ -365,7 +365,8 @@
     "stopHandle": "Ponto {{n}}",
     "leftHand": "Mão esquerda",
     "rightHand": "Mão direita",
-    "noHand": "Sem mão definida"
+    "noHand": "Sem mão definida",
+    "moveColor": "Mover {{label}} (arraste, ou ↑ / ↓)"
   },
   "tab": {
     "label": "Áreas de configurações",
@@ -427,7 +428,8 @@
     }
   },
   "hands": {
-    "hint": "Experimental: mãos virtuais tocam a música carregada no teclado. As posições e a digitação são estimadas a partir das notas, então espere erros. Peças rápidas ou densas provavelmente terão teclas perdidas e movimentos impossíveis."
+    "hint": "Na primeira vez, cerca de 22 MB de dados de movimento das mãos são baixados. Notas sem mão ou dedo definidos são atribuídas automaticamente.",
+    "error": "Não foi possível carregar o movimento das mãos. Desative e ative as Mãos de novo para recarregar."
   },
   "keyframes": {
     "title": "Keyframe em {{time}}",

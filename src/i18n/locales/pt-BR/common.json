@@ -32,7 +32,9 @@
     "timeline": "Linha do tempo"
   },
   "loadingIsland": {
-    "title": "Carregando os sons do piano"
+    "title": "Carregando os sons do piano",
+    "handsLoading": "Carregando o movimento das mãos",
+    "handsWorking": "Gerando o movimento das mãos"
   },
   "startCard": {
     "title": "Comece com uma música",
