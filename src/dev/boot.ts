@@ -1,9 +1,7 @@
 // Dev-only bootstrap (imported from main.tsx behind `import.meta.env.DEV`, so it never reaches a production bundle).
-// Ctrl+Alt+D toggles dev tools; the panel itself is a lazily imported lil-gui instance (handsPanel.ts).
+// Ctrl+Alt+D toggles dev tools; the panel itself is a lazily imported lil-gui instance (panel.ts).
 import { audioEngine } from '../audio/engine'
 import { useStore } from '../store'
-import * as tuning from '../hands/tuning'
-import * as build from '../hands/build'
 import { selectionScreenRect } from '../scene/selectionBounds'
 import { devToolsEnabled, setDevTools, subscribeDevMode, devNoAudio } from './mode'
 
@@ -24,7 +22,7 @@ async function sync(): Promise<void> {
   if (on && !panel && !opening) {
     opening = true
     try {
-      const m = await import('./handsPanel')
+      const m = await import('./panel')
       if (devToolsEnabled()) panel = m.openDevPanel()
     } finally {
       opening = false
@@ -36,8 +34,8 @@ async function sync(): Promise<void> {
 }
 
 export function bootDev(): void {
-  // Console handle (same module instances as the app) for poking at the pipeline.
-  ;(window as unknown as Record<string, unknown>).__nfDev = { tuning, build, store: useStore, engine: audioEngine, selectionScreenRect }
+  // Console handle (same module instances as the app).
+  ;(window as unknown as Record<string, unknown>).__nfDev = { store: useStore, engine: audioEngine, selectionScreenRect }
   subscribeDevMode(() => void sync())
   window.addEventListener('keydown', (e) => {
     if (e.code === 'KeyD' && e.ctrlKey && e.altKey && !e.metaKey && !e.shiftKey && !e.repeat) {

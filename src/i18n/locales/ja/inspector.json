@@ -18,7 +18,7 @@
     "style": "スタイル",
     "noteLabels": "ノートのラベル",
     "keyLabels": "音名（鍵盤）",
-    "hands": "手（アルファ版）"
+    "hands": "手（ベータ版）"
   },
   "camera": {
     "distance": "距離",
@@ -124,7 +124,7 @@
     "reverbHiCut": "高域カット（Hz）",
     "reverbLowCut": "低域カット（Hz）",
     "preDelay": "残響までの遅延（ms）",
-    "handsHumanize": "人間らしさ",
+    "handsBrightness": "明るさ",
     "handsFlashLight": "フラッシュの照り返し",
     "handsMotionBlur": "モーションブラー",
     "handsBlurSamples": "ブラーのサンプル数（上限）"
@@ -365,7 +365,8 @@
     "stopHandle": "色{{n}}の位置",
     "leftHand": "左手",
     "rightHand": "右手",
-    "noHand": "手が未設定のノート"
+    "noHand": "手が未設定のノート",
+    "moveColor": "{{label}}を移動（ドラッグ、または ↑ / ↓）"
   },
   "tab": {
     "label": "設定の区分",
@@ -427,7 +428,8 @@
     }
   },
   "hands": {
-    "hint": "試験機能：読み込んだ曲を仮想の手が鍵盤で弾きます。位置や指使いは音符から推定するため、不自然な動きが出ることがあります。速い曲や音の多い曲では、鍵に届かない、ありえない動きになるなどの破綻が起きやすくなります。"
+    "hint": "初回のみ、手の動きのデータ（約 22 MB）をダウンロードします。手と指が未設定のノートは自動で割り当てます。",
+    "error": "手の動きを読み込めませんでした。「手」をオンにし直すと再読み込みします。"
   },
   "keyframes": {
     "title": "{{time}} のキーフレーム",

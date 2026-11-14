@@ -32,7 +32,9 @@
     "timeline": "タイムライン"
   },
   "loadingIsland": {
-    "title": "ピアノの音を読み込み中"
+    "title": "ピアノの音を読み込み中",
+    "handsLoading": "手の動きを読み込み中",
+    "handsWorking": "手の動きを生成中"
   },
   "startCard": {
     "title": "曲を選んで始めましょう",

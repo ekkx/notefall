@@ -46,7 +46,8 @@ notefall is free, with no account and no watermark on exported videos.
 
 - Playback with a sampled grand piano.
 - Timeline: MIDI offset and trim, speed changes, and an audio track that plays along.
-- Virtual hands (alpha) that play the song.
+- Virtual hands (beta) that play the song. Their motion is loaded from a
+  WebAssembly module.
 - Projects saved as `.nfz` files on your own disk.
 
 MIDI files, recordings, projects and audio are processed in the browser and are

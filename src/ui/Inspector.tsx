@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode, useLayoutEffect } from 'react'
+import { useEffect, useRef, useState, type ReactNode, useLayoutEffect, useSyncExternalStore } from 'react'
 import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
 import { useStore, defaultSettings, type Settings } from '../store'
@@ -23,6 +23,7 @@ import {
 } from './controls'
 import { GradientStops, removeGradientStop } from './look/GradientStops'
 import { PresetSwatch } from './look/PresetSwatch'
+import { ReorderColorRows } from './look/ReorderColorRows'
 import { ImagePicker } from './look/ImagePicker'
 import { useBarColors, useEffectiveLook } from './look/useLookState'
 import { VelocityCurveEditor } from './VelocityCurveEditor'
@@ -32,6 +33,7 @@ import { useTakeInProgress } from './shell/takeFocus'
 import { useIdle } from './shell/idle'
 import { useCustomTexture } from '../notes/customTexture'
 import { CAMERA_LIMITS } from '../scene/cameraLimits'
+import { getHandsStatus, subscribeHandsStatus } from '../hands/motion'
 import {
   STAGE_BACKGROUND_ACCEPTED_TYPES,
   useStageBackground,
@@ -328,9 +330,7 @@ function NoteColorControls() {
           />
           <BoundSliderRow label={t('coloring.seed')} settingKey="noteRandomSeed" min={0} max={99} step={1} />
           <BoundCountRow label={t('coloring.paletteSize')} settingKey="noteRandomCount" min={1} max={5} />
-          {RANDOM_COLOR_KEYS.slice(0, count).map((k, i) => (
-            <BoundColorRow key={k} label={t('coloring.paletteColor', { n: i + 1 })} settingKey={k} />
-          ))}
+          <ReorderColorRows keys={RANDOM_COLOR_KEYS.slice(0, count)} label={(i) => t('coloring.paletteColor', { n: i + 1 })} />
         </SubGroup>
       )}
     </>
@@ -995,14 +995,11 @@ function GradientStopRows({
   const { t } = useTranslation('inspector')
   return (
     <>
-      {colorKeys.slice(0, count).map((k, i) => (
-        <BoundColorRow
-          key={k}
-          label={t('coloring.stopColor', { n: i + 1 })}
-          settingKey={k}
-          onRemove={count > 2 ? () => removeGradientStop(colorKeys, posKeys, countKey, i) : undefined}
-        />
-      ))}
+      <ReorderColorRows
+        keys={colorKeys.slice(0, count)}
+        label={(i) => t('coloring.stopColor', { n: i + 1 })}
+        onRemove={count > 2 ? (i) => removeGradientStop(colorKeys, posKeys, countKey, i) : undefined}
+      />
     </>
   )
 }
@@ -1205,6 +1202,15 @@ function TabPanel({ title, active, children }: { title: string; active: boolean;
       {children}
     </div>
   )
+}
+
+
+/** Why the hands are missing, when their motion could not be loaded (progress shows in the loading island). */
+function HandsStatusLine() {
+  const { t } = useTranslation('inspector')
+  const st = useSyncExternalStore(subscribeHandsStatus, getHandsStatus)
+  if (st.state !== 'error') return null
+  return <p className="text-caption text-danger">{t('hands.error')}</p>
 }
 
 export function Inspector() {
@@ -1485,7 +1491,8 @@ function LookPanel({ leaving }: { leaving: boolean }) {
               </Section>
               <Section title={t('section.hands')} enabledKey="handsEnabled">
                 <p className="text-caption text-ink-faint">{t('hands.hint')}</p>
-                <BoundSliderRow label={t('row.handsHumanize')} settingKey="handsHumanize" min={0} max={1} step={0.01} />
+                <HandsStatusLine />
+                <BoundSliderRow label={t('row.handsBrightness')} settingKey="handsBrightness" min={0} max={3} step={0.05} />
                 <BoundSliderRow label={t('row.handsFlashLight')} settingKey="handsFlashLight" min={0} max={2} step={0.05} />
                 <BoundSwitchRow label={t('row.handsMotionBlur')} settingKey="handsMotionBlur" />
                 <BoundSliderRow label={t('row.handsBlurSamples')} settingKey="handsBlurSamples" min={2} max={16} step={1} />
