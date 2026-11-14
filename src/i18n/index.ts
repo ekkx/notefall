@@ -5,7 +5,7 @@
  * canonical UI string (consistent with "code/UI source in English";
  * other locales are translation layers, never a fork of the source).
  *
- * Resources are bundled (the app ships two small locales; no lazy
+ * Resources are bundled (the app ships a few small locales; no lazy
  * namespace loading needed) and split **one JSON file per namespace
  * per language** so independent areas can be translated in parallel
  * without touching a shared file. ALL namespaces are pre-registered
@@ -35,9 +35,19 @@ import jaInspector from './locales/ja/inspector.json'
 import jaTimeline from './locales/ja/timeline.json'
 import jaEditor from './locales/ja/editor.json'
 
+import ptCommon from './locales/pt-BR/common.json'
+import ptToolbar from './locales/pt-BR/toolbar.json'
+import ptScreens from './locales/pt-BR/screens.json'
+import ptDialogs from './locales/pt-BR/dialogs.json'
+import ptInspector from './locales/pt-BR/inspector.json'
+import ptTimeline from './locales/pt-BR/timeline.json'
+import ptEditor from './locales/pt-BR/editor.json'
+
 export const SUPPORTED_LANGUAGES = [
   { code: 'en', label: 'English' },
   { code: 'ja', label: '日本語' },
+  // Brazilian Portuguese; 'pt-BR' collapses to 'pt' (load: 'languageOnly').
+  { code: 'pt', label: 'Português (Brasil)' },
 ] as const
 
 export type LanguageCode = (typeof SUPPORTED_LANGUAGES)[number]['code']
@@ -71,6 +81,15 @@ const resources = {
     timeline: jaTimeline,
     editor: jaEditor,
   },
+  pt: {
+    common: ptCommon,
+    toolbar: ptToolbar,
+    screens: ptScreens,
+    dialogs: ptDialogs,
+    inspector: ptInspector,
+    timeline: ptTimeline,
+    editor: ptEditor,
+  },
 } as const
 
 void i18n
@@ -79,7 +98,7 @@ void i18n
   .init({
     resources,
     fallbackLng: 'en',
-    supportedLngs: ['en', 'ja'],
+    supportedLngs: ['en', 'ja', 'pt'],
     // 'ja-JP' / 'en-US' collapse to the base language.
     load: 'languageOnly',
     nonExplicitSupportedLngs: true,
