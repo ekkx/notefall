@@ -18,7 +18,7 @@
     "reload": "ページを再読み込み",
     "chromePath": "設定 → システム →",
     "chromeAfter": "を有効にして、ブラウザーを再起動してください。",
-    "firefoxPath": "設定 → 一般 → パフォーマンス →",
+    "firefoxPath": "設定 → タブとブラウジング → パフォーマンス →",
     "firefoxAfter": "を有効にしてください。",
     "safariPath": "「開発」メニュー →",
     "safariAfter": "を有効にしてください（表示されている場合）。"
