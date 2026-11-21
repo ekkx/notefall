@@ -20,7 +20,7 @@ App: https://notefall.app/ (desktop browsers with WebGL, window at least 1024 px
 - Frames are rendered one by one, so output does not depend on computer speed.
 
 ## Other
-- Sampled grand piano; timeline with speed changes and an audio track; virtual hands (alpha); projects saved as .nfz files.
+- Sampled grand piano; timeline with speed changes and an audio track; virtual hands (beta); projects saved as .nfz files.
 
 ## Privacy
 MIDI files, recordings, projects and audio never leave the browser. Anonymous usage statistics can be turned off in the app menu.

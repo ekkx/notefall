@@ -672,6 +672,7 @@ export function createMeshHands(parent: THREE.Object3D) {
   // white-key shader does. Standard-material path, so the Bloom on/off colour space is handled by three.
   const lightU = {
     uBright: { value: 1 },
+    uSkinGain: { value: 1 },
     uFlashStrength: { value: 0 },
     uFlashXY: { value: flashLights.xy },
     uFlashI: { value: flashLights.handIntensities },
@@ -691,6 +692,7 @@ export function createMeshHands(parent: THREE.Object3D) {
           varying vec3 vSkinW;
           #define FLASH_N ${MAX_LIGHTS}
           uniform float uBright;
+          uniform float uSkinGain;
           uniform float uFlashStrength;
           uniform vec2 uFlashXY[FLASH_N];
           uniform float uFlashI[FLASH_N];
@@ -699,7 +701,7 @@ export function createMeshHands(parent: THREE.Object3D) {
         .replace('#include <opaque_fragment>', `
           float skinAO = mix(0.62, 1.0, smoothstep(0.02, 0.5, vSkinW.z));
           float grazing = pow(1.0 - clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0), 2.5);
-          outgoingLight = outgoingLight * skinAO + vec3(0.03) * uBright * grazing * (0.4 + 0.6 * skinAO);
+          outgoingLight = (outgoingLight * skinAO + vec3(0.03) * uBright * grazing * (0.4 + 0.6 * skinAO)) * uSkinGain;
           if (uFlashStrength > 0.001) {
             // Flash lights: wrap diffuse + a small specular, Gaussian falloff (same X / Y widths as the key glow, a tight one in
             // height) so only fingers near a lit key pick it up. Flash y is keyboard-local, hands are in world space: + KEYBOARD_Y.
@@ -740,9 +742,11 @@ export function createMeshHands(parent: THREE.Object3D) {
     loaded,
     get ready() { return hands.L.ready && hands.R.ready },
     setVisible(v: boolean) { root.visible = v },
-    /** Per-frame lighting: `brightness` = resolved keyboardBrightness, `flashLight` = handsFlashLight (0 = off). */
-    setLighting(brightness: number, flashLight: number) {
+    /** Per-frame lighting: `brightness` = resolved keyboardBrightness, `skin` = handsBrightness (the scene-lit skin only, not the
+     *  flash lights; perceptual: 2 looks about twice as bright, so the gain is skin^2.2 in linear light), `flashLight` = handsFlashLight (0 = off). */
+    setLighting(brightness: number, skin: number, flashLight: number) {
       lightU.uBright.value = brightness
+      lightU.uSkinGain.value = Math.pow(Math.max(0, skin), 2.2)
       lightU.uFlashStrength.value = flashLights.strength * flashLights.boost * flashLight
       lightU.uFlashFall.value.set(flashLights.falloffX, flashLights.falloffY)
       mats.L.color.setHex(SKIN.L).multiplyScalar(brightness); mats.R.color.setHex(SKIN.R).multiplyScalar(brightness)

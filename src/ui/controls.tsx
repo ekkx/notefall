@@ -45,16 +45,22 @@ import { Disclosure, GEOMETRY, Icon, KnobThumb, Menu, MenuItem, MenuSeparator, P
 export function useEffectiveSetting<K extends keyof Settings>(
   key: K,
 ): Settings[K] {
-  return useStore((s) => {
-    const t = s.editingKeyframeTime
-    if (t !== null && isAnimatableKey(key)) {
-      const kf = s.settings.settingsKeyframes.find(
-        (p) => Math.abs(p.time - t) < 1e-6,
-      )
-      if (kf && key in kf.settings) return kf.settings[key] as Settings[K]
-    }
-    return s.settings[key]
-  })
+  return useStore((s) => effectiveSettingOf(s, key))
+}
+
+/** `useEffectiveSetting` outside React (read once, e.g. when a drag ends). */
+export function effectiveSettingOf<K extends keyof Settings>(
+  s: ReturnType<typeof useStore.getState>,
+  key: K,
+): Settings[K] {
+  const t = s.editingKeyframeTime
+  if (t !== null && isAnimatableKey(key)) {
+    const kf = s.settings.settingsKeyframes.find(
+      (p) => Math.abs(p.time - t) < 1e-6,
+    )
+    if (kf && key in kf.settings) return kf.settings[key] as Settings[K]
+  }
+  return s.settings[key]
 }
 
 /**

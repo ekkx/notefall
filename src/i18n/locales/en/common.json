@@ -32,7 +32,9 @@
     "timeline": "Timeline"
   },
   "loadingIsland": {
-    "title": "Loading piano sounds"
+    "title": "Loading piano sounds",
+    "handsLoading": "Loading hand motion",
+    "handsWorking": "Generating hand motion"
   },
   "startCard": {
     "title": "Start with a song",

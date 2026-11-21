@@ -18,7 +18,7 @@
     "reload": "Reload page",
     "chromePath": "Settings → System → enable",
     "chromeAfter": ", then restart the browser.",
-    "firefoxPath": "Settings → General → Performance → enable",
+    "firefoxPath": "Settings → Tabs and browsing → Performance → enable",
     "firefoxAfter": ".",
     "safariPath": "Develop menu → enable",
     "safariAfter": " (if shown)."

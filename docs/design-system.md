@@ -36,9 +36,9 @@ notefall makes falling-notes piano videos. The picture is the product: falling n
 Everything floats over a full-window canvas (the 16:9 video is letterboxed in the middle). Positions and heights come from `GEOMETRY` (`EDGE`, `BAR`, `PILL`, `PILL_BOTTOM`, `PANEL`, `GAP`); use it, not literals.
 
 ```
-┌ song island ──────────────┐   loading island    ┌ input island ───────────────┐
+┌ song island ──────────────┐                     ┌ input island ───────────────┐
 │ ◆notefall  File  name ●  ↶ ↷│                     │ MIDI input ▾  ● Record ▾ │ Export │
-└───────────────────────────┘                     └─────────────────────────────┘
+└───────────────────────────┘   loading island    └─────────────────────────────┘
                      canvas (16:9, letterboxed)           ┌ Customize ─┐
                      start card when there is no song      │ tabs  🔍    │
 ┌ Timeline (floating, optional) ───────────────────┐      │ sections…   │
@@ -55,8 +55,8 @@ Everything floats over a full-window canvas (the 16:9 video is letterboxed in th
 | Timeline | left edge, above the pill, up to the right edge (or to Customize when it's open) | Floating, never docked full-width. Starts closed; ⌘B or the pill toggles it. |
 | Selection card | beside the selected notes, never over them, above the timeline / pill, left of Customize | See [Editing notes](#editing-notes). |
 | Toast | centred, just above the pill | One at a time. |
-| Loading island | top-centre | "Loading piano sounds" + progress. The app stays usable. |
-| Start card | centre of the canvas, when there is no song | Open a file, demo songs, record. Goes away on any press outside it or Esc. |
+| Loading island | top-centre, under the top islands | What is being prepared + progress: the piano sounds, the hands' motion (downloading / preparing its data, making a song's motion; one row each when both run). The app stays usable. |
+| Start card | centre of the canvas, when there is no song | Open a file, demo songs, record. Closes with its × (top right), any press outside it or Esc. |
 | Dialogs | centred over `scrim` | Export, confirmations, feedback, shortcut sheet. |
 | Hand video setup | over the scene, the rest of the chrome steps aside | A temporary mode, never a separate screen: the 3D view stays visible behind it (finished look to confirm, see-through to fix by hand). One strong-glass bar at the top holds everything: what happened or what to do (one short line, no caption under it), the step's tools (the video's transparency slider in both steps, the octave stepper and Fix by hand in the confirm step, Back to automatic in the by-hand step) and OK / Cancel. When the keys can't be found the bar says so and has one button (Remove video for a new video, Close on re-entry); there is no by-hand placement for that. Four white pins appear over the video only in the by-hand step. A third step, "Adjust visible area", shows a dashed frame over the keys with three drag handles (left, right, front), a key-name tag while a side is dragged, an edge-softness slider, Reset area and Done; the part outside the frame stays visible but dimmed while editing. No side or bottom panels. Esc cancels, Enter = OK. Entered after adding a video and from Customize / the timeline lane (the visible-area step from the same two places), never by hovering the canvas. |
 

@@ -353,11 +353,13 @@ export function ExternalIcon(props: IconProps) {
   )
 }
 
-/** Turn the hand video a quarter turn clockwise. */
-export function RotateIcon(props: IconProps) {
+/** Drag handle of a reorderable row: two columns of three dots (filled: dots read better than strokes at this size). */
+export function GripIcon(props: IconProps) {
   return (
-    <svg {...base} {...props}>
-      <path d='M20 11a8 8 0 1 0-2.3 5.7' /><path d='M20 4v7h-7' />
+    <svg {...base} {...props} fill='currentColor' stroke='none'>
+      <circle cx='9' cy='6' r='1.6' /><circle cx='15' cy='6' r='1.6' />
+      <circle cx='9' cy='12' r='1.6' /><circle cx='15' cy='12' r='1.6' />
+      <circle cx='9' cy='18' r='1.6' /><circle cx='15' cy='18' r='1.6' />
     </svg>
   )
 }

@@ -18,6 +18,7 @@ import { createAvRenderProgress } from './progress'
 import { enterSceneExportMode } from './sceneExportMode'
 import { useHandVideo } from '../video/handVideo'
 import { assertHandVideoFrame, beginHandVideoExport, endHandVideoExport, prepareHandVideoFrame } from '../video/exportFrames'
+import { handsSettled } from '../hands/motion'
 
 export { VIDEO_CODECS, isVideoExportSupported, probeVideoCodecs }
 export type { AudioTrackConfig }
@@ -98,6 +99,8 @@ export async function renderSongVideo(
   }
 
   onProgress?.({ phase: 'preparing' })
+  // The hands (when on) must have the current song's motion and their meshes before frame 0.
+  await raceWithAbort(handsSettled(), signal, onAbort)
 
   // The hand video is decoded frame-exactly for the render (exportFrames.ts).
   // Its decoder is opened and the first frame decoded BEFORE the scene is

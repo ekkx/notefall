@@ -107,11 +107,9 @@ export function createMotionBlur(renderer: THREE.WebGLRenderer) {
   const size = new THREE.Vector2()
   const mk = (depth: boolean, samples = 0) => {
     const rt = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples, depthBuffer: true })
-    // Linear working space. Flagged as an XR-style target on purpose: three then still tone-maps `toneMapped` materials
-    // (ACES, as they get on the canvas when Bloom is off) while writing linear; with the composer renderer.toneMapping is
-    // None anyway. The composite converts to the destination's colour space.
+    // Colour space and the XR-target flag (whether three tone-maps into it) are set per render for the destination (see `render`).
+    // The composite converts to the destination's colour space.
     rt.texture.colorSpace = THREE.LinearSRGBColorSpace
-    ;(rt as unknown as { isXRRenderTarget: boolean }).isXRRenderTarget = true
     if (depth) {
       rt.depthTexture = new THREE.DepthTexture(1, 1)
       rt.depthTexture.minFilter = rt.depthTexture.magFilter = THREE.NearestFilter
@@ -166,7 +164,14 @@ export function createMotionBlur(renderer: THREE.WebGLRenderer) {
       // layers (glows, particles, labels; they check `isLinearTarget`) blend as in the plain render and the path switch is
       // invisible. Composer destination (Bloom on): linear, as the composer's own buffer.
       const encoded = dest === null
-      for (const rt of [base, hand]) { (rt as unknown as { nfEncoded: boolean }).nfEncoded = encoded; rt.texture.colorSpace = encoded ? THREE.SRGBColorSpace : THREE.LinearSRGBColorSpace }
+      // Tone mapping as in the plain render of that destination: the canvas tone-maps `toneMapped` materials (so the targets pose as
+      // XR targets, which three tone-maps), the composer's own scene render into its buffer does not (a plain target). Flagging them
+      // for the composer too tone-mapped the blurred hands twice, so they went darker whenever the blur kicked in with Bloom on.
+      for (const rt of [base, hand]) {
+        ;(rt as unknown as { nfEncoded: boolean; isXRRenderTarget: boolean }).nfEncoded = encoded
+        ;(rt as unknown as { isXRRenderTarget: boolean }).isXRRenderTarget = encoded
+        rt.texture.colorSpace = encoded ? THREE.SRGBColorSpace : THREE.LinearSRGBColorSpace
+      }
       outMat.uniforms.uEnc.value = encoded ? 1 : 0
       const old = renderer.getRenderTarget()
       const oldAuto = renderer.autoClear
