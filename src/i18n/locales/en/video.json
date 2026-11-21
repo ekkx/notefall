@@ -5,7 +5,8 @@
     "dropHint": "MP4, MOV or WebM, filmed from above the keyboard",
     "remove": "Remove",
     "lineUp": "Line up again",
-    "range": "Adjust visible area"
+    "range": "Adjust visible area",
+    "unplayable": "This browser can’t play this video."
   },
   "lane": {
     "title": "Hand video",

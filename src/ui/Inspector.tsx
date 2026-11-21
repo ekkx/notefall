@@ -806,7 +806,7 @@ function HandVideoControls() {
   return (
     <>
       <p className="text-caption text-ink-faint">{t('handVideo.subtitle')}</p>
-      <SearchableBlock label={`${t('section.handVideo')} ${tv('picker.choose')} ${tv('picker.lineUp')} ${tv('picker.range')}`}>
+      <SearchableBlock label={`${t('section.handVideo')} ${tv('picker.choose')} ${tv('picker.lineUp')} ${tv('picker.range')} ${tv('picker.unplayable')}`}>
         <VideoPicker
           label={t('section.handVideo')}
           onPick={() => void pickAndImportHandVideo().then(report)}

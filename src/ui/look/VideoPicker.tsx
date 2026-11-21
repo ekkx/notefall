@@ -28,6 +28,7 @@ export function VideoPicker({
   const { t } = useTranslation('video')
   const element = useHandVideo((s) => s.element)
   const fileName = useHandVideo((s) => s.fileName)
+  const kept = useHandVideo((s) => s.blob !== null)
   const loading = useHandVideo((s) => s.loading)
   const [dragOver, setDragOver] = useState(false)
 
@@ -55,6 +56,23 @@ export function VideoPicker({
       e.stopPropagation()
       onDropFile(file)
     },
+  }
+
+  // A project's video this browser can't decode: kept so Save still writes it, so it must be removable.
+  if (!element && kept && fileName) {
+    return (
+      <div className="grid min-w-0 gap-1" {...dropProps}>
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="min-w-0 flex-1 truncate text-caption text-ink-muted" title={fileName}>
+            {fileName}
+          </span>
+          <Button variant="quiet" size="sm" onPress={onClear} className="flex-none">
+            {t('picker.remove')}
+          </Button>
+        </div>
+        <p className="text-caption text-ink-faint">{t('picker.unplayable')}</p>
+      </div>
+    )
   }
 
   if (!element || !fileName) {

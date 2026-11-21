@@ -5,7 +5,8 @@
     "dropHint": "MP4・MOV・WebM（鍵盤を頭上から撮ったもの）",
     "remove": "取り消す",
     "lineUp": "位置調整をやり直す",
-    "range": "表示範囲を調整"
+    "range": "表示範囲を調整",
+    "unplayable": "このブラウザでは再生できません"
   },
   "lane": {
     "title": "手元動画",
