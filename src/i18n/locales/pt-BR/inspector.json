@@ -18,7 +18,8 @@
     "style": "Estilo",
     "noteLabels": "Rótulos das notas",
     "keyLabels": "Nomes das teclas",
-    "hands": "Mãos (beta)"
+    "hands": "Mãos (beta)",
+    "handVideo": "Vídeo das mãos"
   },
   "camera": {
     "distance": "Distância",
@@ -458,5 +459,15 @@
     "dropHint": "ou solte uma imagem aqui",
     "replace": "Substituir",
     "remove": "Remover"
+  },
+  "handVideo": {
+    "contrast": "Contraste",
+    "saturation": "Saturação",
+    "fade": "Esmaecer em direção aos braços",
+    "fadeStart": "Início do esmaecimento",
+    "fadeLength": "Duração do esmaecimento",
+    "subtitle": "Filmagem das suas próprias mãos tocando. As teclas nela são encontradas e alinhadas automaticamente.",
+    "fadeDetail": "Posição do esmaecimento",
+    "colour": "Cor"
   }
 }

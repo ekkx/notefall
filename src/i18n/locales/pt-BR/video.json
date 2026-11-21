@@ -1,0 +1,57 @@
+{
+  "picker": {
+    "choose": "Adicionar vídeo das mãos",
+    "loading": "Lendo o vídeo…",
+    "dropHint": "MP4, MOV ou WebM, filmado de cima do teclado",
+    "remove": "Remover",
+    "lineUp": "Alinhar de novo",
+    "range": "Ajustar área visível"
+  },
+  "lane": {
+    "title": "Vídeo das mãos",
+    "removeVideo": "Remover vídeo das mãos",
+    "trimHead": "Cortar o início do vídeo das mãos",
+    "trimTail": "Cortar o fim do vídeo das mãos",
+    "lineUp": "Alinhar de novo",
+    "range": "Ajustar área visível"
+  },
+  "error": {
+    "loadTitle": "Não foi possível adicionar o vídeo das mãos",
+    "loadMessage": "Não foi possível ler “{{name}}”: {{detail}}",
+    "noVideoTrack": "“{{name}}” não tem imagem.",
+    "cannotPlay": "Este navegador não consegue reproduzir “{{name}}”. Converta o arquivo para MP4 H.264 e adicione-o novamente."
+  },
+  "setup": {
+    "label": "Alinhar o vídeo das mãos",
+    "finding": "Procurando as teclas no vídeo…",
+    "cancel": "Cancelar",
+    "foundTitle": "Teclas alinhadas",
+    "octaveDown": "Uma oitava para a esquerda",
+    "octaveUp": "Uma oitava para a direita",
+    "fix": "Corrigir manualmente",
+    "ok": "OK",
+    "failedTitle": "Não foi possível encontrar as teclas no vídeo das mãos",
+    "failedRemove": "Remover vídeo",
+    "failedClose": "Fechar",
+    "fixTitle": "Arraste cada ponto ao mesmo canto de tecla",
+    "backToAutomatic": "Voltar à posição detectada",
+    "transparency": "Transparência do vídeo das mãos",
+    "done": "Concluir",
+    "rangeTitle": "Área visível do vídeo das mãos",
+    "softness": "Suavidade da borda",
+    "rangeReset": "Redefinir área",
+    "rangeLeft": "Borda esquerda da área visível",
+    "rangeRight": "Borda direita da área visível",
+    "rangeFront": "Borda frontal da área visível"
+  },
+  "track": {
+    "checking": "Detectando movimento da câmera…",
+    "still": "Nenhum movimento perceptível da câmera.",
+    "moved": "Detectamos um leve movimento da câmera e ajustamos o vídeo para acompanhá-lo. {{when}}",
+    "movedBig": "Detectamos movimento da câmera e ajustamos o vídeo para acompanhá-lo. {{when}}",
+    "drifted": "Detectamos um leve movimento da câmera e ajustamos o vídeo para acompanhá-lo.",
+    "at": "(em {{list}})",
+    "times": "({{count}} vezes)",
+    "unsure": "Não foi possível detectar o movimento da câmera neste vídeo das mãos. Ele fica onde foi colocado."
+  }
+}

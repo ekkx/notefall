@@ -44,6 +44,7 @@ import ptDialogs from './locales/pt-BR/dialogs.json'
 import ptInspector from './locales/pt-BR/inspector.json'
 import ptTimeline from './locales/pt-BR/timeline.json'
 import ptEditor from './locales/pt-BR/editor.json'
+import ptVideo from './locales/pt-BR/video.json'
 
 export const SUPPORTED_LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -94,6 +95,7 @@ const resources = {
     inspector: ptInspector,
     timeline: ptTimeline,
     editor: ptEditor,
+    video: ptVideo,
   },
 } as const
 
