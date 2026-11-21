@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { createPortal } from 'react-dom'
 import { Slider, SliderThumb, SliderTrack } from 'react-aria-components'
+import { useUNSAFE_PortalContext } from 'react-aria'
 import { useStore } from '../store'
 import { audioEngine } from '../audio/engine'
 import { useUserAudio, type UserAudioPeaks } from '../audio/userAudio'
@@ -424,6 +426,7 @@ function LaneContextMenu({
   onClose: () => void
 }) {
   const { t } = useTranslation('timeline')
+  const { getContainer } = useUNSAFE_PortalContext()
   const ref = useRef<HTMLDivElement | null>(null)
   // Clamp the menu's actual position to the viewport so right-clicks
   // near the edges still reveal the full panel. Measured after mount
@@ -510,7 +513,9 @@ function LaneContextMenu({
     endEdit()
   }
 
-  return (
+  // Portalled out of the glass timeline panel: backdrop-filter makes the panel the containing block of
+  // `fixed` children, which put this menu a panel-height below the click, off screen.
+  return createPortal(
     <div
       ref={ref}
       role="menu"
@@ -597,7 +602,8 @@ function LaneContextMenu({
           <Icon.CloseIcon className="h-4 w-4" /> {t('context.removeAudio')}
         </button>
       )}
-    </div>
+    </div>,
+    getContainer?.() ?? document.body,
   )
 }
 
