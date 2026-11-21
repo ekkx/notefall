@@ -1598,10 +1598,27 @@ function SegmentedTabs({ tab, onChange }: { tab: InspectorTab; onChange: (t: Ins
   const { t } = useTranslation('inspector')
   const listRef = useRef<HTMLDivElement>(null)
   const [pill, setPill] = useState<{ x: number; w: number } | null>(null)
+  // The tabs share the row (flex-auto), so their widths follow the label font and the panel width:
+  // measure again whenever either changes (the web font arriving after the first paint, a locale
+  // switch, a scrollbar), not only when the selection does. offset* ignore the panel's enter transform.
   useLayoutEffect(() => {
-    const el = listRef.current?.querySelector<HTMLElement>(`[data-tab="${tab}"]`)
-    if (el) setPill({ x: el.offsetLeft, w: el.offsetWidth })
-  }, [tab])
+    const list = listRef.current
+    if (!list) return
+    const measure = () => {
+      const el = list.querySelector<HTMLElement>(`[data-tab="${tab}"]`)
+      if (el) setPill((p) => (p && p.x === el.offsetLeft && p.w === el.offsetWidth ? p : { x: el.offsetLeft, w: el.offsetWidth }))
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(list)
+    list.querySelectorAll('[data-tab]').forEach((b) => ro.observe(b))
+    void document.fonts?.ready.then(measure)
+    document.fonts?.addEventListener?.('loadingdone', measure)
+    return () => {
+      ro.disconnect()
+      document.fonts?.removeEventListener?.('loadingdone', measure)
+    }
+  }, [tab, t])
   const onKeyDown = (e: React.KeyboardEvent) => {
     const i = INSPECTOR_TABS.indexOf(tab)
     const next =
