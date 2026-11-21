@@ -1,0 +1,57 @@
+{
+  "picker": {
+    "choose": "手元動画を追加",
+    "loading": "動画を読み込んでいます…",
+    "dropHint": "MP4・MOV・WebM（鍵盤を頭上から撮ったもの）",
+    "remove": "取り消す",
+    "lineUp": "位置調整をやり直す",
+    "range": "表示範囲を調整"
+  },
+  "lane": {
+    "title": "手元動画",
+    "removeVideo": "手元動画を取り消す",
+    "trimHead": "手元動画の先頭をカット",
+    "trimTail": "手元動画の末尾をカット",
+    "lineUp": "位置調整をやり直す",
+    "range": "表示範囲を調整"
+  },
+  "error": {
+    "loadTitle": "手元動画を追加できませんでした",
+    "loadMessage": "「{{name}}」を読み込めませんでした：{{detail}}",
+    "noVideoTrack": "「{{name}}」には映像が入っていません。",
+    "cannotPlay": "このブラウザでは「{{name}}」を再生できません。H.264 の MP4 に変換してから、もう一度追加してください。"
+  },
+  "setup": {
+    "label": "手元動画の位置調整",
+    "finding": "動画の中の鍵盤を探しています…",
+    "cancel": "取り消す",
+    "foundTitle": "手元動画から鍵盤を検出して位置を合わせました",
+    "octaveDown": "1 オクターブ左に移動",
+    "octaveUp": "1 オクターブ右に移動",
+    "fix": "手動でズレを修正する",
+    "ok": "OK",
+    "failedTitle": "手元動画から鍵盤を検出できませんでした",
+    "failedRemove": "取り消す",
+    "failedClose": "閉じる",
+    "fixTitle": "白い点を、背後の鍵盤と同じ位置の角へ移動してください",
+    "backToAutomatic": "自動検出に戻す",
+    "transparency": "手元動画の透過度",
+    "done": "完了",
+    "rangeTitle": "手元動画の表示範囲",
+    "softness": "境界のぼかし",
+    "rangeReset": "範囲をリセット",
+    "rangeLeft": "表示範囲の左端",
+    "rangeRight": "表示範囲の右端",
+    "rangeFront": "表示範囲の手前"
+  },
+  "track": {
+    "checking": "カメラの動きを検知しています…",
+    "still": "カメラには目立った動きはありませんでした。",
+    "moved": "わずかなカメラの動きを検知して、追従するよう調整しました。{{when}}",
+    "movedBig": "カメラの動きを検知して、追従するよう調整しました。{{when}}",
+    "drifted": "わずかなカメラの動きを検知して、追従するよう調整しました。",
+    "at": "（{{list}}）",
+    "times": "（{{count}} 回）",
+    "unsure": "この手元動画からカメラの動きを検知できませんでした。初期設定の位置のまま、調整していません。"
+  }
+}

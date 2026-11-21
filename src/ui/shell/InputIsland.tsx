@@ -8,7 +8,7 @@ import type { useRecorder } from '../../audio/useRecorder'
 import { Button, Divider, Icon, Island, Menu, MenuItem, Popover } from '../kit'
 import { fmtElapsed, TakesPopover } from './TakesPopover'
 import { useChromeHidden } from './idle'
-import { useTakeInProgress } from './takeFocus'
+import { useHandVideoSetupOpen, useTakeInProgress } from './takeFocus'
 
 type TakesProps = Omit<Parameters<typeof TakesPopover>[0], 'rec' | 'countInLocked'>
 
@@ -41,7 +41,8 @@ export function InputIsland({
   // Fades with the transport pill while a song plays and the pointer is idle; never during a take.
   const idleHidden = useChromeHidden()
   const takeInProgress = useTakeInProgress()
-  const chromeHidden = idleHidden && !takeInProgress
+  const setupOpen = useHandVideoSetupOpen()
+  const chromeHidden = (idleHidden && !takeInProgress) || setupOpen
   const islandClass = `fixed right-4 top-4 z-30 transition-[opacity,visibility] duration-200 ${chromeHidden ? 'invisible opacity-0 [transition-delay:0s,200ms]' : 'visible opacity-100'}`
 
   // Esc cancels the count-in (the same as pressing Cancel).

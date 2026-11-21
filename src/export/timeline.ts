@@ -2,6 +2,8 @@ import type { ParsedSong } from '../midi/types'
 import { buildSpeedMap, midiToTimeline, type SpeedMap } from '../midi/speedMap'
 import type { Settings } from '../store'
 import type { UserAudioTrack } from './synth/types'
+import { useHandVideo } from '../video/handVideo'
+import { handVideoEndOnTimeline } from '../video/time'
 
 // Same SONG_TAIL_SECONDS as the engine — the visual layer's reverb wash
 // + landing flashes need this window to play out, and offline audio
@@ -51,7 +53,11 @@ export function computeExportTimeline(
     ? Math.min(userAudio.buffer.duration, userAudio.trimEndSec ?? userAudio.buffer.duration)
     : 0
   const audioEnd = userAudio ? userAudio.offsetSec + audioTrimEnd : 0
-  const songEnd = Math.max(midiTrimEndTimeline + midiOffset, audioEnd)
+  // The hand video is a third clip: the window covers it too (and is just its length when there is no song at all).
+  const video = useHandVideo.getState()
+  const videoEnd = handVideoEndOnTimeline(settings, video.duration, video.element !== null)
+  const hasSound = song.duration > 0 || userAudio !== null
+  const songEnd = Math.max(hasSound ? midiTrimEndTimeline + midiOffset : 0, audioEnd, videoEnd)
   return {
     speedMap,
     midiOffset,
@@ -59,6 +65,6 @@ export function computeExportTimeline(
     midiTrimEnd,
     audioTrimStart,
     audioTrimEnd,
-    totalDuration: songEnd + TAIL_SECONDS,
+    totalDuration: songEnd + (hasSound ? TAIL_SECONDS : 0),
   }
 }

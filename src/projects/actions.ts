@@ -6,6 +6,10 @@ import { applyNoteHands, collectNoteHands } from '../midi/noteHands'
 import { useCustomTexture } from '../notes/customTexture'
 import { useStageBackground } from '../scene/stageBackground'
 import { AUDIO_EXTENSIONS, isAudioName, useUserAudio } from '../audio/userAudio'
+import { HandVideoError, HandVideoLoadSuperseded, VIDEO_EXTENSIONS, hasVideoTrack, isVideoName, useHandVideo } from '../video/handVideo'
+import { autoPlaceHandVideo } from '../video/autoplace'
+import { captureHandVideoBaseline, openHandVideoSetup } from '../video/setup'
+import { validKeys } from '../video/geometry'
 import { useStore } from '../store'
 import { track } from '../usage'
 import type { SongSource } from '../usage/events'
@@ -82,12 +86,14 @@ function suggestedFilename(): string {
   return ensureExtension('Untitled')
 }
 
-function buildProjectFromState(name: string): Project {
+async function buildProjectFromState(name: string): Promise<Project> {
   const s = useStore.getState()
   const tex = useCustomTexture.getState()
   const background = useStageBackground.getState()
   const audio = useUserAudio.getState()
+  const video = useHandVideo.getState()
   const now = Date.now()
+  const videoBytes = video.blob ? new Uint8Array(await video.blob.arrayBuffer()) : null
   return {
     // User-edited project name takes precedence over the on-disk
     // filename so a rename without subsequent Save As still persists
@@ -126,6 +132,10 @@ function buildProjectFromState(name: string): Project {
             mime: audio.fileMime,
             fileName: audio.fileName,
           }
+        : null,
+    handVideo:
+      videoBytes && video.fileName && video.mime
+        ? { bytes: videoBytes, mime: video.mime, fileName: video.fileName }
         : null,
   }
 }
@@ -268,12 +278,36 @@ async function applyOpenedProject(
   // is async (non-trivial for MP3s); we fire-and-forget so the rest of
   // the project loads immediately. The Layout-level effect that syncs
   // the AudioBuffer into the engine picks it up once decoding finishes.
+  // Every opened project, a bundled demo included, is a different take: the hand video on screen goes with the old one.
+  useHandVideo.getState().clear()
   if (project.userAudio) {
     void useUserAudio
       .getState()
       .setFromBytes(project.userAudio.bytes, project.userAudio.mime, project.userAudio.fileName)
   } else {
     useUserAudio.getState().clearFromLoad()
+  }
+  if (project.handVideo) {
+    const { bytes, mime, fileName } = project.handVideo
+    void useHandVideo
+      .getState()
+      .load(new Blob([bytes as Uint8Array<ArrayBuffer>], { type: mime }), fileName, mime)
+      .then(() => {
+        // A project saved before the keyboard detector has no usable placement: find it again.
+        if (validKeys(useStore.getState().settings.handVideoKeys).length === 0) void autoPlaceHandVideo({ keepDirty: true })
+      })
+      .catch((e) => {
+        // Another project was opened meanwhile: this video is no longer wanted.
+        if (e instanceof HandVideoLoadSuperseded) return
+        // Undecodable here (e.g. HEVC): keep the file so Save still writes it, and say so.
+        useHandVideo.getState().keepUndecodable(new Blob([bytes as Uint8Array<ArrayBuffer>], { type: mime }), fileName, mime)
+        track('error_surfaced', { context: 'hand_video' })
+        void showAlert({
+          title: i18n.t('video:error.loadTitle'),
+          message: describeHandVideoError(e, fileName),
+          tone: 'error',
+        })
+      })
   }
 
   // Move-to-top in the recents list. No-op on browsers without FSA
@@ -306,12 +340,12 @@ export async function openProject(): Promise<ActionResult> {
   }
   if (!opened) return { kind: 'cancelled' }
 
-  // Audio is added to the current song as its accompaniment rather than
-  // replacing the session, so it skips the discard prompt. That prompt
-  // therefore runs after the pick (we only know the type then).
-  if (isAudioName(opened.ref.name)) {
-    return importUserAudio(new File([opened.buf], opened.ref.name))
-  }
+  // Audio and video are added to the current song (accompaniment / hand
+  // video) rather than replacing the session, so they skip the discard
+  // prompt. That prompt therefore runs after the pick (we only know the
+  // type then).
+  if (await isHandVideoFile(opened.file)) return importHandVideo(opened.file)
+  if (isAudioName(opened.ref.name)) return importUserAudio(opened.file)
 
   const proceed = await confirmDiscardIfDirty(
     i18n.t('dialogs:actions.openReplace'),
@@ -319,10 +353,16 @@ export async function openProject(): Promise<ActionResult> {
   )
   if (!proceed) return { kind: 'cancelled' }
 
-  if (isMidiName(opened.ref.name)) {
-    return applyOpenedMidi(opened.buf, opened.ref.name, 'midi_file')
+  let buf: ArrayBuffer
+  try {
+    buf = await opened.file.arrayBuffer()
+  } catch (e) {
+    return { kind: 'error', message: describeError(e) }
   }
-  return applyOpenedProject(opened.buf, opened.ref, 'project')
+  if (isMidiName(opened.ref.name)) {
+    return applyOpenedMidi(buf, opened.ref.name, 'midi_file')
+  }
+  return applyOpenedProject(buf, opened.ref, 'project')
 }
 
 /**
@@ -428,7 +468,7 @@ export async function loadDemoProject(label: string, url: string): Promise<Actio
 export async function saveProject(): Promise<ActionResult> {
   const s = useStore.getState()
   if (s.currentFile?.handle) {
-    const project = buildProjectFromState(s.currentFile.name)
+    const project = await buildProjectFromState(s.currentFile.name)
     const blob = pack(project)
     const ok = await saveTo(s.currentFile.handle, blob)
     if (ok) {
@@ -449,7 +489,7 @@ export async function saveProject(): Promise<ActionResult> {
  */
 export async function saveProjectAs(): Promise<ActionResult> {
   const suggested = suggestedFilename()
-  const project = buildProjectFromState(suggested)
+  const project = await buildProjectFromState(suggested)
   const blob = pack(project)
   let ref: Awaited<ReturnType<typeof showSaveAs>>
   try {
@@ -497,6 +537,7 @@ export async function newProject(): Promise<ActionResult> {
   // Same for accompaniment audio — a fresh project starts with no
   // user audio attached.
   useUserAudio.getState().clearFromLoad()
+  useHandVideo.getState().clear()
   track('project_new')
   return { kind: 'ok' }
 }
@@ -563,5 +604,84 @@ export async function importUserAudio(file: File): Promise<ActionResult> {
     }
   }
   track('custom_audio_imported')
+  return { kind: 'ok' }
+}
+
+// ───────── Hand video ─────────
+
+/** A file to treat as a hand video: a video extension, and for `.webm` (also audio) a video track. */
+export async function isHandVideoFile(file: File): Promise<boolean> {
+  if (!isVideoName(file.name)) return false
+  if (!/\.webm$/i.test(file.name)) return true
+  return hasVideoTrack(file)
+}
+
+function describeHandVideoError(e: unknown, name: string): string {
+  if (e instanceof HandVideoError && e.reason === 'noVideoTrack') {
+    return i18n.t('video:error.noVideoTrack', { name })
+  }
+  if (e instanceof HandVideoError && e.reason === 'cannotPlay') {
+    return i18n.t('video:error.cannotPlay', { name })
+  }
+  return i18n.t('video:error.loadMessage', { name, detail: describeError(e) })
+}
+
+const HAND_VIDEO_KEYBOARD_Y = 0.3
+
+/** Pick a video file and add it as the hand video. */
+export async function pickAndImportHandVideo(): Promise<ActionResult> {
+  const file = await new Promise<File | null>((resolve) => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = VIDEO_EXTENSIONS.join(',')
+    input.onchange = () => resolve(input.files?.[0] ?? null)
+    input.click()
+  })
+  if (!file) return { kind: 'cancelled' }
+  return importHandVideo(file)
+}
+
+/**
+ * Add a video of the player's hands. Works with or without a song (in any
+ * order); the video's sound is not used. A new video starts at the
+ * timeline's start with a fresh placement (the look carries over) and is
+ * laid on the keys by the detector (`video/autoplace.ts`, ≈1 s, in the
+ * background): keyboard-wide until it answers, and when it finds nothing.
+ * The setup (`ui/HandVideoSetup.tsx`) opens over the scene at once and follows the detection (find, then
+ * confirm; or the failure step); Esc there removes the video again.
+ */
+export async function importHandVideo(file: File): Promise<ActionResult> {
+  if (useHandVideo.getState().editing) return { kind: 'cancelled' }
+  try {
+    await useHandVideo.getState().load(file, file.name, file.type || undefined)
+  } catch (e) {
+    if (e instanceof HandVideoLoadSuperseded) return { kind: 'cancelled' }
+    track('error_surfaced', { context: 'hand_video' })
+    return { kind: 'error', title: i18n.t('video:error.loadTitle'), message: describeHandVideoError(e, file.name) }
+  }
+  const store = useStore.getState()
+  // Taken before the import's own edit, so Cancel returns to exactly the state before the video was added.
+  const baseline = captureHandVideoBaseline()
+  store.beginSettingsEdit()
+  store.updateSettings({
+    handVideoEnabled: true,
+    handVideoOffsetSec: 0,
+    handVideoTrimStartSec: 0,
+    handVideoTrimEndSec: null,
+    handVideoBend: defaultSettings.handVideoBend,
+    handVideoKeys: defaultSettings.handVideoKeys,
+    handVideoOctaveKnown: defaultSettings.handVideoOctaveKnown,
+    handVideoRange: defaultSettings.handVideoRange,
+    // Room below the keyboard for the hands and arms (with the keyboard at
+    // the bottom edge only the keys' strip of the video shows). Left alone
+    // with keyframes, where this key is animated.
+    ...(store.settings.settingsKeyframes.length === 0 && store.settings.keyboardScreenY < HAND_VIDEO_KEYBOARD_Y
+      ? { keyboardScreenY: HAND_VIDEO_KEYBOARD_Y }
+      : {}),
+  })
+  store.endSettingsEdit()
+  track('hand_video_added')
+  void autoPlaceHandVideo()
+  openHandVideoSetup('confirm', { isNew: true, baseline })
   return { kind: 'ok' }
 }

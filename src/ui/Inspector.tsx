@@ -24,11 +24,15 @@ import {
 import { GradientStops, removeGradientStop } from './look/GradientStops'
 import { PresetSwatch } from './look/PresetSwatch'
 import { ImagePicker } from './look/ImagePicker'
+import { VideoPicker } from './look/VideoPicker'
+import { useHandVideo } from '../video/handVideo'
+import { importHandVideo, pickAndImportHandVideo, type ActionResult } from '../projects/actions'
+import { openHandVideoSetup } from '../video/setup'
 import { useBarColors, useEffectiveLook } from './look/useLookState'
 import { VelocityCurveEditor } from './VelocityCurveEditor'
 import { Button, Icon, IconButton, Panel, GEOMETRY, usePresence } from './kit'
 import { useShell } from './shell/uiState'
-import { useTakeInProgress } from './shell/takeFocus'
+import { useHandVideoSetupOpen, useTakeInProgress } from './shell/takeFocus'
 import { useIdle } from './shell/idle'
 import { useCustomTexture } from '../notes/customTexture'
 import { CAMERA_LIMITS } from '../scene/cameraLimits'
@@ -790,6 +794,52 @@ function NoteLookControls() {
   )
 }
 
+// ── Keyboard: the hand video (src/video/) ───────────────────────────
+function HandVideoControls() {
+  const { t } = useTranslation('inspector')
+  const tv = useTranslation('video').t
+  const loaded = useHandVideo((state) => state.element !== null)
+  const fade = useStore((st) => st.settings.handVideoFade)
+  const report = (result: ActionResult) => {
+    if (result.kind === 'error') void showAlert({ title: result.title ?? tv('error.loadTitle'), message: result.message, tone: 'error' })
+  }
+  return (
+    <>
+      <p className="text-caption text-ink-faint">{t('handVideo.subtitle')}</p>
+      <SearchableBlock label={`${t('section.handVideo')} ${tv('picker.choose')} ${tv('picker.lineUp')} ${tv('picker.range')}`}>
+        <VideoPicker
+          label={t('section.handVideo')}
+          onPick={() => void pickAndImportHandVideo().then(report)}
+          onDropFile={(file) => void importHandVideo(file).then(report)}
+          onClear={() => {
+            useHandVideo.getState().clear()
+            useStore.getState().markDirty()
+          }}
+          onLineUp={() => openHandVideoSetup('confirm')}
+          onRange={() => openHandVideoSetup('range')}
+        />
+      </SearchableBlock>
+      {loaded && (
+        <>
+          <BoundSliderRow label={t('row.opacity')} settingKey="handVideoOpacity" min={0} max={1} step={0.01} />
+          <BoundSwitchRow label={t('handVideo.fade')} settingKey="handVideoFade" />
+          {fade && (
+            <Detail id="handVideoFade" label={t('handVideo.fadeDetail')}>
+              <BoundSliderRow label={t('handVideo.fadeStart')} settingKey="handVideoFadeStart" min={-0.5} max={3} step={0.01} />
+              <BoundSliderRow label={t('handVideo.fadeLength')} settingKey="handVideoFadeLength" min={0.1} max={4} step={0.01} />
+            </Detail>
+          )}
+          <Detail id="handVideoColour" label={t('handVideo.colour')}>
+            <BoundSliderRow label={t('row.brightness')} settingKey="handVideoBrightness" min={-1} max={1} step={0.01} />
+            <BoundSliderRow label={t('handVideo.contrast')} settingKey="handVideoContrast" min={0} max={2} step={0.01} />
+            <BoundSliderRow label={t('handVideo.saturation')} settingKey="handVideoSaturation" min={0} max={2} step={0.01} />
+          </Detail>
+        </>
+      )}
+    </>
+  )
+}
+
 // ── Scene: project-level background image ───────────────────────────
 function BackgroundImageControls() {
   const { t } = useTranslation('inspector')
@@ -1211,7 +1261,8 @@ export function Inspector() {
   const lookOpen = useShell((st) => st.lookOpen)
   // a take in progress has the screen to itself
   const takeInProgress = useTakeInProgress()
-  const { mounted, leaving } = usePresence(lookOpen && !takeInProgress)
+  const setupOpen = useHandVideoSetupOpen()
+  const { mounted, leaving } = usePresence(lookOpen && !takeInProgress && !setupOpen)
   if (!mounted) return null
   return <LookPanel leaving={leaving} />
 }
@@ -1468,6 +1519,9 @@ function LookPanel({ leaving }: { leaving: boolean }) {
                 <BoundColorRow label={t('row.whiteKeys')} settingKey="whiteKeyColor" />
                 <BoundColorRow label={t('row.blackKeys')} settingKey="blackKeyColor" />
                 <BoundColorRow label={t('row.wood')} settingKey="woodColor" />
+              </Section>
+              <Section title={t('section.handVideo')} enabledKey="handVideoEnabled">
+                <HandVideoControls />
               </Section>
               <Section title={t('section.keyLabels')} enabledKey="keyLabelsEnabled">
                 <KeyLabelsModeRow />

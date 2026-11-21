@@ -7,7 +7,9 @@ const TOOLBAR_KEYS = [
   'userAudioTrimStartSec',
   'userAudioVolume',
 ] as const
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { useHandVideo } from '../video/handVideo'
+import type { ParsedSong } from '../midi/types'
 import { audioEngine } from '../audio/engine'
 import { playSong } from '../audio/playback'
 import { recorder } from '../audio/recorder'
@@ -21,6 +23,7 @@ import { parseMidi } from '../midi/parse'
 import { serializeMidi } from '../midi/serialize'
 import {
   pickAndImportUserAudio,
+  pickAndImportHandVideo,
   loadDemoProject,
   newProject,
   openProject,
@@ -55,6 +58,14 @@ import { SongIsland } from './shell/SongIsland'
 export function Toolbar() {
   const { t } = useTranslation('toolbar')
   const song = useStore((s) => s.song)
+  // A hand video alone (no MIDI) can be exported as a silent video: it renders as a song with no notes.
+  const handVideoName = useHandVideo((s) => (s.element ? s.fileName ?? '' : null))
+  const handVideoEnabled = useStore((s) => s.settings.handVideoEnabled)
+  const videoOnly = !song && handVideoName !== null && handVideoEnabled
+  const exportSong = useMemo<ParsedSong | null>(
+    () => song ?? (videoOnly ? { name: (handVideoName ?? '').replace(/\.[^.]+$/, ''), duration: 0, notes: [], pedals: [], tracks: [] } : null),
+    [song, videoOnly, handVideoName],
+  )
   const settings = useSettingsSlice(TOOLBAR_KEYS)
   const setSong = useStore((s) => s.setSong)
   const setTransport = useStore((s) => s.setTransport)
@@ -217,6 +228,10 @@ export function Toolbar() {
       reportError(result.title ?? t('error.couldNotLoadAudio'), result.message)
     }
   }
+  const onImportVideo = async () => {
+    const result = await pickAndImportHandVideo()
+    if (result.kind === 'error') reportError(result.title ?? t('error.couldNotLoadAudio'), result.message)
+  }
   // Export the currently loaded song as a single-track Standard MIDI
   // File. `serializeMidi` collapses any multi-track structure from the
   // original source (e.g. right hand / left hand / pedal split tracks)
@@ -246,7 +261,7 @@ export function Toolbar() {
   // and calls back via `onSubmitExportSettings` with the chosen
   // values.
   const onOpenExportDialog = () => {
-    if (!song || exportState !== null) return
+    if (!exportSong || exportState !== null) return
     setExportSettingsOpen(true)
   }
   const onCloseExportDialog = () => setExportSettingsOpen(false)
@@ -296,7 +311,7 @@ export function Toolbar() {
   //   song-720p30-standard.webm
   //   song.wav
   const buildExportFileName = (values: ExportSettingsValues): string => {
-    const songName = song?.name ?? ''
+    const songName = exportSong?.name ?? ''
     const base = songName
       .trim()
       .replace(/\.(mid|midi)$/i, '')
@@ -317,7 +332,7 @@ export function Toolbar() {
   // the right pipeline (WAV / video), maps progress to the unified
   // shape, and surfaces errors.
   const onSubmitExportSettings = async (values: ExportSettingsValues) => {
-    if (!song) return
+    if (!exportSong) return
     setExportDefaults(values)
     setExportSettingsOpen(false)
 
@@ -370,7 +385,7 @@ export function Toolbar() {
           : null
 
       if (isAudioOnly) {
-        const result = await exportSongToWav(song, useStore.getState().settings, {
+        const result = await exportSongToWav(exportSong, useStore.getState().settings, {
           fileName,
           signal: abort.signal,
           userAudio: userAudioForExport,
@@ -408,7 +423,7 @@ export function Toolbar() {
           values.fps,
           values.quality,
         )
-        const result = await exportSongToVideo(song, useStore.getState().settings, {
+        const result = await exportSongToVideo(exportSong, useStore.getState().settings, {
           codec: values.codec,
           width: resInfo.width,
           height: resInfo.height,
@@ -498,6 +513,7 @@ export function Toolbar() {
         onSave: () => void onSaveProject(),
         onSaveAs: () => void onSaveProjectAs(),
         onImportAudio: () => void onImportAudio(),
+        onImportVideo: () => void onImportVideo(),
         onSaveMidi: onSaveSongAsMidi,
         onExport: onOpenExportDialog,
         onLoadDemo: (label, url) => void onLoadDemo(label, url),
@@ -518,7 +534,7 @@ export function Toolbar() {
       onConnect={(id) => void onConnect(id)}
       onOpenMidiPanel={() => void onOpenMidiPanel()}
       onToggleRecord={onToggleRecord}
-      canExport={!!song && exportState === null && rec.state !== 'recording'}
+      canExport={!!exportSong && exportState === null && rec.state !== 'recording'}
       onExport={onOpenExportDialog}
       takes={{
         transport,
@@ -533,7 +549,8 @@ export function Toolbar() {
       isOpen={exportSettingsOpen}
       onClose={onCloseExportDialog}
       onExport={(values) => void onSubmitExportSettings(values)}
-      songDuration={song?.duration ?? 0}
+      songDuration={videoOnly ? audioEngine.timelineEnd() : song?.duration ?? 0}
+      silentOnly={videoOnly}
       videoExportSupported={videoExportSupported}
       defaults={exportDefaults}
     />

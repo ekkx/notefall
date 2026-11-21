@@ -79,6 +79,11 @@ export type ProjectManifest = {
    * normal settings persistence path.
    */
   userAudio?: AssetRef | null
+  /**
+   * The hand video (`src/video/`), stored uncompressed. Its soundtrack is
+   * not stored separately: it is decoded from the video again on open.
+   */
+  handVideo?: AssetRef | null
   /** Hand / finger assignments of the song's notes (see `midi/noteHands.ts`). Absent = none. */
   noteHands?: NoteHandEntry[]
 }
@@ -101,6 +106,8 @@ export type Project = {
   stageBackground: { bytes: ArrayBuffer; mime: string; fileName: string } | null
   /** Bytes of the user-provided accompaniment audio. null when not in use. */
   userAudio: { bytes: ArrayBuffer; mime: string; fileName: string } | null
+  /** The hand video file. null when none is loaded. */
+  handVideo: { bytes: Uint8Array; mime: string; fileName: string } | null
   noteHands: NoteHandEntry[] | null
 }
 

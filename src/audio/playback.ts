@@ -22,9 +22,10 @@ function resetEditorState(): void {
 
 export async function playSong(): Promise<void> {
   const { song, loadStatus, setLoadStatus, setTransport } = useStore.getState()
-  if (!song) return
+  if (!audioEngine.hasTimeline()) return
   resetEditorState()
-  if (loadStatus.state !== 'ready') {
+  // A hand video alone has no sound to load the piano for.
+  if (song && loadStatus.state !== 'ready') {
     setLoadStatus({ state: 'loading', loaded: 0, total: 1 })
     await audioEngine.init((p) =>
       setLoadStatus({ state: 'loading', loaded: p.loaded, total: p.total }),
@@ -42,8 +43,8 @@ export function pauseSong(): void {
 }
 
 export async function togglePlayback(): Promise<void> {
-  const { transport, song, loadStatus } = useStore.getState()
-  if (!song || loadStatus.state === 'loading') return
+  const { transport, loadStatus } = useStore.getState()
+  if (!audioEngine.hasTimeline() || loadStatus.state === 'loading') return
   if (transport === 'playing') pauseSong()
   else await playSong()
 }

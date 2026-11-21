@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../../store'
 import { GEOMETRY, Progress } from '../kit'
+import { useHandVideoSetupOpen } from './takeFocus'
 
 /**
  * Small island at the top centre while the piano sounds download. Never blocks the app:
@@ -9,7 +10,9 @@ import { GEOMETRY, Progress } from '../kit'
 export function LoadingIsland() {
   const { t } = useTranslation('common')
   const status = useStore((s) => s.loadStatus)
-  if (status.state !== 'loading') return null
+  // The hand video setup has the top of the screen to itself (its bar sits where this island would).
+  const setupOpen = useHandVideoSetupOpen()
+  if (status.state !== 'loading' || setupOpen) return null
   const fraction = status.total > 0 ? status.loaded / status.total : 0
   return (
     <div

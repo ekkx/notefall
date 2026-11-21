@@ -26,6 +26,7 @@ import enDialogs from './locales/en/dialogs.json'
 import enInspector from './locales/en/inspector.json'
 import enTimeline from './locales/en/timeline.json'
 import enEditor from './locales/en/editor.json'
+import enVideo from './locales/en/video.json'
 
 import jaCommon from './locales/ja/common.json'
 import jaToolbar from './locales/ja/toolbar.json'
@@ -34,6 +35,7 @@ import jaDialogs from './locales/ja/dialogs.json'
 import jaInspector from './locales/ja/inspector.json'
 import jaTimeline from './locales/ja/timeline.json'
 import jaEditor from './locales/ja/editor.json'
+import jaVideo from './locales/ja/video.json'
 
 export const SUPPORTED_LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -50,6 +52,7 @@ export const I18N_NAMESPACES = [
   'inspector',
   'timeline',
   'editor',
+  'video',
 ] as const
 
 const resources = {
@@ -61,6 +64,7 @@ const resources = {
     inspector: enInspector,
     timeline: enTimeline,
     editor: enEditor,
+    video: enVideo,
   },
   ja: {
     common: jaCommon,
@@ -70,6 +74,7 @@ const resources = {
     inspector: jaInspector,
     timeline: jaTimeline,
     editor: jaEditor,
+    video: jaVideo,
   },
 } as const
 

@@ -18,7 +18,8 @@
     "style": "Style",
     "noteLabels": "Note labels",
     "keyLabels": "Key names",
-    "hands": "Hands (alpha)"
+    "hands": "Hands (alpha)",
+    "handVideo": "Hand video"
   },
   "camera": {
     "distance": "Distance",
@@ -456,5 +457,15 @@
     "dropHint": "or drop an image here",
     "replace": "Replace",
     "remove": "Remove"
+  },
+  "handVideo": {
+    "contrast": "Contrast",
+    "saturation": "Saturation",
+    "fade": "Fade toward the arms",
+    "fadeStart": "Fade starts",
+    "fadeLength": "Fade length",
+    "subtitle": "Footage of your own hands playing. The keys in it are found automatically and lined up.",
+    "fadeDetail": "Fade position",
+    "colour": "Colour"
   }
 }

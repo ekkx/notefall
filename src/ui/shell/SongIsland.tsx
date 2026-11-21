@@ -18,7 +18,7 @@ import {
 import type { ReportKind } from '../../feedback/report'
 import { AppMenu } from './AppMenu'
 import { useChromeHidden } from './idle'
-import { useTakeInProgress } from './takeFocus'
+import { useHandVideoSetupOpen, useTakeInProgress } from './takeFocus'
 import { REDO_LABEL, shortcutLabel } from './platform'
 
 const SHORTCUT_OPEN = shortcutLabel('O', { mod: true })
@@ -37,6 +37,7 @@ export type FileActions = {
   onSave: () => void
   onSaveAs: () => void
   onImportAudio: () => void
+  onImportVideo: () => void
   onSaveMidi: () => void
   onExport: () => void
   onLoadDemo: (label: string, url: string) => void
@@ -73,7 +74,8 @@ export function SongIsland({
   // Fades with the transport pill while a song plays and the pointer is idle, and steps aside for a take.
   const idleHidden = useChromeHidden()
   const takeInProgress = useTakeInProgress()
-  const chromeHidden = idleHidden || takeInProgress
+  const setupOpen = useHandVideoSetupOpen()
+  const chromeHidden = idleHidden || takeInProgress || setupOpen
   return (
     <Island className={`fixed left-4 top-4 z-30 transition-[opacity,visibility] duration-200 ${chromeHidden ? 'invisible opacity-0 [transition-delay:0s,200ms]' : 'visible opacity-100'}`}>
       <AppMenu onFeedback={onFeedback} />
@@ -125,6 +127,9 @@ export function SongIsland({
           <MenuSeparator />
           <MenuItem isDisabled={!hasSong} onAction={actions.onImportAudio}>
             {t('file.addAudio')}
+          </MenuItem>
+          <MenuItem onAction={actions.onImportVideo}>
+            {t('file.addHandVideo')}
           </MenuItem>
           <MenuItem isDisabled={!hasSong} onAction={actions.onSaveMidi}>
             {t('file.saveSongAsMidi')}

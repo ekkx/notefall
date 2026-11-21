@@ -3,6 +3,7 @@ import * as Tone from "tone";
 import { audioEngine } from "../audio/engine";
 import { markLivePlay } from "../usage";
 import { useStore } from "../store";
+import { useHandVideo } from "../video/handVideo";
 
 // PC keyboard → MIDI mapping. ZXCV/ASDF rows = lower octave (white/sharps),
 // QWERTY/digit rows = upper octave. Some pitches reachable from multiple
@@ -39,6 +40,8 @@ export function usePcKeyboardInput(ensureAudio: () => Promise<boolean>) {
     const pending = new Set<string>();
 
     const onDown = async (e: KeyboardEvent) => {
+      // No piano while the hand video setup has the keyboard.
+      if (useHandVideo.getState().editing) return;
       // Shift is reserved for global shortcuts (e.g. Shift+R for record).
       if (e.repeat || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
       if (isEditable(e.target)) return;

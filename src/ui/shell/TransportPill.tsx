@@ -6,11 +6,13 @@ import { Slider, SliderTrack } from 'react-aria-components'
 import clsx from 'clsx'
 import { defaultSettings, useStore } from '../../store'
 import { audioEngine } from '../../audio/engine'
+import { useUserAudio } from '../../audio/userAudio'
+import { useHandVideo } from '../../video/handVideo'
 import { pauseSong, playSong } from '../../audio/playback'
 import { useCurrentTime } from '../../audio/useCurrentTime'
 import { Button, Divider, GEOMETRY, Icon, IconButton, KnobThumb, ToggleButton, Tooltip } from '../kit'
 import { useChromeHidden, useIdle } from './idle'
-import { useTakeInProgress } from './takeFocus'
+import { useHandVideoSetupOpen, useTakeInProgress } from './takeFocus'
 import { toggleFullscreen, useIsFullscreen } from './fullscreen'
 import { shortcutLabel } from './platform'
 import { useShell } from './uiState'
@@ -249,15 +251,34 @@ export function TransportPill() {
   const lookOpen = useShell((s) => s.lookOpen)
   const setLookOpen = useShell((s) => s.setLookOpen)
   const takeInProgress = useTakeInProgress()
-  const hidden = useChromeHidden() || takeInProgress
+  const setupOpen = useHandVideoSetupOpen()
+  const hidden = useChromeHidden() || takeInProgress || setupOpen
   const isFullscreen = useIsFullscreen()
   // The slider rescales when the speed curve or clip offset changes the TL_audio length.
   useStore((s) => s.settings.midiSpeedAutomation)
   useStore((s) => s.settings.midiOffsetSec)
+  // The timeline's length also follows the accompaniment and the hand video (a video alone can play).
+  const videoLoaded = useHandVideo((s) => s.element !== null)
+  useHandVideo((s) => s.duration)
+  useUserAudio((s) => s.buffer)
+  useStore(
+    (s) =>
+      [
+        s.settings.midiTrimEndSec,
+        s.settings.userAudioOffsetSec,
+        s.settings.userAudioTrimEndSec,
+        s.settings.handVideoEnabled,
+        s.settings.handVideoOffsetSec,
+        s.settings.handVideoTrimStartSec,
+        s.settings.handVideoTrimEndSec,
+      ].join('|'),
+  )
 
-  const hasSong = song !== null
+  const hasSong = song !== null || (videoLoaded && audioEngine.hasTimeline())
   const playing = transport === 'playing'
-  const duration = song ? audioEngine.midiTimeToTimeline(song.duration) : 0
+  // Read on every render (cheap): the subscriptions above re-render on each input, and the engine is synced by
+  // Layout's store subscription before React re-renders, so a memo would only risk a stale total.
+  const duration = audioEngine.timelineEnd()
 
   // Last audible volume, restored when un-muting.
   const lastVolume = useRef(volume > 0.001 ? volume : 0.5)

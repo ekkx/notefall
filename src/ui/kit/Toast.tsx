@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from 'react'
+import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react'
 import clsx from 'clsx'
 import { usePresence } from './usePresence'
 import { Button as AriaButton } from 'react-aria-components'
@@ -37,9 +37,18 @@ const subscribe = (l: () => void) => {
   return () => listeners.delete(l)
 }
 
-/** Mount once in the shell. `bottom` = distance from the bottom edge in px. */
-export function ToastHost({ bottom }: { bottom: number }) {
+/**
+ * Mount once in the shell. `bottom` = distance from the bottom edge in px. `clearOf` = a selector for a
+ * floating surface the toast must not cover (the timeline): when it is on screen the toast sits above it.
+ */
+export function ToastHost({ bottom, clearOf, gap = 12 }: { bottom: number; clearOf?: string; gap?: number }) {
   const toast = useSyncExternalStore(subscribe, () => current)
+  const [lifted, setLifted] = useState(bottom)
+  useLayoutEffect(() => {
+    const el = toast && clearOf ? document.querySelector(clearOf) : null
+    const top = el ? el.getBoundingClientRect().top : null
+    setLifted(top === null ? bottom : Math.max(bottom, window.innerHeight - top + gap))
+  }, [toast, clearOf, bottom, gap])
   // The last toast stays rendered while it fades out.
   const [shown, setShown] = useState<Live | null>(toast)
   if (toast && toast !== shown) setShown(toast)
@@ -57,8 +66,9 @@ export function ToastHost({ bottom }: { bottom: number }) {
   return (
     <div
       aria-live="polite"
-      className="pointer-events-none fixed inset-x-0 z-[70] flex justify-center"
-      style={{ bottom }}
+      // z-45: over the islands / panels (≤ 40), under every menu, popover and dialog (≥ 50), so a toast never covers an open menu.
+      className="pointer-events-none fixed inset-x-0 z-[45] flex justify-center"
+      style={{ bottom: lifted }}
     >
       {mounted && live && (
         <div

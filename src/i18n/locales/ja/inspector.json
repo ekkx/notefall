@@ -18,7 +18,8 @@
     "style": "スタイル",
     "noteLabels": "ノートのラベル",
     "keyLabels": "音名（鍵盤）",
-    "hands": "手（アルファ版）"
+    "hands": "手（アルファ版）",
+    "handVideo": "手元動画"
   },
   "camera": {
     "distance": "距離",
@@ -456,5 +457,15 @@
     "dropHint": "またはここに画像をドロップ",
     "replace": "差し替える",
     "remove": "外す"
+  },
+  "handVideo": {
+    "contrast": "コントラスト",
+    "saturation": "彩度",
+    "fade": "腕側へフェード",
+    "fadeStart": "フェードの開始位置",
+    "fadeLength": "フェードの長さ",
+    "subtitle": "ご自身が実際に演奏する手元動画です。動画から鍵盤の位置を自動検出して調整します。",
+    "fadeDetail": "フェードの位置",
+    "colour": "色味"
   }
 }

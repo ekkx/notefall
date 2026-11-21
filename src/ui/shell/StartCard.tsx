@@ -7,6 +7,7 @@ import { recorder } from '../../audio/recorder'
 import { midiInput } from '../../audio/midiInput'
 import { toggleRecord } from '../../audio/recordControl'
 import { loadDemoProject, openProject } from '../../projects/actions'
+import { useHandVideoSetupOpen } from './takeFocus'
 import { Button, Icon, Menu, MenuItem, MenuTrigger, Popover, usePresence } from '../kit'
 import { showAlert } from '../confirm'
 import { shortcutLabel } from './platform'
@@ -63,7 +64,8 @@ export function StartCard() {
   useEffect(() => {
     if (song) setDismissed(false)
   }, [song])
-  const shown = !song && !isRecording && !countingIn && !dismissed && !hidden
+  const setupOpen = useHandVideoSetupOpen()
+  const shown = !song && !isRecording && !countingIn && !dismissed && !hidden && !setupOpen
   const { mounted, leaving } = usePresence(shown)
   useEffect(() => {
     if (!shown) return

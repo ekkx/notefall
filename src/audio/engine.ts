@@ -214,6 +214,7 @@ export class AudioEngine {
   // The decoded buffer + sync offset + volume; the buffer is also used by
   // the offline export pipeline. Realtime playback is wired through a
   // dedicated GainNode so volume changes don't restart the source.
+  private videoEndSec = 0
   private userAudioBuffer: AudioBuffer | null = null
   private userAudioOffsetSec = 0
   private userAudioVolume = 1
@@ -717,8 +718,27 @@ export class AudioEngine {
     this.playing = false
   }
 
+  /**
+   * End of the hand video on the timeline (0 = none). It is a third clip beside the song and the accompaniment: the
+   * transport plays, seeks and loops over the longest of the three, so a hand video alone (no MIDI, no audio) can play.
+   */
+  setVideoEnd(sec: number): void {
+    this.videoEndSec = Math.max(0, sec)
+  }
+
+  /** Whether there is anything to play: a song or a hand video. */
+  hasTimeline(): boolean {
+    return this.song !== null || this.videoEndSec > 0
+  }
+
+  /** End of the song / accompaniment / hand video, whichever is last (timeline seconds; trim included, no tail). */
+  timelineEnd(): number {
+    const songEnd = this.song ? this.midiOffsetSec + midiToTimeline(this.speedMap, this.effectiveMidiTrimEnd()) : 0
+    return Math.max(songEnd, this.userAudioEndSec(), this.videoEndSec)
+  }
+
   async play(): Promise<void> {
-    if (!this.song) return
+    if (!this.hasTimeline()) return
     if (!devNoAudio() && Tone.getContext().state !== 'running') {
       await Tone.start()
     }
@@ -765,7 +785,7 @@ export class AudioEngine {
     // map.
     const songDur = this.song?.duration ?? 0
     const midiEndTimeline = midiToTimeline(this.speedMap, songDur)
-    const dur = midiEndTimeline + this.midiOffsetSec
+    const dur = Math.max(midiEndTimeline + this.midiOffsetSec, this.userAudioEndSec(), this.videoEndSec)
     const clamped = Math.max(0, Math.min(dur, tlAudio))
     const midiClamped = timelineToMidi(
       this.speedMap,
@@ -902,6 +922,7 @@ export class AudioEngine {
    * stretch with the speed curve.
    */
   currentDisplayTime(): number {
+    if (!this.song) return this.currentSongTime()
     return this.midiOffsetSec + this.currentMidiTime()
   }
 
@@ -1180,6 +1201,8 @@ export class AudioEngine {
   tick(): void {
     this.cleanupLiveNotes()
     this.updatePedalHeld('live', pedalLift(this.livePedalValue))
+    // A hand video alone has no notes to walk: only the end of the timeline matters.
+    if (!this.song && this.playing && !this.silent) this.stopAtTimelineEnd(this.currentSongTime())
     if (!this.song || !this.playing) return
     // In silent mode (export pass) we operate without a sampler — the
     // tick still walks the song to fire listener events for the
@@ -1300,6 +1323,7 @@ export class AudioEngine {
       const effectiveEnd = Math.max(
         this.midiOffsetSec + midiToTimeline(this.speedMap, this.effectiveMidiTrimEnd()),
         audioEnd,
+        this.videoEndSec,
       )
       const endThreshold = effectiveEnd + (this.loop ? 0 : SONG_TAIL_SECONDS)
       if (songTime >= endThreshold && this.active.size === 0 && this.pedalHeld.length === 0) {
@@ -1310,6 +1334,14 @@ export class AudioEngine {
         }
       }
     }
+  }
+
+  /** End-of-timeline handling when only a hand video is loaded: loop back or stop (no tail, nothing is ringing). */
+  private stopAtTimelineEnd(songTime: number): void {
+    const end = Math.max(this.userAudioEndSec(), this.videoEndSec)
+    if (end <= 0 || songTime < end) return
+    if (this.loop) this.seek(0)
+    else this.stop()
   }
 
   /**

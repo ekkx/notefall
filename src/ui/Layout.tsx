@@ -10,7 +10,9 @@ import { ConfirmModal } from './ConfirmModal'
 import { Icon, ToastHost, GEOMETRY, useReleaseFocusAfterPointer } from './kit'
 import { ShortcutSheet } from './shell/ShortcutSheet'
 import { TransportPill } from './shell/TransportPill'
+import { HandVideoSetup } from './HandVideoSetup'
 import { LoadingIsland } from './shell/LoadingIsland'
+import { DriftIsland } from './shell/DriftIsland'
 import { StartCard } from './shell/StartCard'
 import { IdleDriver } from './shell/idle'
 import { setFullscreenRoot, useIsFullscreen } from './shell/fullscreen'
@@ -19,7 +21,9 @@ import { audioEngine } from '../audio/engine'
 import { midiInput } from '../audio/midiInput'
 import { isAudioName, useUserAudio } from '../audio/userAudio'
 import { parseMidi } from '../midi/parse'
-import { importUserAudio, openProjectFromFile } from '../projects/actions'
+import { importHandVideo, importUserAudio, isHandVideoFile, openProjectFromFile } from '../projects/actions'
+import { isVideoName, useHandVideo } from '../video/handVideo'
+import { handVideoEndOnTimeline } from '../video/time'
 import { PROJECT_FILE_EXTENSION } from '../projects/types'
 import { showAlert } from './confirm'
 import { useGlobalShortcuts } from './useGlobalShortcuts'
@@ -200,6 +204,18 @@ export function Layout() {
     audioEngine.setUserAudio(userAudioBuffer)
   }, [userAudioBuffer])
 
+  // The hand video is a third clip of the timeline: the engine plays / seeks / loops over its end too.
+  useEffect(() => {
+    const sync = () => {
+      const st = useStore.getState().settings
+      const v = useHandVideo.getState()
+      audioEngine.setVideoEnd(handVideoEndOnTimeline(st, v.duration, v.element !== null))
+    }
+    sync()
+    const offs = [useStore.subscribe(sync), useHandVideo.subscribe(sync)]
+    return () => offs.forEach((off) => off())
+  }, [])
+
   // sync transport state if engine auto-stopped at end-of-song
   useEffect(() => {
     if (transport !== 'playing') return
@@ -275,6 +291,16 @@ export function Layout() {
           }
           return
         }
+        if (isVideoName(fileItem.name)) {
+          const file = await fileItem.getFile()
+          if (await isHandVideoFile(file)) {
+            const result = await importHandVideo(file)
+            if (result.kind === 'error') {
+              void showAlert({ title: result.title ?? t('drop.couldNotLoadAudioTitle'), message: result.message, tone: 'error' })
+            }
+            return
+          }
+        }
         if (isAudioName(fileItem.name)) {
           const file = await fileItem.getFile()
           const result = await importUserAudio(file)
@@ -298,13 +324,15 @@ export function Layout() {
       }}
     >
       <Viewport />
+      <HandVideoSetup />
       <Toolbar />
       <Inspector />
       <TimelineEditor />
       <StartCard />
       <TransportPill />
       <LoadingIsland />
-      <ToastHost bottom={GEOMETRY.PILL_BOTTOM + GEOMETRY.PILL + GEOMETRY.GAP} />
+      <DriftIsland />
+      <ToastHost bottom={GEOMETRY.PILL_BOTTOM + GEOMETRY.PILL + GEOMETRY.GAP} clearOf="[data-timeline-panel]" gap={GEOMETRY.GAP} />
       <ShortcutSheet />
       <PinTargetSync />
       <IdleDriver />

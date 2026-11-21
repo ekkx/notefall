@@ -16,6 +16,8 @@ import { assertEncodersSupported } from './codec/preflight'
 import type { AudioTrackConfig, VideoCodec } from './codec/types'
 import { createAvRenderProgress } from './progress'
 import { enterSceneExportMode } from './sceneExportMode'
+import { useHandVideo } from '../video/handVideo'
+import { assertHandVideoFrame, beginHandVideoExport, endHandVideoExport, prepareHandVideoFrame } from '../video/exportFrames'
 
 export { VIDEO_CODECS, isVideoExportSupported, probeVideoCodecs }
 export type { AudioTrackConfig }
@@ -97,40 +99,61 @@ export async function renderSongVideo(
 
   onProgress?.({ phase: 'preparing' })
 
-  const restoreScene = enterSceneExportMode(r3f, width, height)
-  setExportFps(fps) // nominal frame duration for the hands' motion blur
-  const clock = new VirtualClock()
-  setActiveClock(clock)
-  audioEngine.beginExportPlayback()
+  // The hand video is decoded frame-exactly for the render (exportFrames.ts).
+  // Its decoder is opened and the first frame decoded BEFORE the scene is
+  // resized: the main thread must not sit idle between the resize and the
+  // first rendered frame, or Chrome can hand back a blank (or partly drawn)
+  // canvas for the whole render. Waits after the first frame are harmless.
+  const handVideo = settings.handVideoEnabled && useHandVideo.getState().element !== null
 
-
-  let videoEncoderError: Error | null = null
-  const videoEncoder = new VideoEncoder({
-    output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
-    error: (e) => {
-      videoEncoderError = e instanceof Error ? e : new Error(String(e))
-    },
-  })
-
-  // The audio encoder is only constructed when an audio track is
-  // wanted. Lazy-construction lets the no-audio path skip
-  // `new AudioEncoder({...})` and `audioEncoder.close()` entirely so
-  // there's no chance of an unused encoder leaking warnings.
-  let audioEncoderError: Error | null = null
-  const audioEncoder = audio
-    ? new AudioEncoder({
-        output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
-        error: (e) => {
-          audioEncoderError = e instanceof Error ? e : new Error(String(e))
-        },
-      })
-    : null
-
-  const progress = createAvRenderProgress(audio !== null, (overall) =>
-    onProgress?.({ phase: 'rendering', progress: overall }),
-  )
-
+  // One try covers everything from here: every resource below is acquired step by step and released in the
+  // finally only if it was acquired, so an early throw leaves no decoder, export mode or clock behind.
+  let restoreScene: (() => void) | null = null
+  let clockInstalled = false
+  let exportPlayback = false
+  let videoEncoder: VideoEncoder | null = null
+  let audioEncoder: AudioEncoder | null = null
   try {
+    if (handVideo) {
+      await beginHandVideoExport()
+      await prepareHandVideoFrame(0, settings)
+      assertHandVideoFrame()
+    }
+
+    restoreScene = enterSceneExportMode(r3f, width, height)
+    setExportFps(fps) // nominal frame duration for the hands' motion blur
+    const clock = new VirtualClock()
+    setActiveClock(clock)
+    clockInstalled = true
+    audioEngine.beginExportPlayback()
+    exportPlayback = true
+
+    let videoEncoderError: Error | null = null
+    videoEncoder = new VideoEncoder({
+      output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+      error: (e) => {
+        videoEncoderError = e instanceof Error ? e : new Error(String(e))
+      },
+    })
+
+    // The audio encoder is only constructed when an audio track is
+    // wanted. Lazy-construction lets the no-audio path skip
+    // `new AudioEncoder({...})` and `audioEncoder.close()` entirely so
+    // there's no chance of an unused encoder leaking warnings.
+    let audioEncoderError: Error | null = null
+    audioEncoder = audio
+      ? new AudioEncoder({
+          output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
+          error: (e) => {
+            audioEncoderError = e instanceof Error ? e : new Error(String(e))
+          },
+        })
+      : null
+
+    const progress = createAvRenderProgress(audio !== null, (overall) =>
+      onProgress?.({ phase: 'rendering', progress: overall }),
+    )
+
     // Kick off the audio render IN PARALLEL with the video pass when
     // audio is wanted. Skipped entirely otherwise — saves ~60 MB
     // sample fetch + offline render time.
@@ -170,6 +193,10 @@ export async function renderSongVideo(
       if (videoEncoderError) throw videoEncoderError
 
       const t = n / fps
+      if (handVideo) {
+        await prepareHandVideoFrame(t, settings)
+        assertHandVideoFrame()
+      }
       clock.setTime(t)
       // Pass SECONDS to advance — see `enterSceneExportMode`'s clock
       // disarm. delta in useFrame becomes 1/fps in seconds.
@@ -249,7 +276,7 @@ export async function renderSongVideo(
     return blob
   } finally {
     try {
-      if (videoEncoder.state !== 'closed') videoEncoder.close()
+      if (videoEncoder && videoEncoder.state !== 'closed') videoEncoder.close()
     } catch {
       /* ignore */
     }
@@ -259,12 +286,13 @@ export async function renderSongVideo(
       /* ignore */
     }
     try {
-      audioEngine.endExportPlayback()
+      if (exportPlayback) audioEngine.endExportPlayback()
     } catch {
       /* ignore */
     }
-    resetActiveClock()
+    if (clockInstalled) resetActiveClock()
     setExportFps(null)
-    restoreScene()
+    restoreScene?.()
+    await endHandVideoExport()
   }
 }

@@ -54,6 +54,19 @@ export type NoteTexture = 'solid' | 'custom'
 
 export type StageBackgroundFit = 'cover' | 'contain' | 'stretch'
 
+/**
+ * Where the hand video lies on the keyboard from video time `t` (seconds) on: `H` is a row-major 3×3
+ * homography taking the lens-corrected picture (0..1, x right, y down) to the keyboard plane (white-key
+ * widths from A0's left edge, y from the front edge; `video/geometry.ts`). `source` says who set it:
+ * the detector or the user's hand (manual keys are never replaced by the background analysis).
+ * Between two keys the placement moves smoothly, so a camera that slips during the take is followed.
+ */
+export type HandVideoKey = {
+  t: number
+  H: number[]
+  source: 'auto' | 'manual'
+}
+
 export type Settings = {
   // Layout
   // On-screen keyboard position: 0 = its front edge on the bottom of the
@@ -422,6 +435,38 @@ export type Settings = {
   // Temporal-supersampling motion blur on the hands only (src/hands/motionBlur.ts). Samples = cap; the actual count adapts to speed.
   handsMotionBlur: boolean
   handsBlurSamples: number
+  // Hand video (src/video/): the user's footage of their hands on a real
+  // keyboard, laid onto the virtual one. Not pin-animatable. Its sound is
+  // never used.
+  handVideoEnabled: boolean
+  handVideoOpacity: number
+  handVideoBrightness: number   // -1..1, 0 = unchanged
+  handVideoContrast: number     // 0..2, 1 = unchanged
+  handVideoSaturation: number   // 0..2, 1 = unchanged
+  // Fade toward the arms: below the keyboard's front edge the video turns
+  // clear over `handVideoFadeLength` world units, starting
+  // `handVideoFadeStart` below the edge.
+  handVideoFade: boolean
+  handVideoFadeStart: number
+  handVideoFadeLength: number
+  // How much of the keyboard's light (key glow, flash reflections) is faked onto the video, 0..1 (0 = off).
+  // The clip on the timeline (its own lane): video t = 0 sits at
+  // `handVideoOffsetSec`; the trim is the shown window (null end = the video's end).
+  handVideoOffsetSec: number
+  handVideoTrimStartSec: number
+  handVideoTrimEndSec: number | null
+  // The camera's lens bend (radial, `video/geometry.ts`), the same for the whole video.
+  handVideoBend: number
+  // Placement per video time (`HandVideoKey`): one key = the whole video; empty = not placed yet
+  // (shown keyboard-wide). False when the detector could not see the keyboard's ends, so the octave
+  // is a guess the user confirms.
+  handVideoKeys: HandVideoKey[]
+  handVideoOctaveKnown: boolean
+  // Display range on the keyboard plane (white-key widths: x from A0's left edge, `front` = how far
+  // below the keys' front edge, toward the player). Outside it the video is cut; null = the whole video.
+  // `handVideoRangeSoftness` = width of the soft edge inside the cut, in white-key widths (0 = hard).
+  handVideoRange: { left: number; right: number; front: number } | null
+  handVideoRangeSoftness: number
   keyLabelsEnabled: boolean
   keyLabelsMode: 'c' | 'white' | 'all'   // which keys carry a label
   keyLabelFormat: PitchLabelFormat
@@ -735,6 +780,22 @@ export const defaultSettings: Settings = {
   handsFlashLight: 1,
   handsMotionBlur: true,
   handsBlurSamples: 8,
+  handVideoEnabled: true,
+  handVideoOpacity: 1,
+  handVideoBrightness: 0,
+  handVideoContrast: 1,
+  handVideoSaturation: 1,
+  handVideoFade: true,
+  handVideoFadeStart: 0.1,
+  handVideoFadeLength: 1.2,
+  handVideoOffsetSec: 0,
+  handVideoTrimStartSec: 0,
+  handVideoTrimEndSec: null,
+  handVideoBend: 0,
+  handVideoKeys: [],
+  handVideoOctaveKnown: true,
+  handVideoRange: null,
+  handVideoRangeSoftness: 0.4,
   keyLabelsEnabled: false,
   keyLabelsMode: 'c',
   keyLabelFormat: 'letterOctave',
@@ -1006,6 +1067,17 @@ const RESET_PRESERVED_KEYS = [
   'followPlayhead',
   // Settings pins — never wiped by Reset
   'settingsKeyframes',
+  // Hand video clip timing + placement (set on the timeline and
+  // in the hand video setup, not in Customize)
+  'handVideoOffsetSec',
+  'handVideoTrimStartSec',
+  'handVideoTrimEndSec',
+  'handVideoBend',
+  'handVideoKeys',
+  'handVideoOctaveKnown',
+  // Display range: framing set in its own setup step, like the placement
+  'handVideoRange',
+  'handVideoRangeSoftness',
 ] as const satisfies readonly (keyof Settings)[]
 
 /**
@@ -1029,6 +1101,10 @@ const SONG_TIED_KEYS = [
   'userAudioOffsetSec',
   'userAudioTrimStartSec',
   'userAudioTrimEndSec',
+  // Hand video clip timing: same reason
+  'handVideoOffsetSec',
+  'handVideoTrimStartSec',
+  'handVideoTrimEndSec',
   // Speed automation
   'midiSpeedAutomation',
   'midiSpeedAutomationYRangeLog2',

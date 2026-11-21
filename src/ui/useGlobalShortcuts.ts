@@ -3,6 +3,8 @@ import i18n from '../i18n'
 import { togglePlayback } from '../audio/playback'
 import { toggleRecord } from '../audio/recordControl'
 import { openProject, saveProject, saveProjectAs } from '../projects/actions'
+import { useHandVideo } from '../video/handVideo'
+import { handVideoSetupCanUndo } from '../video/setup'
 import { useStore } from '../store'
 import { deleteNotes, moveNotes } from '../midi/edit'
 import { showAlert } from './confirm'
@@ -93,6 +95,8 @@ export function useGlobalShortcuts(): void {
     // those keys — react-aria sliders use ArrowUp/Down for value
     // adjustment, for example).
     const onSpaceCapture = (e: KeyboardEvent) => {
+      // The hand video setup owns the keyboard while it is open (Esc, Enter, Space, arrows).
+      if (useHandVideo.getState().editing) return
       if (e.code !== 'Space') return
       if (e.repeat || e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return
       if (isEditable(e.target)) return
@@ -105,6 +109,7 @@ export function useGlobalShortcuts(): void {
     // browser's native Save Page dialog AND any focused react-aria button
     // that might otherwise consume the key event). Cmd+Shift+S = Save As.
     const onSaveCapture = (e: KeyboardEvent) => {
+      if (useHandVideo.getState().editing) return
       if (e.code !== 'KeyS') return
       if (e.altKey) return
       if (!(e.metaKey || e.ctrlKey)) return
@@ -130,6 +135,7 @@ export function useGlobalShortcuts(): void {
     // phase so it wins against the browser's default (bookmark bar
     // toggle).
     const onToggleTimelineEditorCapture = (e: KeyboardEvent) => {
+      if (useHandVideo.getState().editing) return
       if (e.code !== 'KeyB') return
       if (e.altKey || e.shiftKey) return
       if (!(e.metaKey || e.ctrlKey)) return
@@ -145,6 +151,7 @@ export function useGlobalShortcuts(): void {
     // into the tab and navigate away from notefall). `openProject`
     // handles the dirty-confirm internally.
     const onOpenCapture = (e: KeyboardEvent) => {
+      if (useHandVideo.getState().editing) return
       if (e.code !== 'KeyO') return
       if (e.altKey || e.shiftKey) return
       if (!(e.metaKey || e.ctrlKey)) return
@@ -179,7 +186,10 @@ export function useGlobalShortcuts(): void {
     }
 
     const onKey = async (e: KeyboardEvent) => {
+      // The hand video setup keeps undo / redo (each of its gestures is an undo entry), nothing else.
+      const setupOpen = useHandVideo.getState().editing !== null
       if (isEditable(e.target)) return
+      if (setupOpen && !(e.metaKey || e.ctrlKey)) return
 
       // --- always-on record shortcut (Space is handled separately above) ---
       if (!e.repeat && !e.metaKey && !e.ctrlKey && !e.altKey) {
@@ -207,7 +217,7 @@ export function useGlobalShortcuts(): void {
         e.preventDefault()
         const s = useStore.getState()
         if (e.shiftKey) s.redoEdit()
-        else s.undoEdit()
+        else if (handVideoSetupCanUndo()) s.undoEdit()
         return
       }
       if (mod && e.code === 'KeyY' && !e.shiftKey) {
@@ -215,6 +225,7 @@ export function useGlobalShortcuts(): void {
         useStore.getState().redoEdit()
         return
       }
+      if (setupOpen) return
 
       // --- edit-mode shortcuts ---
       if (!inEditMode()) return

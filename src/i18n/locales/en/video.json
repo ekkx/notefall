@@ -1,0 +1,57 @@
+{
+  "picker": {
+    "choose": "Add a video of your hands",
+    "loading": "Reading the video…",
+    "dropHint": "MP4, MOV or WebM, filmed from above the keyboard",
+    "remove": "Remove",
+    "lineUp": "Line up again",
+    "range": "Adjust visible area"
+  },
+  "lane": {
+    "title": "Hand video",
+    "removeVideo": "Remove hand video",
+    "trimHead": "Trim the start of the hand video",
+    "trimTail": "Trim the end of the hand video",
+    "lineUp": "Line up again",
+    "range": "Adjust visible area"
+  },
+  "error": {
+    "loadTitle": "Couldn’t add the hand video",
+    "loadMessage": "“{{name}}” couldn’t be read: {{detail}}",
+    "noVideoTrack": "“{{name}}” has no video in it.",
+    "cannotPlay": "This browser can’t play “{{name}}”. Convert it to an H.264 MP4 and add it again."
+  },
+  "setup": {
+    "label": "Line up the hand video",
+    "finding": "Finding the keys in your video…",
+    "cancel": "Cancel",
+    "foundTitle": "Keys found and lined up",
+    "octaveDown": "One octave left",
+    "octaveUp": "One octave right",
+    "fix": "Fix by hand",
+    "ok": "OK",
+    "failedTitle": "Couldn't find the keys in your hand video",
+    "failedRemove": "Remove video",
+    "failedClose": "Close",
+    "fixTitle": "Drag each white dot onto the same key corner behind",
+    "backToAutomatic": "Back to the detected position",
+    "transparency": "Hand video transparency",
+    "done": "Done",
+    "rangeTitle": "Hand video visible area",
+    "softness": "Edge softness",
+    "rangeReset": "Reset area",
+    "rangeLeft": "Left edge of the visible area",
+    "rangeRight": "Right edge of the visible area",
+    "rangeFront": "Front edge of the visible area"
+  },
+  "track": {
+    "checking": "Detecting camera movement…",
+    "still": "No noticeable camera movement.",
+    "moved": "Detected slight camera movement and adjusted the video to follow it. {{when}}",
+    "movedBig": "Detected camera movement and adjusted the video to follow it. {{when}}",
+    "drifted": "Detected slight camera movement and adjusted the video to follow it.",
+    "at": "(at {{list}})",
+    "times": "({{count}} times)",
+    "unsure": "Couldn’t detect camera movement in this hand video. It stays where it was placed."
+  }
+}

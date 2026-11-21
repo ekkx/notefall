@@ -58,6 +58,7 @@ export function ExportSettingsDialog({
   onClose,
   onExport,
   songDuration,
+  silentOnly = false,
   videoExportSupported,
   defaults,
 }: {
@@ -66,6 +67,8 @@ export function ExportSettingsDialog({
   onExport: (settings: ExportSettingsValues) => void
   /** Song length in seconds — used for the estimated-size readout. */
   songDuration: number
+  /** No song, only a hand video: a silent video is the one thing to export. */
+  silentOnly?: boolean
   /** Browser support gate. When false, video formats are disabled. */
   videoExportSupported: boolean
   defaults: ExportSettingsValues
@@ -100,7 +103,10 @@ export function ExportSettingsDialog({
   // If video export is unsupported, force the form to audio-only so
   // submitting always produces a valid export.
   useEffect(() => {
-    if (isOpen && !videoExportSupported && format !== 'audio-only') {
+    if (isOpen && silentOnly && format !== 'video-only') setFormat('video-only')
+  }, [isOpen, silentOnly, format])
+  useEffect(() => {
+    if (isOpen && !silentOnly && !videoExportSupported && format !== 'audio-only') {
       setFormat('audio-only')
     }
   }, [isOpen, videoExportSupported, format])
@@ -189,9 +195,9 @@ export function ExportSettingsDialog({
           value={format}
           onChange={setFormat}
           options={[
-            { value: 'video-audio', label: t('export.format.videoAudio'), isDisabled: !videoExportSupported },
+            { value: 'video-audio', label: t('export.format.videoAudio'), isDisabled: !videoExportSupported || silentOnly },
             { value: 'video-only', label: t('export.format.videoOnly'), isDisabled: !videoExportSupported },
-            { value: 'audio-only', label: t('export.format.audioOnly') },
+            { value: 'audio-only', label: t('export.format.audioOnly'), isDisabled: silentOnly },
           ]}
         />
       </Field>

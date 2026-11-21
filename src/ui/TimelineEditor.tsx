@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { useStore } from '../store'
 import { useUserAudio } from '../audio/userAudio'
 import { audioEngine } from '../audio/engine'
+import { useHandVideoSetupOpen } from './shell/takeFocus'
+import { useHandVideo } from '../video/handVideo'
 import { Button, GEOMETRY, Icon, IconButton, Panel, ToggleButton, usePresence } from './kit'
 import { useShell } from './shell/uiState'
 import { Timeline } from './Timeline'
@@ -72,7 +74,7 @@ function TimelineResizeHandle() {
 /**
  * Floating glass panel above the transport pill holding the multi-row
  * timeline (minimap + ruler + keyframes + MIDI / speed / audio lanes).
- * Renders nothing without a song or while closed; the open/close
+ * Renders nothing without a song or hand video, or while closed; the open/close
  * toggle lives in the transport pill (`settings.timelineEditorOpen`).
  */
 export function TimelineEditor() {
@@ -93,8 +95,12 @@ export function TimelineEditor() {
       useStore.getState().updateSettings({ timelineEditorOpen: true })
     }
   }, [audioLoaded])
-  const { mounted, leaving } = usePresence(open && !!song)
-  if (!mounted || !song) return null
+  const setupOpen = useHandVideoSetupOpen()
+  // A hand video alone also opens it (its lane is usable without a song).
+  const hasVideo = useHandVideo((s) => s.element !== null)
+  const usable = !!song || hasVideo
+  const { mounted, leaving } = usePresence(open && usable && !setupOpen)
+  if (!mounted || !usable) return null
   return (
     <Panel
       data-timeline-panel
@@ -108,15 +114,17 @@ export function TimelineEditor() {
       <TimelineResizeHandle />
       <div className="mb-1.5 flex h-[34px] items-center gap-1">
         <h2 className="mr-auto text-heading">{t('editor.title')}</h2>
+        {song && (
         <Button
-          size="sm"
-          icon={<Icon.PlusIcon />}
-          onPress={() =>
-            useStore.getState().addKeyframe(audioEngine.currentSongTime())
-          }
-        >
-          {t('addKeyframe.label')}
-        </Button>
+            size="sm"
+            icon={<Icon.PlusIcon />}
+            onPress={() =>
+              useStore.getState().addKeyframe(audioEngine.currentSongTime())
+            }
+          >
+            {t('addKeyframe.label')}
+          </Button>
+        )}
         <ToggleButton
           isSelected={follow}
           onChange={(v) => updateSettings({ followPlayhead: v })}

@@ -223,7 +223,7 @@ export function Viewport() {
       // (see scene/CameraControls.tsx) — let it through unhandled.
       if (e.ctrlKey || e.metaKey) return;
       const s = useStore.getState();
-      if (!s.song) return;
+      if (!audioEngine.hasTimeline()) return;
       if (s.transport === "playing") return;
       if (s.loadStatus.state === "loading") return;
       const unit =
@@ -238,7 +238,7 @@ export function Viewport() {
       // that `seek` expects); the wheel delta is in wall-clock
       // seconds so adding directly is correct.
       const cur = audioEngine.currentSongTime();
-      const duration = audioEngine.midiTimeToTimeline(s.song.duration);
+      const duration = audioEngine.timelineEnd();
       const next = Math.max(0, Math.min(duration, cur + dt));
       if (next === cur) return;
       audioEngine.seek(next);

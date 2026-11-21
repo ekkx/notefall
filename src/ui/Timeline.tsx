@@ -5,6 +5,8 @@ import { useStore } from '../store'
 import { audioEngine } from '../audio/engine'
 import { useUserAudio, type UserAudioPeaks } from '../audio/userAudio'
 import { pickAndImportUserAudio } from '../projects/actions'
+import { useHandVideo } from '../video/handVideo'
+import { HandVideoLane, HandVideoLaneMenu } from './TimelineVideoLane'
 import { showAlert } from './confirm'
 import { useCurrentDisplayTime } from '../audio/useCurrentTime'
 import type { NoteEvent } from '../midi/types'
@@ -1356,6 +1358,7 @@ const ZOOM_PER_DELTA = 0.002
 
 export function Timeline() {
   const { t } = useTranslation('timeline')
+  const tv = useTranslation('video').t
   const wrapRef = useRef<HTMLDivElement | null>(null)
   const [areaWidth, setAreaWidth] = useState(0)
 
@@ -1404,6 +1407,22 @@ export function Timeline() {
     setMenu({ target, x: e.clientX, y: e.clientY })
   }
   const closeMenu = () => setMenu(null)
+  const [videoMenu, setVideoMenu] = useState<{ x: number; y: number } | null>(null)
+  const openVideoMenu = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setVideoMenu({ x: e.clientX, y: e.clientY })
+  }
+
+  // ── Hand video lane (its own clip; `TimelineVideoLane.tsx`) ──
+  const videoLoaded = useHandVideo((s) => s.element !== null)
+  const videoFileName = useHandVideo((s) => s.fileName)
+  const videoDuration = useHandVideo((s) => s.duration)
+  const videoOffsetSec = useStore((s) => s.settings.handVideoOffsetSec)
+  const videoTrimEndSecRaw = useStore((s) => s.settings.handVideoTrimEndSec)
+  const videoEnd = videoLoaded ? videoOffsetSec + (videoTrimEndSecRaw ?? videoDuration) : 0
+  // A hand video alone (no MIDI, no audio) is enough to use the timeline: ruler, seeking, zoom and its own lane.
+  const hasTimeline = !!song || videoLoaded
 
   // ── Zoom + pan state ──
   // `zoom` is a multiplier on the fit-to-width pxPerSec; `scrollSec`
@@ -1441,6 +1460,7 @@ export function Timeline() {
   const midiLaneH = laneUnit * midiLaneRatio
   const audioLaneH = laneUnit * audioLaneRatio
   const speedLaneH = laneUnit * speedLaneRatio
+  const videoLaneH = laneUnit
   const speedPoints = useStore((s) => s.settings.midiSpeedAutomation)
   const speedYRangeLog2 = useStore(
     (s) => s.settings.midiSpeedAutomationYRangeLog2,
@@ -1494,7 +1514,7 @@ export function Timeline() {
   // (drag, click, etc.) predictable when curves are aggressive.
   const audioEnd = audioDuration > 0 ? offsetSec + audioTrimEndSec : 0
   const midiEnd = songDuration > 0 ? midiTrimEndSec + midiOffsetSec : 0
-  const totalDuration = Math.max(0.001, midiEnd, audioEnd)
+  const totalDuration = Math.max(0.001, midiEnd, audioEnd, videoEnd)
 
   // With a song loaded the audio lane is always shown — empty, it holds
   // the "add audio" affordance so the accompaniment feature is
@@ -1536,7 +1556,7 @@ export function Timeline() {
   // Auto-fit anchored to the longest natural track. Speed automation
   // doesn't affect the editor's x-scale; stretching the timeline on
   // every curve edit makes coarse moves unwieldy.
-  const baseDuration = Math.max(0.001, songDuration, audioDuration)
+  const baseDuration = Math.max(0.001, songDuration, audioDuration, videoLoaded ? videoDuration : 0)
   const fitPxPerSec = areaWidth / baseDuration
   const pxPerSec = fitPxPerSec * zoom
   const viewDuration = areaWidth > 0 ? areaWidth / pxPerSec : totalDuration
@@ -1552,11 +1572,11 @@ export function Timeline() {
   // Snap zoom back to 1 (and scroll to 0) whenever the song becomes
   // null — a fresh / empty session shouldn't keep the prior zoom.
   useEffect(() => {
-    if (!song) {
+    if (!hasTimeline) {
       setZoom(1)
       setScrollSec(0)
     }
-  }, [song])
+  }, [hasTimeline])
 
   const playheadInView = currentTime - clampedScroll
   const playheadVisible =
@@ -1602,7 +1622,7 @@ export function Timeline() {
     areaWidth,
     viewDuration,
     maxScroll,
-    songLoaded: !!song,
+    songLoaded: hasTimeline,
   })
   stateRef.current = {
     zoom,
@@ -1613,7 +1633,7 @@ export function Timeline() {
     areaWidth,
     viewDuration,
     maxScroll,
-    songLoaded: !!song,
+    songLoaded: hasTimeline,
   }
   useEffect(() => {
     const el = wrapRef.current
@@ -1752,7 +1772,7 @@ export function Timeline() {
   }
   const rulerHandlers = {
     onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => {
-      if (!song) return
+      if (!hasTimeline) return
       // Right-click is reserved for the lane context menu; ignore so
       // we don't grab pointer capture and trigger an unwanted seek.
       if (e.button !== 0) return
@@ -1761,7 +1781,7 @@ export function Timeline() {
       seekVisibleWindow(e.clientX, e.currentTarget)
     },
     onPointerMove: (e: React.PointerEvent<HTMLDivElement>) => {
-      if (song) showRulerHover(clampedScroll + Math.max(0, Math.min(1, seekFraction(e.clientX, e.currentTarget))) * viewDuration)
+      if (hasTimeline) showRulerHover(clampedScroll + Math.max(0, Math.min(1, seekFraction(e.clientX, e.currentTarget))) * viewDuration)
       if (!seekDraggingRef.current) return
       seekVisibleWindow(e.clientX, e.currentTarget)
     },
@@ -1847,7 +1867,7 @@ export function Timeline() {
     null,
   )
   const onMinimapPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!song) return
+    if (!hasTimeline) return
     if (e.button !== 0) return
     if (areaWidth <= 0 || maxScroll <= 0) return
     disableFollowIfOn()
@@ -1894,7 +1914,7 @@ export function Timeline() {
   const onMinimapEdgePointerDown =
     (side: 'left' | 'right') =>
     (e: React.PointerEvent<HTMLDivElement>) => {
-      if (!song || e.button !== 0) return
+      if (!hasTimeline || e.button !== 0) return
       if (areaWidth <= 0 || totalDuration <= 0) return
       e.stopPropagation()
       disableFollowIfOn()
@@ -2158,15 +2178,17 @@ export function Timeline() {
   // Pin strip — fixed thin height, sits directly under the ruler so
   // it reads as part of the time scale. Only meaningful with a song.
   const showPinLane = !!song
+  // The MIDI lane is for a song; with only a hand video the lanes start at the video's.
+  const showMidiLane = !!song
   const totalRowHeight =
     MINIMAP_HEIGHT +
     ROW_GAP +
     RULER_HEIGHT +
     (showPinLane ? ROW_GAP + PIN_LANE_HEIGHT : 0) +
-    ROW_GAP +
-    midiLaneH +
+    (showMidiLane ? ROW_GAP + midiLaneH : 0) +
     (showSpeedLane ? ROW_GAP + speedLaneH : 0) +
-    (showAudioLane ? ROW_GAP + audioLaneH : 0)
+    (showAudioLane ? ROW_GAP + audioLaneH : 0) +
+    (videoLoaded ? ROW_GAP + videoLaneH : 0)
 
   const onToggleMidiMute = () => {
     beginEdit()
@@ -2208,15 +2230,19 @@ export function Timeline() {
             </div>
           </>
         )}
-        <div style={{ height: ROW_GAP }} />
-        <LaneHeader
-          title={t('lane.midi')}
-          height={midiLaneH}
-          muted={midiMuted}
-          enabled={midiEnabled}
-          onToggleMute={song ? onToggleMidiMute : undefined}
-          onOpenMenu={song ? (e) => openMenuAt('midi', e) : undefined}
-        />
+        {showMidiLane && (
+          <>
+            <div style={{ height: ROW_GAP }} />
+            <LaneHeader
+              title={t('lane.midi')}
+              height={midiLaneH}
+              muted={midiMuted}
+              enabled={midiEnabled}
+              onToggleMute={song ? onToggleMidiMute : undefined}
+              onOpenMenu={song ? (e) => openMenuAt('midi', e) : undefined}
+            />
+          </>
+        )}
         {showSpeedLane ? (
           <>
             <LaneDivider
@@ -2263,6 +2289,12 @@ export function Timeline() {
               />
             </>
           )
+        )}
+        {videoLoaded && (
+          <>
+            <div style={{ height: ROW_GAP }} />
+            <LaneHeader title={videoFileName ?? tv('lane.title')} height={videoLaneH} onOpenMenu={openVideoMenu} />
+          </>
         )}
         <div style={{ height: ROW_GAP }} />
         <div style={{ height: MINIMAP_HEIGHT }} />
@@ -2365,7 +2397,7 @@ export function Timeline() {
               seek belongs to the seek bar above; the lane itself is
               drag-only so the gesture is unambiguous. Right-click
               opens the lane context menu (mute / volume / reset). */}
-          <div
+          {showMidiLane && <div
             onContextMenu={(e) => openMenuAt('midi', e)}
             style={{ height: midiLaneH }}
             className="group relative overflow-hidden rounded-field bg-white/5"
@@ -2413,7 +2445,7 @@ export function Timeline() {
                 />
               </div>
             )}
-          </div>
+          </div>}
 
           {/* Speed automation lane — only meaningful with a MIDI
               loaded. Sits between the MIDI clip and the audio clip
@@ -2524,6 +2556,17 @@ export function Timeline() {
                 </div>
               )}
             </div>
+          )}
+
+          {videoLoaded && (
+            <HandVideoLane
+              height={videoLaneH}
+              areaWidth={areaWidth}
+              pxPerSec={pxPerSec}
+              clampedScroll={clampedScroll}
+              viewDuration={viewDuration}
+              onContextMenu={openVideoMenu}
+            />
           )}
 
           {/* Minimap — full-song overview, pan-only. Sits below the
@@ -2638,6 +2681,7 @@ export function Timeline() {
           </div>
         )}
       </div>
+      {videoMenu && <HandVideoLaneMenu position={videoMenu} onClose={() => setVideoMenu(null)} />}
       {menu && (
         <LaneContextMenu
           target={menu.target}

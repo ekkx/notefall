@@ -1,5 +1,6 @@
 import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
-import { EffectComposer, Bloom } from '@react-three/postprocessing'
+import { EffectComposer } from '@react-three/postprocessing'
+import { BloomSourceComposerPass, MaskedBloom } from './bloomSource'
 import { RoundedBox } from '@react-three/drei'
 import type { BloomEffect } from 'postprocessing'
 import * as THREE from 'three'
@@ -24,6 +25,7 @@ const SCENE_CONTENTS_KEYS = [
   'cameraPos',
   'flashEnabled',
   'handsEnabled',
+  'handVideoEnabled',
   'keyboardScreenY',
   'notesEnabled',
 ] as const
@@ -47,6 +49,8 @@ import { pauseSong, playSong, togglePlayback } from '../audio/playback'
 import { EditTools } from './EditTools'
 import { CameraControls, isCameraGestureActive } from './CameraControls'
 import { StageBackground } from './StageBackgroundLayer'
+import { HandVideoLayer } from './HandVideoLayer'
+import { useHandVideo } from '../video/handVideo'
 import { applyViewShift, keyboardViewShift, viewBottomScale, viewTopScale } from './visibleTop'
 
 // On-screen preview tick rate when the user opts into the lighter
@@ -94,7 +98,8 @@ export function Scene() {
       {s.bloomEnabled && (
         <EffectComposer>
           <HandsBlurComposerPass />
-          <Bloom
+          <BloomSourceComposerPass />
+          <MaskedBloom
             // @react-three/postprocessing types the ref as
             // `typeof BloomEffect` (the class) instead of an instance —
             // a known typings quirk. The runtime ref IS a BloomEffect
@@ -200,6 +205,9 @@ function SceneContents({ recState }: { recState: 'idle' | 'recording' }) {
   // performance / fast-forward UX stays untouched while playing. With
   // no song loaded the first added note bootstraps an empty song.
   const editMode = transport !== 'playing' && recState !== 'recording'
+  // Hand video: real hands replace the virtual ones; the virtual keyboard
+  // is hidden (still there for clicks and glow state) when the user asks.
+  const handVideo = useHandVideo((st) => st.element !== null) && s.handVideoEnabled
   return (
     <>
       <ambientLight intensity={0.35} />
@@ -211,11 +219,12 @@ function SceneContents({ recState }: { recState: 'idle' | 'recording' }) {
       <Keyboard />
       <KeyboardFrontRail />
       <KeyboardCheekBlocks />
+      {handVideo && <HandVideoLayer />}
       {s.notesEnabled && <FallingNotes />}
       {s.flashEnabled && <LandingFlashes />}
       <HitParticles />
       <HitLine />
-      {s.handsEnabled && <Hands />}
+      {s.handsEnabled && !handVideo && <Hands />}
     </>
   )
 }

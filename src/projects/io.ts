@@ -1,5 +1,6 @@
 import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from 'fflate'
 import { AUDIO_EXTENSIONS, isAudioName } from '../audio/userAudio'
+import { VIDEO_EXTENSIONS, isVideoName } from '../video/handVideo'
 import {
   PROJECT_FILE_DESCRIPTION,
   PROJECT_FILE_EXTENSION,
@@ -75,6 +76,12 @@ function extFromAudioMime(mime: string): string {
   }
 }
 
+function extFromVideoMime(mime: string): string {
+  if (mime === 'video/quicktime') return '.mov'
+  if (mime === 'video/webm') return '.webm'
+  return '.mp4'
+}
+
 export function pack(project: Project): Blob {
   const customTextureRef = project.customTexture
     ? `note-texture${extFromImageMime(project.customTexture.mime)}`
@@ -84,6 +91,9 @@ export function pack(project: Project): Blob {
     : null
   const userAudioRef = project.userAudio
     ? `user-audio${extFromAudioMime(project.userAudio.mime)}`
+    : null
+  const handVideoRef = project.handVideo
+    ? `hand-video${extFromVideoMime(project.handVideo.mime)}`
     : null
   const manifest: ProjectManifest = {
     appVersion: __APP_VERSION__,
@@ -116,6 +126,10 @@ export function pack(project: Project): Blob {
             fileName: project.userAudio.fileName,
           }
         : null,
+    handVideo:
+      project.handVideo && handVideoRef
+        ? { ref: handVideoRef, mime: project.handVideo.mime, fileName: project.handVideo.fileName }
+        : null,
     ...(project.noteHands && project.noteHands.length > 0 ? { noteHands: project.noteHands } : {}),
   }
   const files: Zippable = {
@@ -132,6 +146,11 @@ export function pack(project: Project): Blob {
   }
   if (project.userAudio && userAudioRef) {
     files[`assets/${userAudioRef}`] = new Uint8Array(project.userAudio.bytes)
+  }
+  if (project.handVideo && handVideoRef) {
+    // Stored, not deflated: video is already compressed, and deflating
+    // hundreds of MB on the main thread would freeze the save.
+    files[`assets/${handVideoRef}`] = [project.handVideo.bytes, { level: 0 }]
   }
   const zipped = zipSync(files)
   // Copy into a fresh ArrayBuffer so Blob's typing is satisfied regardless
@@ -226,6 +245,16 @@ export async function unpack(buf: ArrayBuffer): Promise<Project> {
     // timeline.
   }
 
+  // Kept as a view into the unzipped bytes (no copy): the loader wraps
+  // it in a Blob, which copies once, and the rest is GC'd.
+  let handVideo: Project['handVideo'] = null
+  if (manifest.handVideo) {
+    const videoBytes = files[`assets/${manifest.handVideo.ref}`]
+    if (videoBytes) {
+      handVideo = { bytes: videoBytes, mime: manifest.handVideo.mime, fileName: manifest.handVideo.fileName }
+    }
+  }
+
   return {
     name: manifest.name,
     createdAt: manifest.createdAt,
@@ -235,6 +264,7 @@ export async function unpack(buf: ArrayBuffer): Promise<Project> {
     customTexture,
     stageBackground,
     userAudio,
+    handVideo,
     noteHands: Array.isArray(manifest.noteHands) ? manifest.noteHands : null,
   }
 }
@@ -271,16 +301,20 @@ const ACCEPT_TYPES = [
 // purely by the extension list.
 const OPEN_ACCEPT_TYPES = [
   {
-    description: 'notefall project, MIDI or audio',
+    description: 'notefall project, MIDI, audio or video',
     accept: {
-      [PICKER_MIME]: [PROJECT_FILE_EXTENSION, '.mid', '.midi', ...AUDIO_EXTENSIONS],
+      [PICKER_MIME]: [PROJECT_FILE_EXTENSION, '.mid', '.midi', ...AUDIO_EXTENSIONS, ...VIDEO_EXTENSIONS.filter((e) => !AUDIO_EXTENSIONS.includes(e))],
     },
   },
 ]
 
 // ───────── Open ─────────
 
-export async function showOpen(): Promise<{ buf: ArrayBuffer; ref: FileRef } | null> {
+/**
+ * The picked file + its ref. Read the bytes with `file.arrayBuffer()` when
+ * needed: a hand video is kept as the (disk-backed) File instead.
+ */
+export async function showOpen(): Promise<{ file: File; ref: FileRef } | null> {
   if (hasFileSystemAccess()) {
     let handles: FileSystemFileHandle[]
     try {
@@ -298,32 +332,25 @@ export async function showOpen(): Promise<{ buf: ArrayBuffer; ref: FileRef } | n
     // MIDI / audio files don't get a write handle stored — there's no
     // Save path back to them, so a handle would be misleading. Project
     // files keep theirs for in-place Cmd+S.
-    const isProject = !isMidiName(file.name) && !isAudioName(file.name)
+    const isProject = !isMidiName(file.name) && !isAudioName(file.name) && !isVideoName(file.name)
     return {
-      buf: await file.arrayBuffer(),
+      file,
       ref: { name: file.name, handle: isProject ? handle : null },
     }
   }
 
   // Fallback: programmatic <input type="file">.
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const input = document.createElement('input')
     input.type = 'file'
-    input.accept = `${PROJECT_FILE_EXTENSION},.mid,.midi,audio/midi,audio/x-midi,${AUDIO_EXTENSIONS.join(',')}`
-    input.onchange = async () => {
+    input.accept = `${PROJECT_FILE_EXTENSION},.mid,.midi,audio/midi,audio/x-midi,${[...new Set([...AUDIO_EXTENSIONS, ...VIDEO_EXTENSIONS])].join(',')}`
+    input.onchange = () => {
       const file = input.files?.[0]
       if (!file) {
         resolve(null)
         return
       }
-      try {
-        resolve({
-          buf: await file.arrayBuffer(),
-          ref: { name: file.name, handle: null },
-        })
-      } catch (e) {
-        reject(e)
-      }
+      resolve({ file, ref: { name: file.name, handle: null } })
     }
     // `oncancel` lands on Chrome 113+ (irrelevant here — we already use FSA there)
     // and is missing on Safari/Firefox. We don't strictly need to resolve on

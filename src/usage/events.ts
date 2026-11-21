@@ -16,6 +16,7 @@ export type EventName =
   | 'project_saved'
   | 'project_new'
   | 'custom_audio_imported'
+  | 'hand_video_added'
   | 'playback_started'
   | 'playback_paused'
   | 'playback_stopped'
