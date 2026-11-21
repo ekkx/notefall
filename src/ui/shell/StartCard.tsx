@@ -7,8 +7,9 @@ import { recorder } from '../../audio/recorder'
 import { midiInput } from '../../audio/midiInput'
 import { toggleRecord } from '../../audio/recordControl'
 import { loadDemoProject, openProject } from '../../projects/actions'
+import { useShell } from './uiState'
 import { useHandVideoSetupOpen } from './takeFocus'
-import { Button, Icon, Menu, MenuItem, MenuTrigger, Popover, usePresence } from '../kit'
+import { Button, GEOMETRY, Icon, Menu, MenuItem, MenuTrigger, Popover, usePresence } from '../kit'
 import { showAlert } from '../confirm'
 import { shortcutLabel } from './platform'
 
@@ -57,6 +58,7 @@ export function StartCard() {
   const countingIn = useStore((s) => s.countInBeat > 0)
   const isRecording = useSyncExternalStore(subscribeRecorder, recording)
   const device = useMidiDeviceName()
+  const lookOpen = useShell((s) => s.lookOpen)
   const [dismissed, setDismissed] = useState(false)
   const [hidden, setHidden] = useState(readHidden)
   const cardRef = useRef<HTMLElement>(null)
@@ -106,7 +108,11 @@ export function StartCard() {
   const action = 'h-12 w-full justify-start rounded-[12px] px-4'
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-20 grid place-items-center p-6">
+    <div
+      className="pointer-events-none fixed inset-0 z-20 grid place-items-center p-6 transition-[padding] duration-200 ease-[var(--ease-out)]"
+      // centred in the space left of Customize while it is open
+      style={lookOpen ? { paddingRight: GEOMETRY.EDGE + GEOMETRY.PANEL + GEOMETRY.GAP + 24 } : undefined}
+    >
       <section
         ref={cardRef}
         aria-labelledby="nf-start-title"
