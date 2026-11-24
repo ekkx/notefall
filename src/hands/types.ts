@@ -9,5 +9,5 @@
 //
 // HandPose: `elbow` (forearm start, y < wrist.y), `wrist`, `bases` (metacarpal bases, thumb first), `fingers[f]` (0 = thumb …
 // 4 = little; thumb [CMC, MCP, IP, tip], others [MCP, PIP, DIP, tip]), `press` (per finger 1 while it holds a key),
-// `thumbRef` (the thumb bones' twist references).
+// `thumbRef` (the thumb bones' twist references), `hinge` (fingers 2-5: the unit normal of each finger's bend plane).
 export type { Hand, HandPose, HandPoses, Vec3 } from './runtime/hands'

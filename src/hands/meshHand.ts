@@ -38,8 +38,6 @@ const interp = (t: [number, number][], y: number) => {
   for (let i = 1; i < t.length; i++) if (y <= t[i][0]) { const u = (y - t[i - 1][0]) / (t[i][0] - t[i - 1][0]); return t[i - 1][1] + u * (t[i][1] - t[i - 1][1]) }
   return t[t.length - 1][1]
 }
-/** `plane` = twist from each finger's own bend plane (default), `knuckle` = the old knuckle-row axis (lab A/B only). */
-const TWIST_MODE: 'plane' | 'knuckle' = 'plane'
 const FINGERS = ['Thumb', 'Index', 'Middle', 'Ring', 'Little']
 const SEGS4 = ['Metacarpal', 'Proximal', 'Distal', 'Tip']
 const SEGS5 = ['Metacarpal', 'Proximal', 'Intermediate', 'Distal', 'Tip']
@@ -124,13 +122,11 @@ class MeshHand {
   fr = new THREE.Matrix4()
   b1 = new THREE.Matrix4()
   delta = new THREE.Matrix4()
-  /** per-finger twist reference (see update) and, for diagnostics, the mesh PIP/DIP hinge's max deviation from the pose bend plane (deg) */
   /** how far the distal bone is stretched so the mesh pad reaches our capsule end (wu): measured per model at load */
   tipExt = TIP_EXT
+  /** per-finger twist reference (see step) */
   latRef = [0, 1, 2, 3, 4].map(() => new THREE.Vector3())
   thumbL = new THREE.Vector3()
-  planeDev = [0, 0, 0, 0, 0]
-  planeN = [0, 1, 2, 3, 4].map(() => new THREE.Vector3())
 
   constructor(hand: Hand, mat: THREE.Material, parent: THREE.Object3D) {
     this.hand = hand
@@ -504,37 +500,12 @@ class MeshHand {
         this.K[i] = this.K[e.prev]
       }
     }
-    // Twist reference per finger. Our fingers flex in a hinge plane (tilted per finger by FLEX_ROLL, rotated with the
-    // MCP abduction), whose normal is NOT the knuckle-row axis; aiming each bone's lateral axis at the knuckle row put
-    // the mesh's PIP / DIP hinge off our bend plane, so the finger looked bent sideways. Use the bend-plane normal
-    // (sum of the oriented segment cross products: |sum| ~ sin of the total bend), fading to the knuckle-row axis as
-    // the finger straightens (the normal is then ill-defined).
+    // Twist reference per finger: the pose's hinge (the normal of the finger's bend plane, exact at any bend, oriented like the knuckle row),
+    // projected off each bone by frameMatrix. Without it (an older runtime) the knuckle-row axis.
     for (let f = 1; f < 5; f++) {
-      const lat = this.latRef[f]
-      lat.copy(this.ex)
-      this.planeDev[f] = 0
-      const c = [E.findIndex((e) => e.kind === 'chain' && e.f === f && e.ci === 0), 0, 0, 0]
-      for (let k = 1; k < 4; k++) c[k] = E[c[k - 1]].next
-      if (c.some((i) => i < 0)) continue
-      tmpV.set(0, 0, 0)
-      for (let k = 0; k < 2; k++) tmpV.add(tmpV2.crossVectors(this.A[c[k]], this.A[c[k + 1]]))
-      const mag = tmpV.length()
-      if (tmpV.dot(this.ex) < 0) tmpV.negate() // orient like the knuckle row
-      if (mag > 1e-6) tmpV.multiplyScalar(1 / mag)
-      const nrm = this.planeN[f].copy(tmpV)
-      if (TWIST_MODE === 'plane' && mag > 1e-6) {
-        const w = Math.min(1, Math.max(0, (mag - 0.09) / (0.4 - 0.09))) // sin 5 deg .. sin 23.5 deg
-        lat.multiplyScalar(1 - w).addScaledVector(nrm, w).normalize()
-      }
-      // diagnostic: deviation of the lateral axis each bone is twisted by (projected off its own axis) from the bend plane
-      if (mag > 0.17) {
-        let dev = 0
-        for (let k = 0; k < 3; k++) {
-          tmpV2.copy(lat).addScaledVector(this.A[c[k]], -this.A[c[k]].dot(lat)).normalize()
-          dev = Math.max(dev, Math.acos(Math.min(1, Math.abs(tmpV2.dot(nrm)))) * 180 / Math.PI)
-        }
-        this.planeDev[f] = dev
-      }
+      const h = p.hinge?.[f - 1]
+      if (h) this.latRef[f].set(h[0], h[1], h[2])
+      else this.latRef[f].copy(this.ex)
     }
     const s = this.s
     // bend-volume compensation: linear blend skinning pinches a segment by ~cos(theta/2) at a bent joint, so a segment

@@ -1,8 +1,8 @@
 // Types of hands.js, the main-thread client of the hand motion runtime (hands-worker.js + hands.wasm + the motion data).
 export type Hand = 'L' | 'R'
 export type Vec3 = [number, number, number]
-/** One hand's pose: world-space joints (fingers[0] = thumb [CMC, MCP, IP, tip], others [MCP, PIP, DIP, tip]), per-finger press 0 / 1, the thumb's twist references */
-export type HandPose = { hand: Hand; elbow: Vec3; wrist: Vec3; bases: Vec3[]; fingers: Vec3[][]; press: number[]; thumbRef: Vec3[] }
+/** One hand's pose: world-space joints (fingers[0] = thumb [CMC, MCP, IP, tip], others [MCP, PIP, DIP, tip]), per-finger press 0 / 1, the thumb's twist references, and the flexion axis of fingers 2-5 (`hinge[0..3]`: unit vectors in world space, the normal of each finger's bend plane, all pointing the way of the knuckle row, index to little finger; every bone of a finger can take it as its lateral axis) */
+export type HandPose = { hand: Hand; elbow: Vec3; wrist: Vec3; bases: Vec3[]; fingers: Vec3[][]; press: number[]; thumbRef: Vec3[]; hinge: Vec3[] }
 export type HandPoses = { L: HandPose | null; R: HandPose | null }
 /** A note to play, in seconds on the clock poses are asked on. With hand / finger it is played that way; without, they are planned: notes on two tracks (`track`, any numbers) that look
  *  like the two hands get their hands from them. */
