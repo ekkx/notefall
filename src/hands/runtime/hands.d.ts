@@ -4,8 +4,9 @@ export type Vec3 = [number, number, number]
 /** One hand's pose: world-space joints (fingers[0] = thumb [CMC, MCP, IP, tip], others [MCP, PIP, DIP, tip]), per-finger press 0 / 1, the thumb's twist references */
 export type HandPose = { hand: Hand; elbow: Vec3; wrist: Vec3; bases: Vec3[]; fingers: Vec3[][]; press: number[]; thumbRef: Vec3[] }
 export type HandPoses = { L: HandPose | null; R: HandPose | null }
-/** A note to play, in seconds on the clock poses are asked on. With hand / finger it is played that way; without, they are planned. */
-export type HandsNote = { midi: number; on: number; off: number; hand?: Hand | null; finger?: number | null }
+/** A note to play, in seconds on the clock poses are asked on. With hand / finger it is played that way; without, they are planned: notes on two tracks (`track`, any numbers) that look
+ *  like the two hands get their hands from them. */
+export type HandsNote = { midi: number; on: number; off: number; hand?: Hand | null; finger?: number | null; track?: number | null }
 export type HandsMotion = {
   fps: number; t0: number; frames: number; S: Record<Hand, number>
   angles: Float32Array
