@@ -64,7 +64,7 @@ export function PresetSwatch({
 }) {
   const { t } = useTranslation('inspector')
   const chipClass =
-    'group nf-focus grid cursor-pointer gap-[5px] rounded-tab text-center text-caption text-ink-muted outline-none transition-colors duration-150 data-[hovered]:text-ink data-[selected]:text-ink'
+    'group nf-focus relative grid cursor-pointer gap-[5px] rounded-tab text-center text-caption text-ink-muted outline-none transition-colors duration-150 data-[hovered]:text-ink data-[selected]:text-ink'
   return (
     <RadioGroup
       aria-label={label}

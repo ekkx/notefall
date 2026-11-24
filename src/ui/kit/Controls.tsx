@@ -41,7 +41,7 @@ export function Switch({
       isDisabled={isDisabled}
       aria-label={ariaLabel}
       className={clsx(
-        'group flex cursor-pointer items-center justify-between gap-2 outline-none data-[disabled]:cursor-default data-[disabled]:opacity-40',
+        'group relative flex cursor-pointer items-center justify-between gap-2 outline-none data-[disabled]:cursor-default data-[disabled]:opacity-40',
         className,
       )}
     >
