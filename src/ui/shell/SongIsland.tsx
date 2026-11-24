@@ -15,6 +15,7 @@ import {
   MenuPopover,
   MenuSeparator,
 } from '../kit'
+import { useHandSplit } from '../../hands/splitAction'
 import type { ReportKind } from '../../feedback/report'
 import { AppMenu } from './AppMenu'
 import { useChromeHidden } from './idle'
@@ -39,6 +40,7 @@ export type FileActions = {
   onImportAudio: () => void
   onImportVideo: () => void
   onSaveMidi: () => void
+  onSplitHands: () => void
   onExport: () => void
   onLoadDemo: (label: string, url: string) => void
   onOpenRecent: (entry: RecentEntry) => void
@@ -68,6 +70,7 @@ export function SongIsland({
   const setProjectName = useStore((s) => s.setProjectName)
   const canUndo = useStore((s) => s.editHistory.length > 0)
   const canRedo = useStore((s) => s.editFuture.length > 0)
+  const splitRunning = useHandSplit((s) => s.running)
   const undoEdit = useStore((s) => s.undoEdit)
   const redoEdit = useStore((s) => s.redoEdit)
 
@@ -130,6 +133,9 @@ export function SongIsland({
           </MenuItem>
           <MenuItem onAction={actions.onImportVideo}>
             {t('file.addHandVideo')}
+          </MenuItem>
+          <MenuItem isDisabled={!hasSong || splitRunning} onAction={actions.onSplitHands}>
+            {t('file.splitHands')}
           </MenuItem>
           <MenuItem isDisabled={!hasSong} onAction={actions.onSaveMidi}>
             {t('file.saveSongAsMidi')}

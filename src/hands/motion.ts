@@ -3,8 +3,8 @@
 // hands are on and kept in Cache Storage, like the piano samples.
 import { MIDI_MAX, MIDI_MIN } from '../keyboard/layout'
 import { midiToTimeline, type SpeedMap } from '../midi/speedMap'
-import type { ParsedSong } from '../midi/types'
-import { HandsRuntime, type HandsMotion, type HandsNote } from './runtime/hands'
+import type { NoteEvent, ParsedSong } from '../midi/types'
+import { HandsRuntime, type Hand, type HandsMotion, type HandsNote } from './runtime/hands'
 import workerUrl from './runtime/hands-worker.js?url'
 import wasmUrl from './runtime/hands.wasm?url'
 
@@ -33,18 +33,23 @@ export type HandsTimeMap = {
  * tracks when there are two and they look like the two hands.
  */
 export function songHandNotes(song: ParsedSong, map: HandsTimeMap): HandsNote[] {
+  return mapSongNotes(song, map).map((e) => e.hn)
+}
+
+/** `songHandNotes` with the song's note each entry came from (notes the mapping drops have no entry). */
+export function mapSongNotes(song: ParsedSong, map: HandsTimeMap): { note: NoteEvent; hn: HandsNote }[] {
   const tl = (t: number) => map.midiOffsetSec + midiToTimeline(map.speedMap, t)
-  const notes: HandsNote[] = []
+  const out: { note: NoteEvent; hn: HandsNote }[] = []
   for (const n of song.notes) {
     if (n.time < map.trimStartSec || n.time >= map.trimEndSec) continue
     const midi = n.midi + map.transpose
     if (midi < MIDI_MIN || midi > MIDI_MAX) continue
     const on = tl(n.time)
     const off = Math.max(on, tl(Math.min(n.time + n.duration, map.trimEndSec)))
-    notes.push({ midi, on, off, hand: n.hand ?? null, finger: n.finger ?? null, track: n.track })
+    out.push({ note: n, hn: { midi, on, off, hand: n.hand ?? null, finger: n.finger ?? null, track: n.track } })
   }
-  notes.sort((a, b) => a.on - b.on || a.midi - b.midi)
-  return notes
+  out.sort((a, b) => a.hn.on - b.hn.on || a.hn.midi - b.hn.midi)
+  return out
 }
 
 // ---- status, for the Inspector -------------------------------------------------------------------------------------
@@ -72,22 +77,33 @@ export function subscribeHandsStatus(l: () => void): () => void {
 
 // ---- the runtime: one per page, created on first use, released a while after hands are turned off ------------------
 
+/** The runtime without the motion data (enough for `plan`), and the same runtime once the data is loaded (for `synth`). */
+let created: Promise<HandsRuntime> | null = null
 let runtime: Promise<HandsRuntime> | null = null
 let users = 0
 let releaseTimer = 0
 /** The Worker holds ~300 MB once the data is loaded; keep it through quick off / on toggles, free it after this. */
 const RELEASE_AFTER_MS = 20_000
 
+function createRuntime(): Promise<HandsRuntime> {
+  const p = HandsRuntime.create({ worker: workerUrl, wasm: wasmUrl })
+  p.catch(() => {
+    if (created === p) created = null
+  })
+  return p
+}
+
 function startRuntime(): Promise<HandsRuntime> {
   const p = (async () => {
     setStatus({ state: 'loading', stage: 'download', fraction: 0 })
-    const rt = await HandsRuntime.create({ worker: workerUrl, wasm: wasmUrl })
+    const rt = await (created ??= createRuntime())
     try {
       await rt.load(DB_URL, (stage, f) =>
         setStatus({ state: 'loading', stage: stage === 'download' ? 'download' : 'prepare', fraction: f }), // (decode and build report one 0..1 between them)
       )
     } catch (e) {
       rt.dispose()
+      created = null
       throw e
     }
     return rt
@@ -100,19 +116,40 @@ function startRuntime(): Promise<HandsRuntime> {
   return p
 }
 
+/** Frees the runtime after RELEASE_AFTER_MS unless someone holds it again. */
+function scheduleRelease(): void {
+  window.clearTimeout(releaseTimer)
+  if (users > 0) return
+  releaseTimer = window.setTimeout(() => {
+    const r = created
+    created = null
+    runtime = null
+    r?.then((rt) => rt.dispose()).catch(() => {})
+    setStatus({ state: 'idle' })
+  }, RELEASE_AFTER_MS)
+}
+
 /** Hands mounted: keeps the runtime alive. Returns the release function. */
 export function retainHandsRuntime(): () => void {
   users++
   window.clearTimeout(releaseTimer)
   return () => {
     users--
-    if (users > 0) return
-    releaseTimer = window.setTimeout(() => {
-      const r = runtime
-      runtime = null
-      r?.then((rt) => rt.dispose()).catch(() => {})
-      setStatus({ state: 'idle' })
-    }, RELEASE_AFTER_MS)
+    scheduleRelease()
+  }
+}
+
+/**
+ * Which hand (and finger) plays each note, without making any motion: needs only the small module, never the motion data
+ * (so no ~22 MB download). Same plan the motion is made from. Rejects with an AbortError when `signal` aborts.
+ */
+export async function planHandNotes(notes: HandsNote[], signal: AbortSignal): Promise<{ hand: (Hand | null)[]; finger: number[] }> {
+  window.clearTimeout(releaseTimer)
+  try {
+    const rt = await (created ??= createRuntime())
+    return await rt.plan(notes, { signal })
+  } finally {
+    scheduleRelease()
   }
 }
 

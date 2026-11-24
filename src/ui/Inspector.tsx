@@ -38,6 +38,8 @@ import { useIdle } from './shell/idle'
 import { useCustomTexture } from '../notes/customTexture'
 import { CAMERA_LIMITS } from '../scene/cameraLimits'
 import { getHandsStatus, subscribeHandsStatus } from '../hands/motion'
+import { unassignedCount } from '../hands/split'
+import { offerHandSplit, splitHands, useHandSplit } from '../hands/splitAction'
 import {
   STAGE_BACKGROUND_ACCEPTED_TYPES,
   useStageBackground,
@@ -271,6 +273,22 @@ function TrackColorRows() {
   )
 }
 
+/** "N notes have no hand" + the automatic split, while some notes have none. */
+function HandSplitRow() {
+  const { t } = useTranslation('dialogs')
+  const count = useStore((st) => unassignedCount(st.song))
+  const { running, slow } = useHandSplit()
+  if (count === 0) return null
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-caption text-ink-faint">{t('handSplit.unassigned', { count })}</p>
+      <Button variant="field" isDisabled={running} onPress={() => void splitHands()}>
+        {slow ? t('handSplit.busy') : t('handSplit.button')}
+      </Button>
+    </div>
+  )
+}
+
 // ── Notes: colouring (solid + per-track / gradient / random palette) ──
 function NoteColorControls() {
   const { t } = useTranslation('inspector')
@@ -289,13 +307,17 @@ function NoteColorControls() {
           { value: 'random', label: t('coloring.modes.random') },
           { value: 'hand', label: t('coloring.modes.hand') },
         ]}
-        onChange={(v) => atomicUpdate({ noteColorMode: v })}
+        onChange={(v) => {
+          atomicUpdate({ noteColorMode: v })
+          if (v === 'hand' && mode !== 'hand') void offerHandSplit()
+        }}
         defaultValue={def.noteColorMode}
         scopeKey="noteColorMode"
       />
       {mode === 'solid' && <TrackColorRows />}
       {mode === 'hand' && (
         <SubGroup label={t('coloring.modes.hand')}>
+          <HandSplitRow />
           <BoundColorRow label={t('coloring.leftHand')} settingKey="noteHandColorL" />
           <BoundColorRow label={t('coloring.rightHand')} settingKey="noteHandColorR" />
           <BoundColorRow label={t('coloring.noHand')} settingKey="noteColor" />

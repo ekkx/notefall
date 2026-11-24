@@ -15,7 +15,8 @@
     "export": "書き出し…",
     "demoSongs": "デモ曲",
     "demoSongsLabel": "デモ曲",
-    "exportButton": "書き出し"
+    "exportButton": "書き出し",
+    "splitHands": "左右の手を自動で分ける"
   },
   "midi": {
     "button": "MIDI入力",

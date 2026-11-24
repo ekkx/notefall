@@ -211,5 +211,23 @@
     "scroll": "scroll",
     "add": "Add a note (empty space)",
     "sheet": "Show these shortcuts"
+  },
+  "handSplit": {
+    "askTitle": "Split into left and right hand?",
+    "askMessage_one": "{{count}} note has no hand yet. Notefall can assign it automatically.",
+    "askMessage_other": "{{count}} notes have no hand yet. Notefall can assign them automatically. Hands you set yourself stay as they are.",
+    "askConfirm": "Split hands",
+    "askCancel": "Not now",
+    "redoTitle": "Split the hands again?",
+    "redoMessage": "Every note already has a hand. Splitting again replaces all of them, including the ones you set yourself.",
+    "redoConfirm": "Replace hands",
+    "done": "Hands set: {{right}} notes on the right, {{left}} on the left.",
+    "doneHint": "Hands set: {{right}} notes on the right, {{left}} on the left. To color notes by hand, choose Customize > Notes > Coloring > By hand.",
+    "errorTitle": "Could not split the hands",
+    "errorMessage": "Something went wrong while assigning the hands. Try again.",
+    "unassigned_one": "{{count}} note has no hand.",
+    "unassigned_other": "{{count}} notes have no hand.",
+    "button": "Split hands automatically",
+    "busy": "Splitting…"
   }
 }

@@ -211,5 +211,23 @@
     "scroll": "rolagem",
     "add": "Adicionar uma nota (espaço vazio)",
     "sheet": "Mostrar estes atalhos"
+  },
+  "handSplit": {
+    "askTitle": "Separar em mão esquerda e direita?",
+    "askMessage_one": "{{count}} nota ainda não tem mão. O Notefall pode atribuí-la automaticamente.",
+    "askMessage_other": "{{count}} notas ainda não têm mão. O Notefall pode atribuí-las automaticamente. As mãos que você definiu continuam como estão.",
+    "askConfirm": "Separar mãos",
+    "askCancel": "Agora não",
+    "redoTitle": "Separar as mãos de novo?",
+    "redoMessage": "Todas as notas já têm mão. Separar de novo substitui todas, inclusive as que você definiu.",
+    "redoConfirm": "Substituir mãos",
+    "done": "Mãos definidas: {{right}} notas na direita, {{left}} na esquerda.",
+    "doneHint": "Mãos definidas: {{right}} notas na direita, {{left}} na esquerda. Para colorir as notas por mão, escolha Personalizar > Notas > Modo de cor > Por mão.",
+    "errorTitle": "Não foi possível separar as mãos",
+    "errorMessage": "Algo deu errado ao atribuir as mãos. Tente de novo.",
+    "unassigned_one": "{{count}} nota sem mão.",
+    "unassigned_other": "{{count}} notas sem mão.",
+    "button": "Separar as mãos automaticamente",
+    "busy": "Separando…"
   }
 }

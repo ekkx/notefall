@@ -15,7 +15,8 @@
     "export": "Export…",
     "demoSongs": "Demo songs",
     "demoSongsLabel": "Demo songs",
-    "exportButton": "Export"
+    "exportButton": "Export",
+    "splitHands": "Split hands automatically"
   },
   "midi": {
     "button": "MIDI input",

@@ -9,6 +9,8 @@ const TOOLBAR_KEYS = [
 ] as const
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useHandVideo } from '../video/handVideo'
+import { isHandSplit } from '../hands/split'
+import { splitHandsCommand } from '../hands/splitAction'
 import type { ParsedSong } from '../midi/types'
 import { audioEngine } from '../audio/engine'
 import { playSong } from '../audio/playback'
@@ -240,7 +242,8 @@ export function Toolbar() {
   // to recombine three.
   const onSaveSongAsMidi = () => {
     if (!song) return
-    const buf = serializeMidi(song)
+    // one track, except for a song split into the two hands: those stay two tracks
+    const buf = serializeMidi(song, { preserveTracks: isHandSplit(song) })
     const blob = new Blob([buf], { type: 'audio/midi' })
     const url = URL.createObjectURL(blob)
     const base =
@@ -515,6 +518,7 @@ export function Toolbar() {
         onImportAudio: () => void onImportAudio(),
         onImportVideo: () => void onImportVideo(),
         onSaveMidi: onSaveSongAsMidi,
+        onSplitHands: () => void splitHandsCommand(),
         onExport: onOpenExportDialog,
         onLoadDemo: (label, url) => void onLoadDemo(label, url),
         onOpenRecent: (entry) => void onOpenRecent(entry),
