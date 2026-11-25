@@ -29,12 +29,6 @@ const SCENE_CONTENTS_KEYS = [
   'keyboardScreenY',
   'notesEnabled',
 ] as const
-const PLAY_TOGGLE_KEYS = [
-  'cameraFov',
-  'cameraLookAt',
-  'cameraPos',
-  'keyboardScreenY',
-] as const
 import { recorder } from '../audio/recorder'
 import { registerR3FStateGetter } from './exportBridge'
 import { Keyboard } from '../keyboard/Keyboard'
@@ -51,7 +45,8 @@ import { CameraControls, isCameraGestureActive } from './CameraControls'
 import { StageBackground } from './StageBackgroundLayer'
 import { HandVideoLayer } from './HandVideoLayer'
 import { useHandVideo } from '../video/handVideo'
-import { applyViewShift, keyboardViewShift, viewBottomScale, viewTopScale } from './visibleTop'
+import { applyFraming } from './framing'
+import { PICK_PLANES } from './pickPlanes'
 
 // On-screen preview tick rate when the user opts into the lighter
 // 30 fps mode. The rendered MP4 export drives its own fps regardless
@@ -406,23 +401,6 @@ function KeyboardCheekBlocks() {
 const HOLD_THRESHOLD_MS = 200
 
 function PlayToggleArea() {
-  const s = useSettingsSlice(PLAY_TOGGLE_KEYS)
-  const camDistance = Math.abs(s.cameraPos[2])
-  const halfVisHeight = camDistance * Math.tan((s.cameraFov * Math.PI) / 360)
-  const shift = keyboardViewShift(s)
-  const visibleTopY = s.cameraLookAt[1] + halfVisHeight * viewTopScale(shift)
-  const visibleBottomY = s.cameraLookAt[1] - halfVisHeight * viewBottomScale(shift)
-  const topOfKeyboard = NOTE_HIT_Y
-  const bottomOfKeyboard = KEYBOARD_Y
-  // Above-keyboard region (where falling notes appear)
-  const upperHeight = visibleTopY - topOfKeyboard
-  const upperCenterY = (visibleTopY + topOfKeyboard) / 2
-  // Below-keyboard region
-  const lowerHeight = bottomOfKeyboard - visibleBottomY
-  const lowerCenterY = (bottomOfKeyboard + visibleBottomY) / 2
-  // Wide enough to cover any reasonable aspect ratio at this camera distance.
-  const width = halfVisHeight * 4
-
   const holdTimer = useRef<number | null>(null)
   const fastForwardActive = useRef(false)
   // Whether the song was already playing when the hold began. If false the
@@ -508,26 +486,12 @@ function PlayToggleArea() {
 
   return (
     <>
-      {upperHeight > 0 && (
-        <mesh
-          position={[0, upperCenterY, 0.01]}
-          onPointerDown={onPointerDown}
-          onPointerUp={onPointerUp}
-        >
-          <planeGeometry args={[width, upperHeight]} />
+      {PICK_PLANES.map((p) => (
+        <mesh key={p.name} position={p.position} onPointerDown={onPointerDown} onPointerUp={onPointerUp}>
+          <planeGeometry args={p.size} />
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
-      )}
-      {lowerHeight > 0 && (
-        <mesh
-          position={[0, lowerCenterY, 0.01]}
-          onPointerDown={onPointerDown}
-          onPointerUp={onPointerUp}
-        >
-          <planeGeometry args={[width, lowerHeight]} />
-          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-        </mesh>
-      )}
+      ))}
     </>
   )
 }
@@ -566,15 +530,12 @@ function CameraSync({
     if ('fov' in camera) {
       ;(camera as THREE.PerspectiveCamera).fov = fov
       ;(camera as THREE.PerspectiveCamera).updateProjectionMatrix()
-      applyViewShift(
-        camera as THREE.PerspectiveCamera,
-        keyboardViewShift({
-          keyboardScreenY: screenY,
-          cameraPos: pos,
-          cameraLookAt: lookAt,
-          cameraFov: fov,
-        }),
-      )
+      applyFraming(camera as THREE.PerspectiveCamera, {
+        keyboardScreenY: screenY,
+        cameraPos: pos,
+        cameraLookAt: lookAt,
+        cameraFov: fov,
+      })
     }
     camera.lookAt(...lookAt)
   }, [camera, pos, lookAt, fov, screenY])
@@ -625,15 +586,12 @@ function CameraSync({
         persp.updateProjectionMatrix()
         prevFov.current = cf
       }
-      applyViewShift(
-        persp,
-        keyboardViewShift({
-          keyboardScreenY: cs,
-          cameraPos: cp,
-          cameraLookAt: cl,
-          cameraFov: cf,
-        }),
-      )
+      applyFraming(persp, {
+        keyboardScreenY: cs,
+        cameraPos: cp,
+        cameraLookAt: cl,
+        cameraFov: cf,
+      })
     }
     camera.lookAt(lx, ly, lz)
   })

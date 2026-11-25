@@ -1,5 +1,5 @@
 import type { ParsedSong } from '../midi/types'
-import type { Settings } from '../store'
+import type { Settings, VideoAspect } from '../store'
 import {
   VIDEO_CODECS,
   isVideoExportSupported,
@@ -18,8 +18,7 @@ import type { UserAudioTrack } from './synth/types'
 // from each axis (resolution, fps, quality) and the bitrate ladder
 // looks up the right number. Splitting "preset" into independent axes
 // instead of a flat `1080p · 60fps · High` list keeps the UI readable
-// when we add more dimensions (e.g. shorter aspect ratios for vertical
-// video) and lets each axis evolve independently.
+// and lets each axis evolve independently.
 // ──────────────────────────────────────────────────────────────────────
 
 export type VideoResolutionId = '720p' | '1080p' | '4k'
@@ -33,6 +32,21 @@ export const VIDEO_RESOLUTIONS: Record<
   '720p': { width: 1280, height: 720, label: '720p' },
   '1080p': { width: 1920, height: 1080, label: '1080p' },
   '4k': { width: 3840, height: 2160, label: '4K' },
+}
+
+const ASPECT_RATIOS: Record<VideoAspect, number> = { '16:9': 16 / 9, '9:16': 9 / 16, '1:1': 1 }
+
+export const VIDEO_ASPECTS = Object.keys(ASPECT_RATIOS) as VideoAspect[]
+
+/** Width over height. */
+export const aspectRatio = (aspect: VideoAspect): number => ASPECT_RATIOS[aspect] ?? ASPECT_RATIOS['16:9']
+
+/** Pixel size of a video: the resolution's short side stays the short side whatever the shape. */
+export function videoSize(resolution: VideoResolutionId, aspect: VideoAspect): { width: number; height: number } {
+  const { width, height } = VIDEO_RESOLUTIONS[resolution]
+  if (aspect === '9:16') return { width: height, height: width }
+  if (aspect === '1:1') return { width: height, height }
+  return { width, height }
 }
 
 export const VIDEO_QUALITIES: Record<
@@ -67,9 +81,13 @@ export function computeVideoBitrateKbps(
   resolution: VideoResolutionId,
   fps: VideoFps,
   quality: VideoQualityId,
+  aspect: VideoAspect,
 ): number {
   const base = BASE_VIDEO_BITRATES_KBPS[`${resolution}_${fps}`]
-  return Math.round(base * VIDEO_QUALITIES[quality].bitrateMul)
+  const full = VIDEO_RESOLUTIONS[resolution]
+  const { width, height } = videoSize(resolution, aspect)
+  const pixels = (width * height) / (full.width * full.height)
+  return Math.round(base * VIDEO_QUALITIES[quality].bitrateMul * pixels)
 }
 
 /**

@@ -16,6 +16,7 @@
       "videoOnly": "Somente vídeo",
       "audioOnly": "Somente áudio"
     },
+    "aspect": "Proporção",
     "resolution": "Resolução",
     "fps": "Taxa de quadros",
     "fps30": "30 fps",

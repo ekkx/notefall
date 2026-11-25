@@ -50,8 +50,8 @@ import {
 } from "./whiteKeyShader";
 import { usePcKeyboardInput } from "./pcInput";
 import { retriggerDip } from "./retriggerDip";
-import { useStore, useSettingsSlice, defaultSettings } from "../store";
-import { computeLiveVisibleTop, keyboardViewShift } from "../scene/visibleTop";
+import { useStore, useSettingsSlice } from "../store";
+import { MAX_LIVE_VISIBLE_ABOVE_HIT } from "../scene/visibleTop";
 import { getResolvedSettings } from "../scene/automatedSettings";
 
 // Key labels: glyph height (world units, size 1). Black-key labels sit on
@@ -798,30 +798,9 @@ export function Keyboard() {
     return xs;
   }, []);
 
-  // Divider length: keyboard back edge → top of the live camera view
-  // at the divider's depth. Uses the same `computeLiveVisibleTop`
-  // helper as the falling notes so both extend together when the user
-  // zooms out / looks up — and both fall back to the same hard cap
-  // beyond the horizon. The reference trajectory length serves as a
-  // floor so zoom-in / look-down can't shorten the line below the
-  // designed default.
-  const dividerHitY = NOTE_HIT_Y;
-  const referenceTopWorld =
-    defaultSettings.cameraLookAt[1] +
-    Math.abs(defaultSettings.cameraPos[2]) *
-      Math.tan((defaultSettings.cameraFov * Math.PI) / 360);
-  const dividerLiveTop = computeLiveVisibleTop(
-    settings.cameraPos,
-    settings.cameraLookAt,
-    settings.cameraFov,
-    0.02,
-    dividerHitY,
-    keyboardViewShift(settings),
-  );
-  const dividerLength = Math.max(
-    0,
-    Math.max(dividerLiveTop, referenceTopWorld) - dividerHitY,
-  );
+  // Octave dividers run from the keyboard's back edge past the top of any
+  // view (the same cap the falling notes use).
+  const dividerLength = MAX_LIVE_VISIBLE_ABOVE_HIT;
 
   return (
     <group ref={rootRef} position={[0, KEYBOARD_Y, 0]}>
@@ -897,7 +876,6 @@ export function Keyboard() {
         );
       })}
       {settings.octaveLinesEnabled &&
-        dividerLength > 0 &&
         octaveDividerXs.map((x, i) => (
           <mesh
             key={`octave-divider-${i}`}

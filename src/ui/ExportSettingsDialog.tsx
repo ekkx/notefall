@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { setVideoAspect, useVideoAspectOptions } from './videoAspect'
+import { useStore, type VideoAspect } from '../store'
 import { Button, Dialog, Disclosure, SegmentedControl, Switch } from './kit'
 import {
   VIDEO_QUALITIES,
   VIDEO_RESOLUTIONS,
   audioConfigFor,
   computeVideoBitrateKbps,
+  videoSize,
   type VideoFps,
   type VideoQualityId,
   type VideoResolutionId,
@@ -85,6 +88,10 @@ export function ExportSettingsDialog({
     defaults.playSoundOnComplete,
   )
 
+  // The shape is the project's own setting (the window shows it too), not one of the dialog's.
+  const aspect = useStore((st) => st.settings.videoAspect)
+  const aspectOptions = useVideoAspectOptions()
+
   // Reset to defaults each time the dialog opens. Without this, the
   // form would show whatever the previous render left in state, even
   // if the user dismissed without exporting and the caller's
@@ -143,14 +150,14 @@ export function ExportSettingsDialog({
       // = 352.8 kB/s at 44.1 kHz ≈ 2822 kbps
       bitrateKbps = 44_100 * 4 * 2 * 8 / 1000
     } else {
-      bitrateKbps += computeVideoBitrateKbps(resolution, fps, quality)
+      bitrateKbps += computeVideoBitrateKbps(resolution, fps, quality, aspect)
       if (format === 'video-audio') {
         bitrateKbps += audioConfigFor(codec)?.bitrateKbps ?? 0
       }
     }
     const bytes = (bitrateKbps * songDuration * 1000) / 8
     return Math.max(1, Math.round(bytes / (1024 * 1024)))
-  }, [format, codec, resolution, fps, quality, songDuration])
+  }, [format, codec, resolution, fps, quality, aspect, songDuration])
 
   const handleExport = () => {
     onExport({ format, codec, resolution, fps, quality, playSoundOnComplete })
@@ -160,10 +167,11 @@ export function ExportSettingsDialog({
     CODEC_SUMMARY[codec],
     VIDEO_QUALITIES[quality].label,
   ].join(' · ')
+  const size = videoSize(resolution, aspect)
   const fileMeta = showVideoOptions
     ? t('export.fileFormat', {
         codec: VIDEO_CODECS[codec].config.ext.toUpperCase(),
-        res: VIDEO_RESOLUTIONS[resolution].label,
+        res: `${size.width}×${size.height}`,
         fps,
       })
     : t('export.wavMeta')
@@ -204,6 +212,14 @@ export function ExportSettingsDialog({
 
       {showVideoOptions && (
         <>
+          <Field label={t('export.aspect')}>
+            <SegmentedControl<VideoAspect>
+              aria-label={t('export.aspect')}
+              value={aspect}
+              onChange={setVideoAspect}
+              options={aspectOptions}
+            />
+          </Field>
           <Field label={t('export.resolution')}>
             <SegmentedControl<VideoResolutionId>
               aria-label={t('export.resolution')}
@@ -262,7 +278,7 @@ export function ExportSettingsDialog({
               />
               <p className="m-0 text-ink-muted">
                 {t('export.qualityHint', {
-                  mbps: (computeVideoBitrateKbps(resolution, fps, quality) / 1000).toFixed(1),
+                  mbps: (computeVideoBitrateKbps(resolution, fps, quality, aspect) / 1000).toFixed(1),
                 })}
               </p>
             </Field>

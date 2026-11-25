@@ -70,7 +70,7 @@ export type PxRect = { x: number; y: number; w: number; h: number }
  */
 export function handBounds(poses: HandPoses[], camera: THREE.PerspectiveCamera, width: number, height: number, padWu: number): PxRect[] {
   const v = new THREE.Vector3()
-  const pad = Math.ceil(padWu * height / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * camera.position.length()) + 4)
+  const pad = Math.ceil(padWu * height / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * camera.position.length() * (camera.view?.height ?? 1)) + 4)
   const rects: PxRect[] = []
   for (const h of ['L', 'R'] as const) {
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity

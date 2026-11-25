@@ -6,8 +6,8 @@ import { Icon } from "./kit";
 import { useIdle } from "./shell/idle";
 import { useStore } from "../store";
 import { audioEngine } from "../audio/engine";
+import { aspectRatio } from "../export/exportVideo";
 
-const ASPECT = 16 / 9;
 // Wheel-to-seek sensitivity. 0.005s per CSS pixel of deltaY → a typical
 // mouse wheel notch (~100px) advances the song by ~0.5s, while trackpads
 // scrub at finer increments naturally. Direction: deltaY > 0 (wheel down)
@@ -163,6 +163,7 @@ export function Viewport() {
   // available area and is offset from the canvas by the letterbox bars.
   const innerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
+  const aspect = useStore((s) => aspectRatio(s.settings.videoAspect));
   // Drives the click-eater overlay: while samples are being downloaded
   // we shouldn't let any canvas interaction (play toggle, eraser, new
   // note, range-select, hold-to-fast-forward) fire. The floating chrome
@@ -194,18 +195,18 @@ export function Viewport() {
       const r = el.getBoundingClientRect();
       const containerAspect = r.width / r.height;
       let w: number, h: number;
-      if (containerAspect > ASPECT) {
+      if (containerAspect > aspect) {
         h = r.height;
-        w = h * ASPECT;
+        w = h * aspect;
       } else {
         w = r.width;
-        h = w / ASPECT;
+        h = w / aspect;
       }
       setSize({ w, h });
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [aspect]);
 
   // Wheel-to-seek over the canvas while in edit mode. Reaching for the
   // seek bar every time interrupts the editing flow — scrolling lets the

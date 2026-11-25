@@ -2,13 +2,9 @@ import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import { useThree, type ThreeEvent } from '@react-three/fiber'
 import { useStore, useSettingsSlice } from '../store'
-import { keyboardViewShift, viewBottomScale, viewTopScale } from './visibleTop'
+import { PICK_PLANES } from './pickPlanes'
 
 const EDIT_TOOLS_KEYS = [
-  'cameraFov',
-  'cameraLookAt',
-  'cameraPos',
-  'keyboardScreenY',
   'midiOffsetSec',
   'midiSpeedAutomation',
   'transpose',
@@ -30,7 +26,6 @@ import {
 import { noteDeathFx } from '../notes/noteDeathFx'
 import {
   KEYBOARD_LAYOUT,
-  KEYBOARD_Y,
   KEY_COUNT,
   MIDI_MIN,
   NOTE_HIT_Y,
@@ -127,19 +122,6 @@ export function EditTools() {
       gl.domElement.style.cursor = ''
     }
   }, [gl])
-
-  const camDistance = Math.abs(s.cameraPos[2])
-  const halfVisHeight = camDistance * Math.tan((s.cameraFov * Math.PI) / 360)
-  const shift = keyboardViewShift(s)
-  const visibleTopY = s.cameraLookAt[1] + halfVisHeight * viewTopScale(shift)
-  const visibleBottomY = s.cameraLookAt[1] - halfVisHeight * viewBottomScale(shift)
-  const topOfKeyboard = NOTE_HIT_Y
-  const bottomOfKeyboard = KEYBOARD_Y
-  const upperHeight = visibleTopY - topOfKeyboard
-  const upperCenterY = (visibleTopY + topOfKeyboard) / 2
-  const lowerHeight = bottomOfKeyboard - visibleBottomY
-  const lowerCenterY = (bottomOfKeyboard + visibleBottomY) / 2
-  const width = halfVisHeight * 4
 
   const screenToWorld = (clientX: number, clientY: number): THREE.Vector3 | null => {
     const canvas = gl.domElement
@@ -501,28 +483,18 @@ export function EditTools() {
 
   return (
     <>
-      {upperHeight > 0 && (
+      {PICK_PLANES.map((p) => (
         <mesh
-          position={[0, upperCenterY, 0.01]}
+          key={p.name}
+          position={p.position}
           onPointerDown={onPointerDown}
-          onPointerMove={onUpperAreaMove}
+          onPointerMove={p.name === 'above' ? onUpperAreaMove : onLowerAreaMove}
           onPointerOut={onAreaPointerOut}
         >
-          <planeGeometry args={[width, upperHeight]} />
+          <planeGeometry args={p.size} />
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
-      )}
-      {lowerHeight > 0 && (
-        <mesh
-          position={[0, lowerCenterY, 0.01]}
-          onPointerDown={onPointerDown}
-          onPointerMove={onLowerAreaMove}
-          onPointerOut={onAreaPointerOut}
-        >
-          <planeGeometry args={[width, lowerHeight]} />
-          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-        </mesh>
-      )}
+      ))}
     </>
   )
 }

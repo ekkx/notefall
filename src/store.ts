@@ -67,6 +67,8 @@ export type HandVideoKey = {
   source: 'auto' | 'manual'
 }
 
+export type VideoAspect = '16:9' | '9:16' | '1:1'
+
 export type Settings = {
   // Layout
   // On-screen keyboard position: 0 = its front edge on the bottom of the
@@ -77,6 +79,16 @@ export type Settings = {
   cameraFov: number
   cameraPos: [number, number, number]
   cameraLookAt: [number, number, number]
+  /** Shape of the picture, in the window and in an exported video. */
+  videoAspect: VideoAspect
+  /** Keep what is being played in the picture: pan and zoom along with the song (scene/cameraFollow.ts). */
+  cameraFollowEnabled: boolean
+  /** The closest the follow gets, as white keys across the picture. */
+  cameraFollowMinKeys: number
+  /** Room beside the outermost notes, in white keys. */
+  cameraFollowMargin: number
+  /** Seconds a movement is spread over (the zoom takes twice that). */
+  cameraFollowSmooth: number
   // Notes
   notesEnabled: boolean
   fallDirection: FallDirection
@@ -669,6 +681,11 @@ export const defaultSettings: Settings = {
   cameraFov: 32,
   cameraPos: [0, 0, 12],
   cameraLookAt: [0, 0, 0],
+  videoAspect: '16:9',
+  cameraFollowEnabled: false,
+  cameraFollowMinKeys: 24,
+  cameraFollowMargin: 2,
+  cameraFollowSmooth: 2,
   notesEnabled: true,
   fallDirection: 'down',
   fallDurationSec: 2.5,

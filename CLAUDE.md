@@ -49,8 +49,16 @@ src/
 - Camera at `[0, 0, 12]`, FOV 32°. Keyboard fixed at world `KEYBOARD_Y = -2.0` (`keyboard/layout.ts`).
 - 1 mm = 0.01 wu. White: 0.235 × 1.475. Black: 0.137 × 0.95. 88 white keys × 0.235 = 12.22 wu = full 16:9 viewport width.
 - White keys are 3D solid caps with rounded corners (`createRoundedWhiteGeometry`); black keys are custom chamfered geometry with an **inner solid fill** so chamfer/slope seams resolve to black instead of revealing the void behind.
-- On-screen keyboard position is `keyboardScreenY` (Inspector "Keyboard Y"; 0 = keyboard front edge on the bottom of the view, 1 = back edge on the top). `keyboardViewShift` turns it into a **lens shift** for the current camera, applied by `CameraSync` via `camera.view.offsetY` (`applyViewShift`, `scene/visibleTop.ts`). The keyboard itself never moves — moving it in world Y (the old `keyboardY`) exposed its back/top structure through perspective. Anything that derives the visible Y range from FOV must scale the half-height by `viewTopScale` / `viewBottomScale` of that shift.
+- On-screen keyboard position is `keyboardScreenY` (Inspector "Keyboard Y"; 0 = keyboard front edge on the bottom of the view, 1 = back edge on the top). `keyboardViewShift` turns it into a **lens shift** for the current camera, applied by `CameraSync` via `camera.view` (`applyFraming`, see Framing below). The keyboard itself never moves — moving it in world Y (the old `keyboardY`) exposed its back/top structure through perspective. Anything that derives the visible Y range from FOV must use the frame's lens window (`getLensWindow()`).
 - Hit line at `NOTE_HIT_Y = KEYBOARD_Y + WHITE_KEY_LENGTH`. Note plane z = 0.05; clipping is **per-fragment SDF** (`vWorldY < uHitY`), NOT z-occlusion — putting notes at a different z would cause perspective parallax against the keys.
+
+## Framing (`scene/framing.ts`, `scene/cameraFollow.ts`)
+
+The picture is one lens window (scale + centre in the unshifted view's NDC) on `camera.view`, set each frame by `CameraSync` before every consumer: Keyboard Y, the video's shape and the camera follow all go through it. The camera never moves for them, so there is no extra perspective and the notes stay on their keys (`parallaxX` assumes the default camera x). The keyboard's front edge keeps its screen height at every scale.
+
+- **Shape** (`videoAspect` 16:9 / 9:16 / 1:1, in Settings): the window's letterbox and the export size (`videoSize`) both read it. Without the follow, a narrower shape shows the 16:9 picture's whole width. `setVideoAspect` (`ui/videoAspect.ts`, Scene tab and Export dialog) also turns the follow on for 9:16 / 1:1 and off for 16:9.
+- **Follow** (`cameraFollow*`, not animatable): `buildFollowPath` works the whole path out ahead from the timeline-mapped notes (pure function of time, so seek and export match): running min / max of the played extent over ±T, then a weighted mean over the same ±T, which keeps every played note inside by construction; T = `cameraFollowSmooth` for the pan, 2T for the (log) zoom. Closest zoom = `cameraFollowMinKeys`, raised so the keyboard never fills more than a third of the height. No notes = no follow (live play keeps the plain picture). Off while the hand video setup is open. While paused with a pointer down the path is held, so dragging a note never moves the picture; a changed path / mode eases in over 0.5 s (never in an export: `clockEpoch`).
+- The click planes (`scene/pickPlanes.ts`) are larger than any view.
 
 ## AudioEngine (`src/audio/engine.ts`)
 

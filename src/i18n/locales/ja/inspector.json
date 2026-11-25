@@ -1,5 +1,7 @@
 {
   "section": {
+    "video": "動画",
+    "cameraFollow": "演奏に合わせたカメラの動き",
     "camera": "カメラ",
     "edge": "エッジ",
     "flash": "フラッシュ",
@@ -21,6 +23,17 @@
     "hands": "仮想の手（ベータ版）",
     "handVideo": "手元動画"
   },
+  "videoAspect": {
+    "landscape": "16:9 横",
+    "portrait": "9:16 縦",
+    "square": "1:1"
+  },
+  "cameraFollow": {
+    "hint": "弾いている鍵盤が画面に収まるように、カメラが左右に動き、ズームします。",
+    "minKeys": "最もズームしたときに映る白鍵の数",
+    "margin": "左右の余白（白鍵の数）",
+    "smooth": "動きの滑らかさ（秒）"
+  },
   "camera": {
     "distance": "距離",
     "horizontal": "水平",
@@ -31,6 +44,7 @@
     "hint": "マウスの中ボタンでドラッグして回転、Shift+中ボタンでパン、Ctrl/Cmd+スクロールでズームします。"
   },
   "row": {
+    "videoAspect": "縦横比",
     "color": "カラー",
     "enabled": "有効",
     "keyboardY": "キーボード Y",

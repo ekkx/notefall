@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useStore } from '../store'
+import { getLensWindow } from './framing'
 import { CAMERA_LIMITS, clamp } from './cameraLimits'
 
 // True while the user is actively orbiting / panning / wheel-dollying.
@@ -154,7 +155,7 @@ export function CameraControls() {
         // World units per CSS pixel at the target plane (perspective scale).
         const distance = pos.distanceTo(target)
         const fovRad = (fov * Math.PI) / 180
-        const worldPerPx = (2 * Math.tan(fovRad / 2) * distance) / size.height
+        const worldPerPx = (2 * Math.tan(fovRad / 2) * distance * getLensWindow().scale) / size.height
         const deltaWorld = right
           .multiplyScalar(-dx * worldPerPx)
           .add(camUp.multiplyScalar(dy * worldPerPx))

@@ -1,5 +1,7 @@
 {
   "section": {
+    "video": "Video",
+    "cameraFollow": "Camera follows the playing",
     "camera": "Camera",
     "edge": "Edge",
     "flash": "Flash",
@@ -21,6 +23,17 @@
     "hands": "Virtual hands (beta)",
     "handVideo": "Hand video"
   },
+  "videoAspect": {
+    "landscape": "16:9 wide",
+    "portrait": "9:16 tall",
+    "square": "1:1"
+  },
+  "cameraFollow": {
+    "hint": "The camera pans and zooms so the keys being played stay in the picture.",
+    "minKeys": "White keys shown at the closest zoom",
+    "margin": "Space at the sides (white keys)",
+    "smooth": "Smoothness (seconds)"
+  },
   "camera": {
     "distance": "Distance",
     "horizontal": "Horizontal",
@@ -31,6 +44,7 @@
     "hint": "Drag with the middle mouse button to orbit, Shift+middle to pan, and Ctrl/Cmd+scroll to zoom."
   },
   "row": {
+    "videoAspect": "Aspect ratio",
     "color": "Color",
     "enabled": "Enabled",
     "keyboardY": "Keyboard Y",

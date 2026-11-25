@@ -16,6 +16,7 @@
       "videoOnly": "動画のみ",
       "audioOnly": "音声のみ"
     },
+    "aspect": "縦横比",
     "resolution": "解像度",
     "fps": "フレームレート",
     "fps30": "30 fps",

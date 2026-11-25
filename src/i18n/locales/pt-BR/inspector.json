@@ -1,5 +1,7 @@
 {
   "section": {
+    "video": "Vídeo",
+    "cameraFollow": "Câmera acompanha a música",
     "camera": "Câmera",
     "edge": "Borda",
     "flash": "Luz de contato",
@@ -21,6 +23,17 @@
     "hands": "Mãos virtuais (beta)",
     "handVideo": "Vídeo das mãos"
   },
+  "videoAspect": {
+    "landscape": "16:9",
+    "portrait": "9:16",
+    "square": "1:1"
+  },
+  "cameraFollow": {
+    "hint": "A câmera se move e aproxima para manter na imagem as teclas que estão sendo tocadas.",
+    "minKeys": "Teclas brancas no zoom máximo",
+    "margin": "Espaço nas laterais (teclas brancas)",
+    "smooth": "Suavidade (segundos)"
+  },
   "camera": {
     "distance": "Distância",
     "horizontal": "Horizontal",
@@ -31,6 +44,7 @@
     "hint": "Arraste com o botão do meio para orbitar, Shift+botão do meio para deslocar e Ctrl/Cmd+rolagem para dar zoom."
   },
   "row": {
+    "videoAspect": "Proporção",
     "color": "Cor",
     "enabled": "Ativado",
     "keyboardY": "Y do teclado",

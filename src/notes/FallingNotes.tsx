@@ -3,7 +3,8 @@ import * as THREE from 'three'
 import { isLinearTarget } from '../scene/linearTarget'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { useStore, useSettingsSlice, defaultSettings } from '../store'
-import { computeLiveVisibleTop, keyboardViewShift } from '../scene/visibleTop'
+import { getLensWindow } from '../scene/framing'
+import { computeLiveVisibleTop } from '../scene/visibleTop'
 import { getResolvedSettings } from '../scene/automatedSettings'
 import { audioEngine } from '../audio/engine'
 import { now } from '../audio/clock'
@@ -955,7 +956,7 @@ export function FallingNotes() {
       rs.cameraFov,
       noteZ,
       hitY,
-      keyboardViewShift(rs),
+      getLensWindow(),
     )
     const visibleTop = Math.max(liveVisibleTop, hitY + FALL_DISTANCE)
     // Spawn cutoff (in seconds-into-future) for 'down' notes. Default

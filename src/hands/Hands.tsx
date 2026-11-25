@@ -133,7 +133,7 @@ export function Hands() {
     const wr = poses.L?.wrist ?? poses.R?.wrist
     const dist = wr ? camera.position.distanceTo(new THREE.Vector3(wr[0], wr[1], wr[2])) : camera.position.length()
     gl.getDrawingBufferSize(SIZE)
-    const px = shift * (SIZE.y / (2 * dist * Math.tan(THREE.MathUtils.degToRad(persp.fov) / 2)))
+    const px = shift * (SIZE.y / (2 * dist * Math.tan(THREE.MathUtils.degToRad(persp.fov) / 2) * (persp.view?.height ?? 1)))
     if (px < BLUR_MIN_PX) return
     const n = Math.min(Math.round(s.handsBlurSamples), Math.max(2, Math.ceil(px / BLUR_PX_STEP)))
     const sub: HandPoses[] = blurOffsets(n, BLUR_SHUTTER, dt).map((o) => (o === 0 ? poses : poseAt(motion, Math.max(0, t + o))))

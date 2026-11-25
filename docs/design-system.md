@@ -33,13 +33,13 @@ notefall makes falling-notes piano videos. The picture is the product: falling n
 
 ## Layout
 
-Everything floats over a full-window canvas (the 16:9 video is letterboxed in the middle). Positions and heights come from `GEOMETRY` (`EDGE`, `BAR`, `PILL`, `PILL_BOTTOM`, `PANEL`, `GAP`); use it, not literals.
+Everything floats over a full-window canvas (the video, 16:9 unless the project's shape says otherwise, is letterboxed in the middle). Positions and heights come from `GEOMETRY` (`EDGE`, `BAR`, `PILL`, `PILL_BOTTOM`, `PANEL`, `GAP`); use it, not literals.
 
 ```
 ┌ song island ──────────────┐                     ┌ input island ───────────────┐
 │ ◆notefall  File  name ●  ↶ ↷│                     │ MIDI input ▾  ● Record ▾ │ Export │
 └───────────────────────────┘   loading island    └─────────────────────────────┘
-                     canvas (16:9, letterboxed)           ┌ Customize ─┐
+                     canvas (video, letterboxed)         ┌ Customize ─┐
                                                            │ tabs  🔍    │
 ┌ Timeline (floating, optional) ───────────────────┐      │ sections…   │
 └──────────────────────────────────────────────────┘      └─────────────┘

@@ -42,6 +42,7 @@ import {
   audioConfigFor,
   exportSongToVideo,
   VIDEO_RESOLUTIONS,
+  videoSize,
 } from '../export/exportVideo'
 import { VIDEO_CODECS, isVideoExportSupported } from '../export/renderVideo'
 import { showAlert } from './confirm'
@@ -325,7 +326,9 @@ export function Toolbar() {
     const stem = base || fallback
     if (values.format === 'audio-only') return `${stem}.wav`
     const resLabel = VIDEO_RESOLUTIONS[values.resolution].label.toLowerCase()
-    const tag = `${resLabel}${values.fps}-${values.quality}`
+    const aspect = useStore.getState().settings.videoAspect
+    const shape = aspect === '16:9' ? '' : `-${aspect.replace(':', 'x')}`
+    const tag = `${resLabel}${values.fps}-${values.quality}${shape}`
     const silent = values.format === 'video-only' ? '-silent' : ''
     return `${stem}-${tag}${silent}.${VIDEO_CODECS[values.codec].config.ext}`
   }
@@ -420,16 +423,18 @@ export function Toolbar() {
           return
         }
         const includeAudio = values.format === 'video-audio'
-        const resInfo = VIDEO_RESOLUTIONS[values.resolution]
+        const videoAspect = useStore.getState().settings.videoAspect
+        const { width, height } = videoSize(values.resolution, videoAspect)
         const videoBitrateKbps = computeVideoBitrateKbps(
           values.resolution,
           values.fps,
           values.quality,
+          videoAspect,
         )
         const result = await exportSongToVideo(exportSong, useStore.getState().settings, {
           codec: values.codec,
-          width: resInfo.width,
-          height: resInfo.height,
+          width,
+          height,
           fps: values.fps,
           videoBitrateKbps,
           audio: includeAudio ? audioConfigFor(values.codec) : null,

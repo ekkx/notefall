@@ -36,6 +36,7 @@ import { useShell } from './shell/uiState'
 import { useHandVideoSetupOpen, useTakeInProgress } from './shell/takeFocus'
 import { useIdle } from './shell/idle'
 import { useCustomTexture } from '../notes/customTexture'
+import { setVideoAspect, useVideoAspectOptions } from './videoAspect'
 import { CAMERA_LIMITS } from '../scene/cameraLimits'
 import { getHandsStatus, subscribeHandsStatus } from '../hands/motion'
 import { unassignedCount } from '../hands/split'
@@ -107,6 +108,23 @@ function SubGroup({ label, heading, children }: { label: string; heading?: boole
       {heading && !query && <div className="pt-1 text-label text-ink">{label}</div>}
       <SearchGroup label={label}>{children}</SearchGroup>
     </div>
+  )
+}
+
+// ── Video shape ──────────────────────────────────────────────────────
+function VideoAspectRow() {
+  const { t } = useTranslation('inspector')
+  const value = useEffectiveSetting('videoAspect')
+  const options = useVideoAspectOptions()
+  return (
+    <SelectRow
+      label={t('row.videoAspect')}
+      value={value}
+      options={options}
+      onChange={setVideoAspect}
+      defaultValue={def.videoAspect}
+      scopeKey="videoAspect"
+    />
   )
 }
 
@@ -1515,6 +1533,15 @@ function LookPanel({ leaving }: { leaving: boolean }) {
                   settingKey="backgroundColor"
                 />
                 <BackgroundImageControls />
+              </Section>
+              <Section title={t('section.video')}>
+                <VideoAspectRow />
+              </Section>
+              <Section title={t('section.cameraFollow')} enabledKey="cameraFollowEnabled">
+                <p className="text-caption text-ink-faint">{t('cameraFollow.hint')}</p>
+                <BoundSliderRow label={t('cameraFollow.minKeys')} settingKey="cameraFollowMinKeys" min={10} max={52} step={1} />
+                <BoundSliderRow label={t('cameraFollow.margin')} settingKey="cameraFollowMargin" min={0} max={10} step={0.5} />
+                <BoundSliderRow label={t('cameraFollow.smooth')} settingKey="cameraFollowSmooth" min={0.5} max={6} step={0.1} />
               </Section>
               <Section title={t('section.camera')}>
                 <CameraSection />
