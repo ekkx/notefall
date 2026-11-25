@@ -29,11 +29,17 @@ function nearestPreset(look: LookLike): NoteLookPreset {
 
 /** The rendered preset, tinted by the current note colours (multiply keeps the shading, takes the hue). */
 function Thumb({ name, colors }: { name: NoteLookPreset; colors: string[] }) {
-  const tint = colors.length > 1 ? `linear-gradient(90deg, ${colors.join(', ')})` : (colors[0] ?? 'transparent')
+  const stops = colors.length > 1 ? colors : [colors[0] ?? '#fff', colors[0] ?? '#fff']
+  // Picture and tint are one background, so the rounded corners cut them together: as two layers, each was smoothed
+  // on its own and a light edge of the tint showed at the corners.
   return (
-    <span className="relative block h-14 overflow-hidden rounded-tab bg-fill-well">
-      <img src={thumbUrl(name)} alt="" draggable={false} className="h-full w-full object-cover" />
-      <span aria-hidden className="absolute inset-0 mix-blend-multiply" style={{ background: tint }} />
+    <span
+      className="relative block h-14 overflow-hidden rounded-tab bg-cover bg-center"
+      style={{
+        backgroundImage: `linear-gradient(90deg, ${stops.join(', ')}), url("${thumbUrl(name)}")`,
+        backgroundBlendMode: 'multiply, normal',
+      }}
+    >
       {/* Ring above the tint so it stays ink. */}
       <span
         aria-hidden
