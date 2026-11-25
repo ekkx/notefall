@@ -1,7 +1,7 @@
 {
   "section": {
     "video": "Vídeo",
-    "cameraFollow": "Câmera acompanha a música",
+    "cameraFollow": "Acompanhamento da câmera",
     "camera": "Câmera",
     "edge": "Borda",
     "flash": "Luz de contato",
@@ -30,10 +30,10 @@
   },
   "cameraFollow": {
     "hint": "A câmera se move e aproxima para manter na imagem as teclas que estão sendo tocadas.",
-    "minKeys": "Teclas brancas no zoom máximo",
-    "margin": "Espaço nas laterais (teclas brancas)",
-    "smooth": "Suavidade (segundos)",
-    "noteStretch": "Alongamento das notas com o zoom"
+    "minKeys": "Largura mínima (teclas)",
+    "margin": "Margem lateral (teclas)",
+    "smooth": "Suavização (s)",
+    "noteStretch": "Extensão das notas"
   },
   "camera": {
     "distance": "Distância",

@@ -634,7 +634,7 @@ export function SliderRow({ label, value, min, max, step = 0.01, onChange, forma
           useStore.getState().endSettingsEdit()
         }
       }}
-      className="grid gap-1.5"
+      className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1.5"
     >
       <div className="flex items-center justify-between gap-2">
         <span className="flex min-w-0 items-center gap-1.5">

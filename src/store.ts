@@ -685,7 +685,7 @@ export const defaultSettings: Settings = {
   cameraLookAt: [0, 0, 0],
   videoAspect: '16:9',
   cameraFollowEnabled: false,
-  cameraFollowMinKeys: 5,
+  cameraFollowMinKeys: 16,
   cameraFollowMargin: 2,
   cameraFollowSmooth: 2,
   cameraFollowNoteStretch: 1,

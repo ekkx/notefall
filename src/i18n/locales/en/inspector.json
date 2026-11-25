@@ -1,7 +1,7 @@
 {
   "section": {
     "video": "Video",
-    "cameraFollow": "Camera follows the playing",
+    "cameraFollow": "Camera follow",
     "camera": "Camera",
     "edge": "Edge",
     "flash": "Flash",
@@ -30,10 +30,10 @@
   },
   "cameraFollow": {
     "hint": "The camera pans and zooms so the keys being played stay in the picture.",
-    "minKeys": "White keys shown at the closest zoom",
-    "margin": "Space at the sides (white keys)",
-    "smooth": "Smoothness (seconds)",
-    "noteStretch": "Note stretch with zoom"
+    "minKeys": "Minimum width (white keys)",
+    "margin": "Side margin (white keys)",
+    "smooth": "Smoothing (s)",
+    "noteStretch": "Note stretch"
   },
   "camera": {
     "distance": "Distance",
