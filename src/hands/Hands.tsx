@@ -6,6 +6,7 @@ import { audioEngine } from '../audio/engine'
 import { getResolvedSettings } from '../scene/automatedSettings'
 import { buildSpeedMap } from '../midi/speedMap'
 import { useSettingsSlice, useStore } from '../store'
+import { withEntrance } from './entrance'
 import { createMeshHands } from './meshHand'
 import { retainHandsRuntime, songHandNotes, synthHandMotion, trackHandsWork, type ReadyMotion } from './motion'
 import { getExportFps } from '../scene/exportBridge'
@@ -117,7 +118,8 @@ export function Hands() {
     mesh.setLighting(getResolvedSettings().keyboardBrightness, s.handsBrightness, s.handsFlashLight)
     mesh.setVisible(!!ready)
     if (!ready || !mesh.ready) return
-    const { motion, poseAt } = ready
+    const { motion } = ready
+    const poseAt = (m: typeof motion, at: number) => withEntrance(ready.poseAt(m, at), getResolvedSettings())
     const t = audioEngine.currentSongTime()
     const poses = poseAt(motion, t)
     mesh.update(poses, false)
