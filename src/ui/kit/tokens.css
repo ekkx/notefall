@@ -29,7 +29,7 @@
   --font-sans: 'Geist Variable', 'Geist', 'Hiragino Sans', 'Noto Sans JP', system-ui, sans-serif;
 
   /* Shadow + blur */
-  --shadow-glass: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 10px 40px rgba(0, 0, 0, 0.35);
+  --shadow-glass: 0 10px 40px rgba(0, 0, 0, 0.35);
   --shadow-knob: 0 1px 4px rgba(0, 0, 0, 0.4);
   --glass-blur: 36px;
 

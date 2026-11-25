@@ -138,7 +138,7 @@ export function PauseIcon(props: IconProps) {
 export function PlayIcon(props: IconProps) {
   return (
     <svg {...base} {...props}>
-      <path d='M8 5.5v13l11-6.5z' fill='currentColor' stroke='none'/>
+      <path d='M8.5 6.2v11.6l9.8-5.8z' fill='currentColor'/>
     </svg>
   )
 }

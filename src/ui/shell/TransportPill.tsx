@@ -321,7 +321,6 @@ export function TransportPill() {
       </IconButton>
       <IconButton
         size="play"
-        className="data-[disabled]:!bg-ink"
         label={playLabel}
         shortcut="Space"
         isDisabled={!hasSong || loading}

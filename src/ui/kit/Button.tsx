@@ -70,7 +70,7 @@ export type IconButtonProps = Omit<AriaButtonProps, 'className' | 'children'> & 
 const ICON_SIZE = {
   sm: 'h-control-sm w-control-sm text-ink data-[hovered]:bg-fill-hover data-[pressed]:bg-fill-selected [&>svg]:h-4 [&>svg]:w-4',
   md: 'h-icon-btn w-icon-btn text-ink data-[hovered]:bg-fill-hover data-[pressed]:bg-fill-selected [&>svg]:h-5 [&>svg]:w-5',
-  play: 'h-play w-play bg-ink text-on-ink data-[hovered]:brightness-[1.06] data-[pressed]:brightness-95 [&>svg]:h-[18px] [&>svg]:w-[18px]',
+  play: 'h-play w-play text-ink data-[hovered]:bg-fill-hover data-[pressed]:bg-fill-selected [&>svg]:h-9 [&>svg]:w-9',
 }
 
 /** Icon-only button. Only for universal media / window controls (play, skip, volume, close, reset, undo, redo). */
