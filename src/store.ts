@@ -798,7 +798,7 @@ export const defaultSettings: Settings = {
   handsEnabled: false,
   handsBrightness: 1.2,
   handsFlashLight: 1,
-  handsMotionBlur: true,
+  handsMotionBlur: false,
   handsBlurSamples: 8,
   handVideoEnabled: true,
   handVideoOpacity: 1,
