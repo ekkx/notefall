@@ -1,7 +1,7 @@
 {
   "picker": {
     "choose": "手元動画を追加",
-    "loading": "動画を読み込んでいます…",
+    "loading": "手元動画を読み込んでいます…",
     "dropHint": "MP4・MOV・WebM（鍵盤を頭上から撮ったもの）",
     "remove": "取り消す",
     "lineUp": "位置調整をやり直す",
@@ -19,12 +19,12 @@
   "error": {
     "loadTitle": "手元動画を追加できませんでした",
     "loadMessage": "「{{name}}」を読み込めませんでした：{{detail}}",
-    "noVideoTrack": "「{{name}}」には映像が入っていません。",
+    "noVideoTrack": "「{{name}}」には映像が含まれていません。",
     "cannotPlay": "このブラウザでは「{{name}}」を再生できません。H.264 の MP4 に変換してから、もう一度追加してください。"
   },
   "setup": {
     "label": "手元動画の位置調整",
-    "finding": "動画の中の鍵盤を探しています…",
+    "finding": "手元動画から鍵盤を検出しています…",
     "cancel": "取り消す",
     "foundTitle": "手元動画から鍵盤を検出して位置を合わせました",
     "octaveDown": "1 オクターブ左に移動",
