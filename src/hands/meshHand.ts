@@ -26,6 +26,10 @@ export const FINGER_THICK = 1.12
 const TH_MIN = 0.92, TH_MAX = 1.12
 /** Share of linear-blend skinning's volume loss at a bend (1/cos(theta/2) - 1) that is given back as extra cross-section. */
 const BEND_BULGE = 0.7
+/** The hand turns clear toward the model's cut at the wrist over this much of it (model units, ~mm / 870). */
+const WRIST_FADE = 0.026
+/** How deep the hollow at the model's wrist end goes (model units). */
+const WRIST_HOLLOW = 0.016
 /** Mesh v2 wrist flare / palm remap (reshape of wrist + metacarpal verts). Off: judged odd without the forearm. */
 const PALM_REMAP = false
 /** Target anthropometry in mm along the hand axis Y (0 = wrist joint, + = toward the fingers). Wrist breadth 59.1 mm
@@ -128,14 +132,16 @@ class MeshHand {
   latRef = [0, 1, 2, 3, 4].map(() => new THREE.Vector3())
   thumbL = new THREE.Vector3()
 
-  constructor(hand: Hand, mat: THREE.Material, parent: THREE.Object3D) {
+  constructor(hand: Hand, mat: THREE.Material, endMats: THREE.Material[], parent: THREE.Object3D) {
     this.hand = hand
     this.sgn = hand === 'R' ? 1 : -1
     this.group.visible = false
     parent.add(this.group)
     this.mat = mat
+    this.endMats = endMats
   }
   mat: THREE.Material
+  endMats: THREE.Material[]
 
   async load() {
     const g = await new GLTFLoader().loadAsync(`${HAND_MODEL_DIR}hand_${this.hand.toLowerCase()}.gltf`)
@@ -216,6 +222,26 @@ class MeshHand {
 
     // ---- rest-geometry re-proportioning (bind space; the bones stay where they are) ----
     this.reshape(m, byName, sfx)
+
+    // the end of the wrist, turning clear: the model stops where that starts (`aWrist` > 0), a second mesh draws the rest see-through
+    // (its depth first, so only its nearest surface shows). The model's z runs straight to its wrist end, which is a hollow: its
+    // inside is clear.
+    const wp = m.geometry.attributes.position as THREE.BufferAttribute, wn = m.geometry.attributes.normal as THREE.BufferAttribute
+    m.geometry.computeBoundingBox()
+    const rim = m.geometry.boundingBox!.max.z
+    m.geometry.setAttribute('aWrist', new THREE.BufferAttribute(Float32Array.from({ length: wp.count }, (_, i) => {
+      const inward = wp.getX(i) * wn.getX(i) + wp.getY(i) * wn.getY(i) < 0
+      return rim - wp.getZ(i) < WRIST_HOLLOW && (inward || wn.getZ(i) > 0.7) ? 2 : 1 - (rim - wp.getZ(i)) / WRIST_FADE
+    }), 1))
+    for (const [k, mat] of this.endMats.entries()) {
+      const end = new THREE.SkinnedMesh(m.geometry, mat)
+      end.bind(m.skeleton, m.bindMatrix)
+      end.frustumCulled = false
+      end.renderOrder = 5 + 0.1 * k
+      end.raycast = () => {}
+      end.matrixAutoUpdate = false
+      this.group.add(end)
+    }
 
     // wrist opening: the proximal-most vertices (bind space)
     const pos = m.geometry.attributes.position as THREE.BufferAttribute
@@ -650,17 +676,20 @@ export function createMeshHands(parent: THREE.Object3D) {
     uFlashC: { value: flashLights.colors },
     uFlashFall: { value: new THREE.Vector2(1, 1) },
   }
-  const mkMat = (c: number) => {
+  const mkMat = (c: number, part: 'hand' | 'endDepth' | 'end' = 'hand') => {
     const mat = new THREE.MeshPhysicalMaterial({ color: c, roughness: 0.82, metalness: 0, specularIntensity: 0.25, envMapIntensity: 0, side: THREE.DoubleSide })
+    if (part !== 'hand') { mat.transparent = true; mat.forceSinglePass = true; mat.defines = { ...mat.defines, WRIST_END: '' } }
+    if (part === 'endDepth') mat.colorWrite = false
     // cheap AO (contact darkening toward the key plane, world z) + a barely visible neutral rim; matte skin, no sheen.
     mat.onBeforeCompile = (sh) => {
       Object.assign(sh.uniforms, lightU)
       sh.vertexShader = sh.vertexShader
-        .replace('#include <common>', '#include <common>\nvarying vec3 vSkinW;')
-        .replace('#include <project_vertex>', '#include <project_vertex>\nvSkinW = (modelMatrix * vec4(transformed, 1.0)).xyz;')
+        .replace('#include <common>', '#include <common>\nvarying vec3 vSkinW;\nattribute float aWrist;\nvarying float vWrist;')
+        .replace('#include <project_vertex>', '#include <project_vertex>\nvSkinW = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvWrist = aWrist;')
       sh.fragmentShader = sh.fragmentShader
         .replace('#include <common>', `#include <common>
           varying vec3 vSkinW;
+          varying float vWrist;
           #define FLASH_N ${MAX_LIGHTS}
           uniform float uBright;
           uniform float uSkinGain;
@@ -670,6 +699,15 @@ export function createMeshHands(parent: THREE.Object3D) {
           uniform vec3 uFlashC[FLASH_N];
           uniform vec2 uFlashFall;`)
         .replace('#include <opaque_fragment>', `
+          // (the skin seen from inside, through the clear part, is not drawn)
+          if (vWrist > -1.0 && dot(normalize(vNormal), normalize(vViewPosition)) < -0.2) discard;
+          #ifdef WRIST_END
+          if (vWrist <= 0.0) discard;
+          diffuseColor.a *= 1.0 - smoothstep(0.0, 0.92, vWrist);
+          if (diffuseColor.a < 0.004) discard;
+          #else
+          if (vWrist > 0.0) discard;
+          #endif
           float skinAO = mix(0.62, 1.0, smoothstep(0.02, 0.5, vSkinW.z));
           float grazing = pow(1.0 - clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0), 2.5);
           outgoingLight = (outgoingLight * skinAO + vec3(0.03) * uBright * grazing * (0.4 + 0.6 * skinAO)) * uSkinGain;
@@ -703,7 +741,8 @@ export function createMeshHands(parent: THREE.Object3D) {
     return mat
   }
   const mats = { L: mkMat(SKIN.L), R: mkMat(SKIN.R) }
-  const hands = { L: new MeshHand('L', mats.L, root), R: new MeshHand('R', mats.R, root) }
+  const ends = { L: [mkMat(SKIN.L, 'endDepth'), mkMat(SKIN.L, 'end')], R: [mkMat(SKIN.R, 'endDepth'), mkMat(SKIN.R, 'end')] }
+  const hands = { L: new MeshHand('L', mats.L, ends.L, root), R: new MeshHand('R', mats.R, ends.R, root) }
   const stats: TipStats = { enabled: false, n: 0, axisErrSum: 0, axisErrMax: 0, palmErrSum: 0, palmErrMax: 0, boneErrMax: 0, axisSigned: 0, nAxis: 0, zSigned: 0, zMin: Infinity, zMax: -Infinity }
   const loaded = Promise.all([hands.L.load(), hands.R.load()]).then(() => undefined)
   loaded.catch((e) => console.error('mesh hands failed', e))
@@ -719,12 +758,13 @@ export function createMeshHands(parent: THREE.Object3D) {
       lightU.uFlashStrength.value = flashLights.strength * flashLights.boost * flashLight
       lightU.uFlashFall.value.set(flashLights.falloffX, flashLights.falloffY)
       mats.L.color.setHex(SKIN.L).multiplyScalar(brightness); mats.R.color.setHex(SKIN.R).multiplyScalar(brightness)
+      ends.L[1].color.copy(mats.L.color); ends.R[1].color.copy(mats.R.color)
     },
     stats,
     update(poses: HandPoses, showForearm: boolean, debug = false) {
       hands.L.update(poses.L, stats, showForearm, debug)
       hands.R.update(poses.R, stats, showForearm, debug)
     },
-    dispose() { parent.remove(root); mats.L.dispose(); mats.R.dispose() },
+    dispose() { parent.remove(root); mats.L.dispose(); mats.R.dispose(); [...ends.L, ...ends.R].forEach((m) => m.dispose()) },
   }
 }
