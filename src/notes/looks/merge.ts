@@ -38,7 +38,7 @@ import * as THREE from 'three'
 
 export const MERGE_K = 8 // neighbours per note (two vec4 attributes)
 export const MERGE_MAX_NOTES = 4096
-const ROWS = 5
+const ROWS = 6
 // The data texture holds MERGE_MAX_NOTES columns wrapped into blocks of TEX_W (WebGL2 only guarantees 2048-wide
 // textures): note i, row r lives at (i % TEX_W, r + ROWS · floor(i / TEX_W)).
 const TEX_W = 1024
@@ -53,6 +53,7 @@ export type MergeNote = {
   color: [number, number, number] // rgb tint
   key: number // pitch / key index (same-key rule)
   seed?: [number, number] // note-carried seeds (pattern, bump), returned by mergeNoteCarry().xy
+  texShift?: number // moves the note-carried textures along the note, returned by mergeTexShift()
   solo?: boolean // takes no part in merging (no neighbours), e.g. a fading ghost
 }
 
@@ -89,7 +90,7 @@ export const MERGE_SHAPE_DEFAULTS: MergeShape = {
 //   0: render rect centre.xy, half.xy (legato ends extended)      1: tint rgb, key
 //   2: corner radius top, bottom, seam y (top end), closure amount (top)
 //   3: seam y (bottom end), gap (top end), ORIGINAL half h, closure amount (bottom)
-//   4: pattern seed, bump seed, ORIGINAL centre.xy
+//   4: pattern seed, bump seed, ORIGINAL centre.xy           5: texture shift
 export const MERGE_VERT_GLSL = /* glsl */ `
 uniform sampler2D uMergeData;
 uniform float uMergeMargin;
@@ -98,6 +99,7 @@ flat varying vec4 vMergeNbrA, vMergeNbrB;
 flat varying float vMergeSelf;
 ivec2 mergeTexel(int id, int row) { return ivec2(id % ${TEX_W}, row + ${ROWS} * (id / ${TEX_W})); }
 vec4 mergeNoteCarry(int id) { return texelFetch(uMergeData, mergeTexel(id, 4), 0); }
+float mergeTexShift(int id) { return texelFetch(uMergeData, mergeTexel(id, 5), 0).x; }
 // world xy of this quad corner (corner = position.xy in [-0.5, 0.5]); also sets the merge varyings
 vec2 mergeQuadCorner(vec2 corner) {
   vec4 R = texelFetch(uMergeData, mergeTexel(gl_InstanceID, 0), 0);
@@ -128,6 +130,7 @@ struct MergeSample {
 
 vec4 mergeRow(int id, int row) { return texelFetch(uMergeData, ivec2(id % ${TEX_W}, row + ${ROWS} * (id / ${TEX_W})), 0); }
 vec4 mergeNoteCarry(int id) { return mergeRow(id, 4); }
+float mergeTexShift(int id) { return mergeRow(id, 5).x; }
 vec2 mergeWorldPos() {
   vec2 ndc = gl_FragCoord.xy / uMergeRes * 2.0 - 1.0;
   vec4 a = uMergeInvViewProj * vec4(ndc, -1.0, 1.0), b = uMergeInvViewProj * vec4(ndc, 1.0, 1.0);
@@ -456,6 +459,7 @@ export class MergeData {
       d[3 * row + o] = seamB[i]; d[3 * row + o + 1] = gapT[i]; d[3 * row + o + 2] = N.h / 2; d[3 * row + o + 3] = amtB[i]
       d[4 * row + o] = N.seed?.[0] ?? (i * 0.618034) % 1 * 37; d[4 * row + o + 1] = N.seed?.[1] ?? 0
       d[4 * row + o + 2] = N.x; d[4 * row + o + 3] = N.y
+      d[5 * row + o] = N.texShift ?? 0
     }
     this.tex.needsUpdate = true
     // ---- neighbours: extended-rect gap < reach, K nearest ----

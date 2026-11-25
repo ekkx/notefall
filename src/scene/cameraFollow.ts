@@ -145,3 +145,24 @@ export function followAt(path: FollowPath, t: number): KeyFrame {
   const x = (t - path.t0) / STEP
   return { centre: sample(path.centre, x), half: sample(path.half, x) }
 }
+
+const travelSums = new WeakMap<FollowPath, { power: number; sum: Float64Array }>()
+
+/** `half` to a power, summed over time from the path's start (seconds; held at its ends outside the path). */
+export function halfTravelAt(path: FollowPath, t: number, power: number): number {
+  const n = path.half.length
+  let cached = travelSums.get(path)
+  if (cached?.power !== power) {
+    const sum = new Float64Array(n)
+    for (let i = 1; i < n; i++)
+      sum[i] = sum[i - 1] + ((Math.pow(path.half[i - 1], power) + Math.pow(path.half[i], power)) / 2) * STEP
+    cached = { power, sum }
+    travelSums.set(path, cached)
+  }
+  const { sum } = cached
+  const x = (t - path.t0) / STEP
+  if (x <= 0) return x * STEP * Math.pow(path.half[0], power)
+  if (x >= n - 1) return sum[n - 1] + (x - (n - 1)) * STEP * Math.pow(path.half[n - 1], power)
+  const i = Math.floor(x)
+  return sum[i] + (sum[i + 1] - sum[i]) * (x - i)
+}

@@ -10,7 +10,7 @@ import { buildSpeedMap } from '../midi/speedMap'
 import type { ParsedSong } from '../midi/types'
 import { defaultSettings, useStore, type Settings } from '../store'
 import { useHandVideo } from '../video/handVideo'
-import { buildFollowPath, followAt, minKeysForAspect, type FollowPath, type KeyFrame } from './cameraFollow'
+import { buildFollowPath, followAt, halfTravelAt, minKeysForAspect, type FollowPath, type KeyFrame } from './cameraFollow'
 import { cameraNdc, keyboardViewShift, type LensWindow, type ViewShiftInput } from './visibleTop'
 
 const DESIGN_ASPECT = 16 / 9
@@ -82,8 +82,8 @@ function anchoredY(cam: ViewShiftInput, scale: number): number {
 }
 
 /**
- * The window scale at the song's typical zoom (default camera). One value for the whole song, and in coarse steps so an
- * edit that shifts the typical zoom a little doesn't move the textures.
+ * The window scale at the song's typical zoom (default camera): sets the speed textures flow at. One value for the whole
+ * song, and in coarse steps so an edit that shifts the typical zoom a little doesn't move them.
  */
 function textureScale(aspect: number, typical: number): number {
   const width = 2 * Math.abs(defaultSettings.cameraPos[2]) * Math.tan((defaultSettings.cameraFov * Math.PI) / 360) * aspect
@@ -113,6 +113,15 @@ function followWindow(
     fall: scale * Math.pow(typical / half, 1 - stretch),
     texture: textureScale(aspect, typical),
   }
+}
+
+let travelPath: FollowPath | null = null
+let travelScale = 1
+let travelPower = 0
+/** `fall` summed over a stretch of the song (seconds; the window's own value times its length when nothing follows). */
+export function fallTravel(from: number, to: number): number {
+  if (!travelPath) return current.fall * (to - from)
+  return travelScale * (halfTravelAt(travelPath, to, travelPower) - halfTravelAt(travelPath, from, travelPower))
 }
 
 const ease = {
@@ -165,6 +174,11 @@ export function applyFraming(camera: THREE.PerspectiveCamera, cam: ViewShiftInpu
     }
   }
   current = target
+  travelPath = follow
+  if (follow) {
+    travelPower = s.cameraFollowNoteStretch
+    travelScale = target.fall / Math.pow(followAt(follow, audioEngine.currentSongTime()).half, travelPower)
+  }
   setLensWindow(camera, target)
 }
 

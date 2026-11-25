@@ -52,6 +52,11 @@ export const NOTE_VERTEX_SHADER = /* glsl */ `
   // the CPU each frame) + opacity multiplier (1 for normal notes, ramped
   // 1 → 0 for the dying-note ghosts).
   attribute vec4 iTintAlpha;
+  #ifndef MERGE
+  // Texture shift (notes/textureShift.ts); the merge data carries it.
+  attribute float iTexShift;
+  #endif
+  varying float vTexShift;
   // Note plane z (NOTE_PLANE_Z), instance space.
   uniform float uNoteZ;
   // Extra quad margin (world units) around the note: AA edge + outline ring.
@@ -75,6 +80,11 @@ export const NOTE_VERTEX_SHADER = /* glsl */ `
     vBlack = iSeedSel.w;
     vTint = iTintAlpha.rgb;
     vAlpha = iTintAlpha.a;
+  #ifdef MERGE
+    vTexShift = mergeTexShift(gl_InstanceID);
+  #else
+    vTexShift = iTexShift;
+  #endif
     vec4 center = modelMatrix * vec4(iRect.xy, uNoteZ, 1.0);
   #ifdef MERGE
     // liquid merge (looks/merge.ts): the quad is placed / enlarged from the
@@ -104,6 +114,7 @@ export const NOTE_VERTEX_SHADER = /* glsl */ `
 export const NOTE_FRAGMENT_SHADER = /* glsl */ `
   precision highp float;
   varying float vBlack;
+  varying float vTexShift;
   varying vec2 vLocal;
   varying vec2 vSize;
   varying vec2 vSeed;
@@ -176,7 +187,7 @@ export const NOTE_FRAGMENT_SHADER = /* glsl */ `
   uniform float uBumpTile, uBumpDepth, uDetail, uBumpSoft, uMelt, uScatter, uFacetEdges;
   uniform float uFacetMap;       // 1: the bump map's alpha carries baked facet edges (1 − edge; looks/crystalNormal.ts)
   uniform float uScroll;         // texture units fallen so far: frame y ± uScroll is fixed on every song note
-  uniform float uTexUnit;        // texture units per world unit of fall (1 at the song's typical zoom, see framing.ts)
+  uniform float uTexUnit;        // texture units per world unit of fall: constant speed of the texture frame under a zoom
   uniform float uTime;           // look animation clock (wrapped)
   uniform float uCloud, uCloudTile, uCloudSoft, uCloudClear;
   uniform float uHighlight, uHighlightThr, uHighlightSoft;
@@ -272,8 +283,9 @@ export const NOTE_FRAGMENT_SHADER = /* glsl */ `
   // merged — the two strongest contributors', whose RESULTS are blended
   // (gW1 = weight of the second one; blending the inputs instead would sweep
   // the pattern across many cells over the fillet).
-  // texture frame (texFrame) of the pixel and of the note's centre(s)
-  vec2 gT;
+  // Texture frame: the note's centre(s) (texFrame: falls at a constant speed whatever the zoom) and the pixel's offset
+  // from it (never stretched; the shift keeps it still on the note while a zoom lengthens the note).
+  vec2 gO, gO1;
   vec2 gC, gC1, gS, gS1;
   float gW1 = 0.0;
 
@@ -298,7 +310,7 @@ export const NOTE_FRAGMENT_SHADER = /* glsl */ `
   // Texture wrap is RepeatWrapping in customTexture.ts so values outside
   // [0,1] tile naturally.
   vec3 textureCustom(vec3 tint) {
-    vec2 uv = ((vLocal + 0.5 * vSize) * vec2(1.0, uTexUnit) + uPhase) * uTextureScale + vSeed * 100.0 * uTextureVariation - uTextureOffset;
+    vec2 uv = (vec2(vLocal.x + 0.5 * vSize.x, vLocal.y + vTexShift + 0.5 * vSize.y * uTexUnit) + uPhase) * uTextureScale + vSeed * 100.0 * uTextureVariation - uTextureOffset;
     // Single tap with LOD bias — the texture is configured with mipmaps
     // and trilinear filtering, so the bias selects a progressively-blurred
     // mip level. This is what GPU hardware is built to do, and produces a
@@ -310,9 +322,7 @@ export const NOTE_FRAGMENT_SHADER = /* glsl */ `
     return mix(tint, sampled * tint, uHasCustomTexture);
   }
 
-  // World → texture frame: y in units of fall, so everything drawn on a note stays where it is on that note, and moves
-  // at the same speed, while a zoom lengthens or shortens the notes.
-  vec2 texFrame(vec2 w) { return vec2(w.x, uHitY + (w.y - uHitY) * uTexUnit); }
+  vec2 texFrame(vec2 c) { return vec2(c.x, uHitY + (c.y - uHitY) * uTexUnit); }
 
   // Frame of the note-carried maps (bump, and with scatter also cloud +
   // frost grain).
@@ -324,14 +334,14 @@ export const NOTE_FRAGMENT_SHADER = /* glsl */ `
   //     neighbouring keys / chords never show the same interior.
   // R maps frame → map space; slopes read from the map go back with transpose(R).
   // c = the note's centre, seedY = its bump seed.
-  vec2 songFrame(vec2 c) { return vec2(gT.x - c.x, gT.y + uScroll); }
+  vec2 songFrame(vec2 c, vec2 o) { return vec2(o.x, c.y + o.y + uScroll); }
   float keyHash(vec2 c) { return hash12(vec2(floor(c.x * 97.0 + 0.5) * 0.731, 4.17)); }
-  vec2 noteMapUv(vec2 c, float seedY, float tile, out mat2 R) {
+  vec2 noteMapUv(vec2 c, vec2 o, float seedY, float tile, out mat2 R) {
     R = mat2(1.0);
-    vec2 local = gT - c;
+    vec2 local = o;
     vec2 off = vec2(0.0, seedY * 64.0);
     if (uScatter > 0.0) {
-      local = songFrame(c);
+      local = songFrame(c, o);
       float h = keyHash(c);
       float k = floor(fract(h * 3.71) * 4.0);
       vec2 cs = k < 0.5 ? vec2(1, 0) : k < 1.5 ? vec2(0, 1) : k < 2.5 ? vec2(-1, 0) : vec2(0, -1);
@@ -347,7 +357,7 @@ export const NOTE_FRAGMENT_SHADER = /* glsl */ `
   // (a surface slope). Anchored in world space, carried with the note by
   // uLock; the per-note seed shifts where a carried note samples it.
   float patternAt1(vec2 bend) {
-    vec2 q = gT - uLock * (gC - gS.x * uPatternTile * vec2(1.0, 0.61));
+    vec2 q = gC + gO - uLock * (gC - gS.x * uPatternTile * vec2(1.0, 0.61));
     q.x -= uDriftX;
     vec2 b = uDistort * uPatternTile * bend;
     vec2 puv = (q + b) / uPatternTile;
@@ -358,7 +368,7 @@ export const NOTE_FRAGMENT_SHADER = /* glsl */ `
     // instead of tilting the normal, so it never sparkles in highlights.
     if (uFrost > 0.0) {
       float acc = pat, rad = 0.06 * uFrost;
-      vec2 gq = uScatter > 0.0 ? songFrame(gC) / uFrostTile + keyHash(gC) * 71.0 : (gT - gC) / uFrostTile + gS.x * 7.0;
+      vec2 gq = uScatter > 0.0 ? songFrame(gC, gO) / uFrostTile + keyHash(gC) * 71.0 : gO / uFrostTile + gS.x * 7.0;
       vec2 jit = (vec2(vnoise2(gq), vnoise2(gq + 17.3)) - 0.5) * uFrostGrain * rad * 2.0;
       for (int i = 0; i < 8; i++) {
         float a = float(i) * 2.39996, rr = rad * sqrt((float(i) + 0.5) / 8.0);
@@ -380,18 +390,18 @@ export const NOTE_FRAGMENT_SHADER = /* glsl */ `
     pat = mix(0.35, pat, uPatternAmount);
     // silk note texture: carried like the pattern, bent proportionally
     if (uNoteTexAmount > 0.0) {
-      vec2 qt = gT - uLock * gC + b * (uNoteTexTile / uPatternTile);
+      vec2 qt = gC + gO - uLock * gC + b * (uNoteTexTile / uPatternTile);
       pat *= mix(1.0, 2.2 * texture2D(uNoteTex, qt / uNoteTexTile).r, uNoteTexAmount);
     }
     return pat;
   }
   float patternAt(vec2 bend) {
     if (gW1 <= 0.0) return patternAt1(bend);
-    vec2 c = gC, sd = gS;
+    vec2 c = gC, sd = gS, o = gO;
     float a = patternAt1(bend);
-    gC = gC1; gS = gS1;
+    gC = gC1; gS = gS1; gO = gO1;
     float b = patternAt1(bend);
-    gC = c; gS = sd;
+    gC = c; gS = sd; gO = o;
     return mix(a, b, gW1);
   }
   // ---- 2D (sprite) look: analytic soft-lit slab on the same quad ----
@@ -472,7 +482,7 @@ export const NOTE_FRAGMENT_SHADER = /* glsl */ `
       vec3 alb = tint;
       float gain = 1.0;
       if (u2dTex > 0.0) {
-        vec2 q = (gT - u2dTexLock * (gC - gS * 40.0)) / u2dTexCell;
+        vec2 q = (gC + gO - u2dTexLock * (gC - gS * 40.0)) / u2dTexCell;
         float tt = uTime * u2dTexSpeed;
         float h0 = s2dSilk(q, tt);
         float hx = s2dSilk(q + vec2(0.04, 0.0), tt), hy = s2dSilk(q + vec2(0.0, 0.04), tt);
@@ -482,7 +492,7 @@ export const NOTE_FRAGMENT_SHADER = /* glsl */ `
         gain = u2dTexGain;
       }
       if (u2dShimmer > 0.0) {
-        vec2 q = gT - u2dShimmerLock * (gC - gS * 40.0);
+        vec2 q = gC + gO - u2dShimmerLock * (gC - gS * 40.0);
         gain *= u2dShimmerGain * (1.0 - 0.5 * u2dShimmer + u2dShimmer * s2dShimmerAt(q, uTime * u2dShimmerSpeed));
       }
       if (u2dGlow > 0.0) gain *= u2dGlowBoost;
@@ -506,16 +516,16 @@ export const NOTE_FRAGMENT_SHADER = /* glsl */ `
   }
 
   // cloud field at the note-carried frame of centre c / seed sx
-  float cloudAt(vec2 c, float sx, float w) {
+  float cloudAt(vec2 c, vec2 o, float sx, float w) {
     vec2 cq = uScatter > 0.0
-      ? songFrame(c) / uCloudTile + keyHash(c) * 170.0
-      : (gT - uLock * c) / uCloudTile + sx * 17.0;
+      ? songFrame(c, o) / uCloudTile + keyHash(c) * 170.0
+      : (c + o - uLock * c) / uCloudTile + sx * 17.0;
     return smoothstep(0.5 - w, 0.5 + w, cloudField(cq, uTime * 0.08));
   }
   // bump slope (note frame) of the map at centre c / bump seed sy, mip bias lod
-  vec2 bumpAt(vec2 c, float sy, float lod) {
+  vec2 bumpAt(vec2 c, vec2 o, float sy, float lod) {
     mat2 R;
-    vec3 bt = texture2D(uBump, noteMapUv(c, sy, uBumpTile, R), lod).rgb;
+    vec3 bt = texture2D(uBump, noteMapUv(c, o, sy, uBumpTile, R), lod).rgb;
     if (uBumpZEnc > 0.5) bt.z = bt.z * 2.0 - 1.0;
     return transpose(R) * ((bt.xy * 2.0 - 1.0) / max(bt.z, 0.3));
   }
@@ -566,10 +576,12 @@ export const NOTE_FRAGMENT_SHADER = /* glsl */ `
     if (!mergeSample(mp, ms)) discard;   // another instance owns this pixel
     vec4 mc0 = mergeNoteCarry(ms.id0), mc1 = mergeNoteCarry(ms.id1);
     gC = mc0.zw; gS = mc0.xy; gC1 = mc1.zw; gS1 = mc1.xy; gW1 = ms.w1;
+    gO = vWorld - gC + vec2(0.0, mergeTexShift(ms.id0));
+    gO1 = vWorld - gC1 + vec2(0.0, mergeTexShift(ms.id1));
   #else
-    gC = vCenter; gS = vSeed;
+    gC = vCenter; gS = vSeed; gO = vWorld - gC + vec2(0.0, vTexShift);
   #endif
-    gT = texFrame(vWorld); gC = texFrame(gC); gC1 = texFrame(gC1);
+    gC = texFrame(gC); gC1 = texFrame(gC1);
     if (vWorld.y < uHitY) discard;
     if (vSize.x < 0.0001 || vSize.y < 0.0001) discard;
     vec2 halfSize = vSize * 0.5;
@@ -647,20 +659,20 @@ export const NOTE_FRAGMENT_SHADER = /* glsl */ `
       float cloudC = 0.0;
       if (uCloud > 0.0 || uCloudClear > 0.0 || uMelt > 0.0) {
         float w = mix(0.04, 0.45, uCloudSoft);   // softness = width of the blob falloff
-        cloudC = cloudAt(gC, gS.x, w);
-        if (gW1 > 0.0) cloudC = mix(cloudC, cloudAt(gC1, gS1.x, w), gW1);
+        cloudC = cloudAt(gC, gO, gS.x, w);
+        if (gW1 > 0.0) cloudC = mix(cloudC, cloudAt(gC1, gO1, gS1.x, w), gW1);
       }
       // ---- bump (carried by the note): normal map slope, + micro grain for cast metal ----
       // buv = contributor 0's map frame (the realistic maps use it too)
       mat2 bR;
-      vec2 buv = noteMapUv(gC, gS.y, uBumpTile, bR);
+      vec2 buv = noteMapUv(gC, gO, gS.y, uBumpTile, bR);
       // melt: where the cloud is strong (everywhere when there is no cloud)
       // the map is read from a much blurrier mip, so creases dissolve
       float melt = uMelt * ((uCloud > 0.0 || uCloudClear > 0.0) ? cloudC : 1.0);
-      vec2 bump = bumpAt(gC, gS.y, uBumpSoft + melt * 4.0);
+      vec2 bump = bumpAt(gC, gO, gS.y, uBumpSoft + melt * 4.0);
       // merged: the second contributor's slope, sampled in ITS frame (slopes
       // mix linearly → no seam on the fillet)
-      if (gW1 > 0.0) bump = mix(bump, bumpAt(gC1, gS1.y, uBumpSoft + melt * 4.0), gW1);
+      if (gW1 > 0.0) bump = mix(bump, bumpAt(gC1, gO1, gS1.y, uBumpSoft + melt * 4.0), gW1);
       // facet edges: faint lines where the UNMELTED map changes facet —
       // baked with the map when it has them (smooth, anti-aliased), else
       // the screen-space derivative of its slope (steps per 2×2 quad)
@@ -672,13 +684,13 @@ export const NOTE_FRAGMENT_SHADER = /* glsl */ `
           // bias): merged, buv jumps where contributor 0 changes, and the
           // implicit derivative there would pick the top mip → a grey seam
           float gs = exp2(uBumpSoft) / uBumpTile;
-          facetEdge = 1.0 - textureGrad(uBump, buv, bR * dFdx(gT) * gs, bR * dFdy(gT) * gs).a;
+          facetEdge = 1.0 - textureGrad(uBump, buv, bR * dFdx(vWorld) * gs, bR * dFdy(vWorld) * gs).a;
         } else {
           if (uBumpZEnc > 0.5) bs.z = bs.z * 2.0 - 1.0;
           facetEdge = smoothstep(0.03, 0.25, length(fwidth((bs.xy * 2.0 - 1.0) / max(bs.z, 0.3))));
         }
       }
-      if (uDetail > 0.0) bump += grainSlope(p * vec2(1.0, uTexUnit) / (uUnit * 0.09) + vSeed.y * 64.0) * uDetail;
+      if (uDetail > 0.0) bump += grainSlope((p + vec2(0.0, vTexShift)) / (uUnit * 0.09) + vSeed.y * 64.0) * uDetail;
       bump *= uBumpDepth;
       // ---- surface slope per shape. The shape slope (geo) and the bump
       // slope (bmp) stay apart so bevelReflect scales how much the SHAPE
@@ -743,7 +755,7 @@ export const NOTE_FRAGMENT_SHADER = /* glsl */ `
       // the satin grain textures it, attenuated where the surface is already
       // bright so it never sparkles
       if (uFrostVeil > 0.0) {
-        float gn = uFrostGrain > 0.0 ? vnoise2(p * vec2(1.0, uTexUnit) / uFrostTile + 3.7) - 0.5 : 0.0;
+        float gn = uFrostGrain > 0.0 ? vnoise2((p + vec2(0.0, vTexShift)) / uFrostTile + 3.7) - 0.5 : 0.0;
         float hot = smoothstep(0.5, 1.0, dot(col, vec3(0.299, 0.587, 0.114)));
         float v = uFrostVeil * 0.35 * (1.0 + uFrostGrain * 1.6 * gn * (1.0 - hot));
         col = mix(col, mix(tint, vec3(1.0), 0.5) * 0.55, clamp(v, 0.0, 1.0));

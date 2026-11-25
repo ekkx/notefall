@@ -4,6 +4,7 @@ import { isLinearTarget } from '../scene/linearTarget'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { useStore, useSettingsSlice } from '../store'
 import { getLensWindow } from '../scene/framing'
+import { textureShift } from './textureShift'
 import { computeLiveVisibleTop } from '../scene/visibleTop'
 import { getResolvedSettings } from '../scene/automatedSettings'
 import { audioEngine } from '../audio/engine'
@@ -277,6 +278,13 @@ export function FallingNotes() {
     }
     return { rect: make(), seedSel: make(), tintAlpha: make() }
   }, [])
+  // Per-instance texture shift (`textureShift`), uploaded as its own attribute.
+  const texShiftAttr = useMemo(() => {
+    const a = new THREE.InstancedBufferAttribute(new Float32Array(MAX_INSTANCES), 1)
+    a.setUsage(THREE.DynamicDrawUsage)
+    return a
+  }, [])
+  const texShifts = texShiftAttr.array as Float32Array
   // Per-instance key index (0..87, transpose applied), for the pitch labels.
   const labelKeys = useMemo(() => new Int16Array(MAX_INSTANCES), [])
   // Finger number (1–5) per instance for finger labels; 0 = none (live notes, ghosts, unassigned).
@@ -458,6 +466,7 @@ export function FallingNotes() {
     mesh.geometry.setAttribute('iRect', packed.rect)
     mesh.geometry.setAttribute('iSeedSel', packed.seedSel)
     mesh.geometry.setAttribute('iTintAlpha', packed.tintAlpha)
+    mesh.geometry.setAttribute('iTexShift', texShiftAttr)
     mesh.geometry.setAttribute('iMergeNbrA', mergeData.nbrA)
     mesh.geometry.setAttribute('iMergeNbrB', mergeData.nbrB)
     // Pin a large bounding sphere so raycasting never short-circuits.
@@ -482,10 +491,11 @@ export function FallingNotes() {
       mesh.geometry.deleteAttribute('iRect')
       mesh.geometry.deleteAttribute('iSeedSel')
       mesh.geometry.deleteAttribute('iTintAlpha')
+      mesh.geometry.deleteAttribute('iTexShift')
       mesh.geometry.deleteAttribute('iMergeNbrA')
       mesh.geometry.deleteAttribute('iMergeNbrB')
     }
-  }, [packed, material, mergeData])
+  }, [packed, texShiftAttr, material, mergeData])
 
   // The 2D look's glow halo: a second instanced mesh over the SAME geometry,
   // instance matrices and uniforms (shader variant GLOW_PASS), drawn just
@@ -920,12 +930,13 @@ export function FallingNotes() {
     }
 
     const FALL_DISTANCE = fallDistance()
-    // What is drawn on the notes lives in a frame whose y is in units of fall
-    // (shader `texFrame`), so a zoom that lengthens the notes neither slides
-    // it along them nor changes its speed.
+    // What is drawn on the notes lives in a frame that falls at a constant
+    // speed (shader `texFrame`) and is never stretched; `textureShift` keeps
+    // it still on each note while a zoom changes the note's length.
     const textureFall = FALL_REFERENCE_DISTANCE * getLensWindow().texture
     material.uniforms.uScroll.value = ((isDown ? 1 : -1) * tl * textureFall) / fall
-    material.uniforms.uTexUnit.value = textureFall / FALL_DISTANCE
+    const texUnit = textureFall / FALL_DISTANCE
+    material.uniforms.uTexUnit.value = texUnit
     material.uniforms.uGradArea.value.w = GRADIENT_AREA_HEIGHT * getLensWindow().fall
     // Visible-range bound for spawn / cull — derived from the live
     // camera so song notes (down spawn), 'up' history trails, and live
@@ -1038,6 +1049,7 @@ export function FallingNotes() {
 
       const length = topY - bottomY
       const centerY = (topY + bottomY) / 2
+      texShifts[count] = textureShift(tl, headFire, tailFire, centerY, length, isDown, fall, texUnit)
 
       const key = KEYBOARD_LAYOUT.keys[idx]
       const width = key.width * widthScale
@@ -1132,6 +1144,7 @@ export function FallingNotes() {
         blacks[count] = key.isBlack ? 1 : 0
         labelKeys[count] = idx
         labelFingers[count] = 0
+        texShifts[count] = 0
         // Live notes have no track / id.
         const liveTint = resolveTint(ln.midi, undefined)
         tints[count * 3] = liveTint[0]
@@ -1175,6 +1188,7 @@ export function FallingNotes() {
       blacks[count] = isBlackKey(d.midi) ? 1 : 0
       labelKeys[count] = d.midi - MIDI_MIN
       labelFingers[count] = 0
+      texShifts[count] = 0
       // Preserve the deleted note's track tint so the fade-out reads
       // as "this exact note is dissolving" instead of flashing back
       // to the global noteColor for its final 0.12s.
@@ -1210,6 +1224,7 @@ export function FallingNotes() {
         o.key = mergeKeys[i]
         o.seed![0] = seeds[i * 2]
         o.seed![1] = seeds[i * 2 + 1]
+        o.texShift = texShifts[i]
         o.solo = mergeKeys[i] < 0
       }
       MN.length = count
@@ -1255,6 +1270,9 @@ export function FallingNotes() {
         a.addUpdateRange(0, count * 4)
         a.needsUpdate = true
       }
+      texShiftAttr.clearUpdateRanges()
+      texShiftAttr.addUpdateRange(0, count)
+      texShiftAttr.needsUpdate = true
     }
     const labels = labelMeshRef.current
     if (labels) {

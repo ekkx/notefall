@@ -21,7 +21,7 @@ const _worldUp = new THREE.Vector3(0, 1, 0)
  * (x right, y up) and size relative to it (1 = all of it, 2 = twice as
  * wide and high). `fall` = how much longer than at scale 1 the notes are in
  * the world (equal to `scale`: the same length on screen); `texture` = the
- * `fall` at which their textures are unstretched. See scene/framing.ts.
+ * constant `fall` their texture frame moves at. See scene/framing.ts.
  */
 export type LensWindow = { scale: number; x: number; y: number; fall: number; texture: number }
 

@@ -698,8 +698,6 @@ export function createMeshHands(parent: THREE.Object3D) {
             }
             outgoingLight += (flashSum + glowSum) * uFlashStrength;
           }
-          // forearm / wrist end fades to black so the cut disappears into the dark foreground
-          outgoingLight *= smoothstep(${(KEYBOARD_Y - 1.0).toFixed(3)}, ${(KEYBOARD_Y - 0.25).toFixed(3)}, vSkinW.y);
           #include <opaque_fragment>`)
     }
     return mat
