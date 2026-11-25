@@ -32,8 +32,8 @@
     "hint": "The camera pans and zooms so the keys being played stay in the picture.",
     "minKeys": "White keys shown at the closest zoom",
     "margin": "Space at the sides (white keys)",
-    "panSpeed": "Sideways speed",
-    "zoomSpeed": "Zoom speed"
+    "smooth": "Smoothness (seconds)",
+    "noteStretch": "Note stretch with zoom"
   },
   "camera": {
     "distance": "Distance",

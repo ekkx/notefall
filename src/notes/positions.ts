@@ -3,6 +3,7 @@ import { defaultSettings, type Settings } from '../store'
 import { midiToTimeline, timelineToMidi, type SpeedMap } from '../midi/speedMap'
 import { KEYBOARD_LAYOUT, KEY_COUNT, MIDI_MIN, NOTE_HIT_Y } from '../keyboard/layout'
 import { getLensWindow } from '../scene/framing'
+import { computeLiveVisibleTop } from '../scene/visibleTop'
 import { noteLabelMinLengthAt } from './pitchLabels'
 
 // Falling notes render on the z = NOTE_PLANE_Z plane so they sit in front
@@ -82,11 +83,15 @@ export const FALL_REFERENCE_DISTANCE =
 
 /**
  * World units a note falls in `fallDurationSec` this frame. Grows with the
- * lens window (video shape, camera follow), so a zoom changes only how wide
- * the notes look: on screen they keep their length and their speed.
+ * lens window (video shape, camera follow), by default as much as the zoom:
+ * the notes get wider and narrower but keep their length on screen.
  */
 export function fallDistance(): number {
-  return FALL_REFERENCE_DISTANCE * getLensWindow().scale
+  return FALL_REFERENCE_DISTANCE * getLensWindow().fall
+}
+
+function visibleTopY(s: Settings): number {
+  return computeLiveVisibleTop(s.cameraPos, s.cameraLookAt, s.cameraFov, NOTE_PLANE_Z, NOTE_HIT_Y, getLensWindow())
 }
 
 /**
@@ -213,8 +218,9 @@ export function noteVisualBounds(
   if (settings.fallDirection === 'down') {
     const headT = headFire - currentAudioTime
     const tailT = tailFire - currentAudioTime
-    if (headT > fall) return null
     const headY = hitY + (headT / fall) * fd
+    // beyond the fall AND above the picture = not on screen
+    if (headT > fall && headY > visibleTopY(settings)) return null
     const tailY = hitY + (tailT / fall) * fd
     const visualLength = Math.max(minLength, tailY - headY)
     bottomY = headY

@@ -32,8 +32,8 @@
     "hint": "A câmera se move e aproxima para manter na imagem as teclas que estão sendo tocadas.",
     "minKeys": "Teclas brancas no zoom máximo",
     "margin": "Espaço nas laterais (teclas brancas)",
-    "panSpeed": "Velocidade lateral",
-    "zoomSpeed": "Velocidade do zoom"
+    "smooth": "Suavidade (segundos)",
+    "noteStretch": "Alongamento das notas com o zoom"
   },
   "camera": {
     "distance": "Distância",

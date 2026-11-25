@@ -10,14 +10,14 @@ import { buildSpeedMap } from '../midi/speedMap'
 import type { ParsedSong } from '../midi/types'
 import { useStore, type Settings } from '../store'
 import { useHandVideo } from '../video/handVideo'
-import { buildFollowPath, followAt, minKeysForAspect, type FollowPath } from './cameraFollow'
+import { buildFollowPath, followAt, minKeysForAspect, type FollowPath, type KeyFrame } from './cameraFollow'
 import { cameraNdc, keyboardViewShift, type LensWindow, type ViewShiftInput } from './visibleTop'
 
 const DESIGN_ASPECT = 16 / 9
 /** Seconds the picture takes to a new framing when the song or a setting changes under it. */
 const EASE_SEC = 0.5
 
-let current: LensWindow = { scale: 1, x: 0, y: 0 }
+let current: LensWindow = { scale: 1, x: 0, y: 0, fall: 1 }
 /** The lens window this frame is drawn with (set by `CameraSync`, before every consumer). */
 export const getLensWindow = (): LensWindow => current
 
@@ -31,8 +31,7 @@ const PATH_KEYS = [
   'transpose',
   'cameraFollowMinKeys',
   'cameraFollowMargin',
-  'cameraFollowPanSpeed',
-  'cameraFollowZoomSpeed',
+  'cameraFollowSmooth',
 ] as const satisfies readonly (keyof Settings)[]
 
 let path: FollowPath | null = null
@@ -62,8 +61,7 @@ function followPath(song: ParsedSong, s: Settings, aspect: number, hold: boolean
   path = buildFollowPath(notes, {
     minKeys,
     margin: s.cameraFollowMargin,
-    panSpeed: s.cameraFollowPanSpeed,
-    zoomSpeed: s.cameraFollowZoomSpeed,
+    smoothSec: s.cameraFollowSmooth,
   })
   ease.restart = true
   return path
@@ -74,7 +72,7 @@ function followPath(song: ParsedSong, s: Settings, aspect: number, hold: boolean
 /** The framing with no follow: the camera as set, the 16:9 picture's whole width in any shape. */
 function baseWindow(cam: ViewShiftInput, aspect: number): LensWindow {
   const scale = Math.max(1, DESIGN_ASPECT / aspect)
-  return { scale, x: 0, y: anchoredY(cam, scale) }
+  return { scale, x: 0, y: anchoredY(cam, scale), fall: scale }
 }
 
 /** Window centre that leaves the keyboard's front edge at the screen height the unscaled picture has it. */
@@ -83,13 +81,23 @@ function anchoredY(cam: ViewShiftInput, scale: number): number {
   return front - scale * (front + 2 * keyboardViewShift(cam))
 }
 
-function followWindow(cam: ViewShiftInput, aspect: number, centre: number, half: number): LensWindow {
+/**
+ * `stretch`: how much of the zoom the notes' length makes up for. 1 = all of it (the same length on screen), 0 = none
+ * (they scale with the keys). Measured from the song's typical zoom, so it never changes the fall speed as a whole.
+ */
+function followWindow(
+  cam: ViewShiftInput,
+  aspect: number,
+  { centre, half }: KeyFrame,
+  typical: number,
+  stretch: number,
+): LensWindow {
   const x = (key: number) =>
     cameraNdc(cam, key * WHITE_KEY_WIDTH - KEYBOARD_LAYOUT.totalWidth / 2, NOTE_HIT_Y).x / aspect
   const l = x(centre - half)
   const r = x(centre + half)
   const scale = Math.max(1e-3, (r - l) / 2)
-  return { scale, x: (l + r) / 2, y: anchoredY(cam, scale) }
+  return { scale, x: (l + r) / 2, y: anchoredY(cam, scale), fall: scale * Math.pow(typical / half, 1 - stretch) }
 }
 
 const ease = {
@@ -111,7 +119,7 @@ export function applyFraming(camera: THREE.PerspectiveCamera, cam: ViewShiftInpu
   let target: LensWindow
   if (follow) {
     const f = followAt(follow, audioEngine.currentSongTime())
-    target = followWindow(cam, aspect, f.centre, f.half)
+    target = followWindow(cam, aspect, f, follow.typical, s.cameraFollowNoteStretch)
   } else {
     target = baseWindow(cam, aspect)
   }
@@ -137,6 +145,7 @@ export function applyFraming(camera: THREE.PerspectiveCamera, cam: ViewShiftInpu
       scale: f.scale * Math.pow(target.scale / f.scale, e),
       x: f.x + (target.x - f.x) * e,
       y: f.y + (target.y - f.y) * e,
+      fall: f.fall * Math.pow(target.fall / f.fall, e),
     }
   }
   current = target

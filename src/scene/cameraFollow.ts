@@ -10,20 +10,17 @@ export type FollowOptions = {
   minKeys: number
   /** Room kept beside the outermost notes, in white keys. */
   margin: number
-  /** How fast the picture moves sideways / zooms, 1 = the default (each spread over `*_SPREAD_SEC / speed`). */
-  panSpeed: number
-  zoomSpeed: number
+  /** Seconds the sideways movement is spread over, ahead of and behind each change; the zoom takes twice that. */
+  smoothSec: number
 }
 
-export type FollowPath = { t0: number; centre: Float32Array; half: Float32Array }
+/** `typical` = the song's median half width. */
+export type FollowPath = { t0: number; centre: Float32Array; half: Float32Array; typical: number }
 
 type TimedNote = { midi: number; on: number; off: number }
 
 const KEYS = KEYBOARD_LAYOUT.whiteCount
 const STEP = 0.05
-/** Seconds a movement starts ahead of what needs it, and the length it is spread over on either side, at speed 1. */
-const PAN_SPREAD_SEC = 1.2
-const ZOOM_SPREAD_SEC = 0.9
 /** How far past the keyboard's ends the picture may reach. */
 const END_ROOM = 0.5
 /** The centre is kept on the keyboard by a clamp; this rounds off its corners. */
@@ -85,10 +82,10 @@ function fillGaps(a: Float32Array): void {
 }
 
 /**
- * The centre follows the middle of what is played, the half width whatever that centre then needs to keep it all inside.
- * Both are "widest over a window, then a weighted mean over the same window": every sample of the mean saw the extent
- * at its centre, so what is played stays in the frame whatever the two speeds are, and the window is also how far ahead
- * the camera starts.
+ * Widest extent over a window, then a weighted mean over the same window: every sample of that mean saw the extent at
+ * its centre, so what is played is always inside the frame, and the window's length is how far ahead the camera moves
+ * and how softly. Done twice: the sideways movement over `smoothSec`, the zoom over twice that, so the picture follows
+ * the hands while its scale changes only from passage to passage.
  */
 export function buildFollowPath(notes: readonly TimedNote[], o: FollowOptions): FollowPath | null {
   if (!notes.length) return null
@@ -116,16 +113,12 @@ export function buildFollowPath(notes: readonly TimedNote[], o: FollowOptions): 
   fillGaps(lo)
   fillGaps(hi)
 
-  const pan = Math.max(1, Math.round(PAN_SPREAD_SEC / o.panSpeed / STEP))
-  const zoom = Math.max(1, Math.round(ZOOM_SPREAD_SEC / o.zoomSpeed / STEP))
+  const pan = Math.round(o.smoothSec / STEP)
   const left = smooth(windowMin(lo, pan, 1), pan)
   const right = smooth(windowMin(hi, pan, -1), pan)
   const logHalf = new Float32Array(count)
-  for (let i = 0; i < count; i++) {
-    const c = (left[i] + right[i]) / 2
-    logHalf[i] = Math.log(Math.max(hi[i] - c, c - lo[i], o.minKeys / 2))
-  }
-  const zoomed = smooth(windowMin(logHalf, zoom, -1), zoom)
+  for (let i = 0; i < count; i++) logHalf[i] = Math.log(Math.max(right[i] - left[i], o.minKeys) / 2)
+  const zoomed = smooth(windowMin(logHalf, 2 * pan, -1), 2 * pan)
 
   const half = new Float32Array(count)
   const centre = new Float32Array(count)
@@ -134,7 +127,8 @@ export function buildFollowPath(notes: readonly TimedNote[], o: FollowOptions): 
     half[i] = h
     centre[i] = Math.min(KEYS + END_ROOM - h, Math.max(h - END_ROOM, (left[i] + right[i]) / 2))
   }
-  return { t0: first, centre: smooth(centre, Math.round(CLAMP_SMOOTH_SEC / STEP)), half }
+  const typical = half.slice().sort()[count >> 1]
+  return { t0: first, centre: smooth(centre, Math.round(CLAMP_SMOOTH_SEC / STEP)), half, typical }
 }
 
 function sample(a: Float32Array, x: number): number {

@@ -87,9 +87,10 @@ export type Settings = {
   cameraFollowMinKeys: number
   /** Room beside the outermost notes, in white keys. */
   cameraFollowMargin: number
-  /** How fast the follow moves sideways / zooms (1 = normal). */
-  cameraFollowPanSpeed: number
-  cameraFollowZoomSpeed: number
+  /** Seconds a movement is spread over (the zoom takes twice that). */
+  cameraFollowSmooth: number
+  /** How much the notes lengthen as the follow zooms out: 1 = as much as the zoom (same length on screen), 0 = not at all. */
+  cameraFollowNoteStretch: number
   // Notes
   notesEnabled: boolean
   fallDirection: FallDirection
@@ -686,8 +687,8 @@ export const defaultSettings: Settings = {
   cameraFollowEnabled: false,
   cameraFollowMinKeys: 16,
   cameraFollowMargin: 2,
-  cameraFollowPanSpeed: 1,
-  cameraFollowZoomSpeed: 1,
+  cameraFollowSmooth: 2,
+  cameraFollowNoteStretch: 1,
   notesEnabled: true,
   fallDirection: 'down',
   fallDurationSec: 2.5,
