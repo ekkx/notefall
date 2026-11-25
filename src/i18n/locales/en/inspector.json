@@ -18,7 +18,7 @@
     "style": "Style",
     "noteLabels": "Note labels",
     "keyLabels": "Key names",
-    "hands": "Hands (beta)",
+    "hands": "Virtual hands (beta)",
     "handVideo": "Hand video"
   },
   "camera": {
@@ -430,7 +430,7 @@
   },
   "hands": {
     "hint": "The first time, about 22 MB of hand motion data is downloaded. Notes without a hand or finger are assigned automatically.",
-    "error": "Couldn't load the hand motion. Turn Hands off and on again to reload."
+    "error": "Couldn't load the hand motion. Turn Virtual hands off and on again to reload."
   },
   "keyframes": {
     "title": "Keyframe at {{time}}",

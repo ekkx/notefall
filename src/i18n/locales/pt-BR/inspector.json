@@ -18,7 +18,7 @@
     "style": "Estilo",
     "noteLabels": "Rótulos das notas",
     "keyLabels": "Nomes das teclas",
-    "hands": "Mãos (beta)",
+    "hands": "Mãos virtuais (beta)",
     "handVideo": "Vídeo das mãos"
   },
   "camera": {
@@ -430,7 +430,7 @@
   },
   "hands": {
     "hint": "Na primeira vez, cerca de 22 MB de dados de movimento das mãos são baixados. Notas sem mão ou dedo definidos são atribuídas automaticamente.",
-    "error": "Não foi possível carregar o movimento das mãos. Desative e ative as Mãos de novo para recarregar."
+    "error": "Não foi possível carregar o movimento das mãos. Desative e ative as Mãos virtuais de novo para recarregar."
   },
   "keyframes": {
     "title": "Keyframe em {{time}}",
