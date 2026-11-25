@@ -25,12 +25,12 @@ const STEP = 0.05
 const END_ROOM = 0.5
 /** The centre is kept on the keyboard by a clamp; this rounds off its corners. */
 const CLAMP_SMOOTH_SEC = 0.6
-/** The keyboard never fills more of the picture's height than this. */
-const MAX_KEYBOARD_SHARE = 0.4
+/** The keyboard never fills more of the picture's height than this (a portrait picture has room to spare above it). */
+const maxKeyboardShare = (aspect: number) => (aspect < 1 ? 0.71 : 0.4)
 
 /** Fewest white keys across a picture of this aspect before the keyboard would fill too much of its height. */
 export function minKeysForAspect(aspect: number): number {
-  return (WHITE_KEY_LENGTH / WHITE_KEY_WIDTH / MAX_KEYBOARD_SHARE) * aspect
+  return (WHITE_KEY_LENGTH / WHITE_KEY_WIDTH / maxKeyboardShare(aspect)) * aspect
 }
 
 /** Smallest (sign 1) / largest (sign -1) value within ±r samples. */

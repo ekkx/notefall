@@ -8,7 +8,7 @@ import { songHandNotes } from '../hands/motion'
 import { KEYBOARD_LAYOUT, KEYBOARD_Y, NOTE_HIT_Y, WHITE_KEY_WIDTH } from '../keyboard/layout'
 import { buildSpeedMap } from '../midi/speedMap'
 import type { ParsedSong } from '../midi/types'
-import { useStore, type Settings } from '../store'
+import { defaultSettings, useStore, type Settings } from '../store'
 import { useHandVideo } from '../video/handVideo'
 import { buildFollowPath, followAt, minKeysForAspect, type FollowPath, type KeyFrame } from './cameraFollow'
 import { cameraNdc, keyboardViewShift, type LensWindow, type ViewShiftInput } from './visibleTop'
@@ -17,7 +17,7 @@ const DESIGN_ASPECT = 16 / 9
 /** Seconds the picture takes to a new framing when the song or a setting changes under it. */
 const EASE_SEC = 0.5
 
-let current: LensWindow = { scale: 1, x: 0, y: 0, fall: 1 }
+let current: LensWindow = { scale: 1, x: 0, y: 0, fall: 1, texture: 1 }
 /** The lens window this frame is drawn with (set by `CameraSync`, before every consumer). */
 export const getLensWindow = (): LensWindow => current
 
@@ -72,13 +72,22 @@ function followPath(song: ParsedSong, s: Settings, aspect: number, hold: boolean
 /** The framing with no follow: the camera as set, the 16:9 picture's whole width in any shape. */
 function baseWindow(cam: ViewShiftInput, aspect: number): LensWindow {
   const scale = Math.max(1, DESIGN_ASPECT / aspect)
-  return { scale, x: 0, y: anchoredY(cam, scale), fall: scale }
+  return { scale, x: 0, y: anchoredY(cam, scale), fall: scale, texture: scale }
 }
 
 /** Window centre that leaves the keyboard's front edge at the screen height the unscaled picture has it. */
 function anchoredY(cam: ViewShiftInput, scale: number): number {
   const front = cameraNdc(cam, 0, KEYBOARD_Y).y
   return front - scale * (front + 2 * keyboardViewShift(cam))
+}
+
+/**
+ * The window scale at the song's typical zoom (default camera). One value for the whole song, and in coarse steps so an
+ * edit that shifts the typical zoom a little doesn't move the textures.
+ */
+function textureScale(aspect: number, typical: number): number {
+  const width = 2 * Math.abs(defaultSettings.cameraPos[2]) * Math.tan((defaultSettings.cameraFov * Math.PI) / 360) * aspect
+  return Math.pow(2, Math.round(Math.log2((2 * typical * WHITE_KEY_WIDTH) / width) * 4) / 4)
 }
 
 /**
@@ -97,7 +106,13 @@ function followWindow(
   const l = x(centre - half)
   const r = x(centre + half)
   const scale = Math.max(1e-3, (r - l) / 2)
-  return { scale, x: (l + r) / 2, y: anchoredY(cam, scale), fall: scale * Math.pow(typical / half, 1 - stretch) }
+  return {
+    scale,
+    x: (l + r) / 2,
+    y: anchoredY(cam, scale),
+    fall: scale * Math.pow(typical / half, 1 - stretch),
+    texture: textureScale(aspect, typical),
+  }
 }
 
 const ease = {
@@ -146,6 +161,7 @@ export function applyFraming(camera: THREE.PerspectiveCamera, cam: ViewShiftInpu
       x: f.x + (target.x - f.x) * e,
       y: f.y + (target.y - f.y) * e,
       fall: f.fall * Math.pow(target.fall / f.fall, e),
+      texture: target.texture,
     }
   }
   current = target

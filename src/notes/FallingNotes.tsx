@@ -41,7 +41,7 @@ import {
   linearToSrgbChannel,
 } from './noteShader'
 import { NoteLookResources } from './looks/noteLookResources'
-import { NoteColorResolver, createGradientUniforms, noteGradient, writeGradientUniforms } from './noteColor'
+import { GRADIENT_AREA_HEIGHT, NoteColorResolver, createGradientUniforms, noteGradient, writeGradientUniforms } from './noteColor'
 import { MergeData, type MergeNote } from './looks/merge'
 import {
   createLabelMesh,
@@ -369,7 +369,7 @@ export function FallingNotes() {
         uFacetEdges: { value: 0 },
         uFacetMap: { value: 0 },
         uScroll: { value: 0 },
-        uFallUnit: { value: 1 },
+        uTexUnit: { value: 1 },
         uTime: { value: 0 },
         uCloud: { value: 0 },
         uCloudTile: { value: 1 },
@@ -920,11 +920,13 @@ export function FallingNotes() {
     }
 
     const FALL_DISTANCE = fallDistance()
-    // The bump-scatter song-space frame, kept in scale-1 units: world units
-    // the song has scrolled, and what a world unit of fall is worth. The
-    // lens scale then never slides the maps along the notes.
-    material.uniforms.uScroll.value = ((isDown ? 1 : -1) * tl * FALL_REFERENCE_DISTANCE) / fall
-    material.uniforms.uFallUnit.value = FALL_REFERENCE_DISTANCE / FALL_DISTANCE
+    // What is drawn on the notes lives in a frame whose y is in units of fall
+    // (shader `texFrame`), so a zoom that lengthens the notes neither slides
+    // it along them nor changes its speed.
+    const textureFall = FALL_REFERENCE_DISTANCE * getLensWindow().texture
+    material.uniforms.uScroll.value = ((isDown ? 1 : -1) * tl * textureFall) / fall
+    material.uniforms.uTexUnit.value = textureFall / FALL_DISTANCE
+    material.uniforms.uGradArea.value.w = GRADIENT_AREA_HEIGHT * getLensWindow().fall
     // Visible-range bound for spawn / cull — derived from the live
     // camera so song notes (down spawn), 'up' history trails, and live
     // notes all rise / appear up to the user's actual viewport. Capped

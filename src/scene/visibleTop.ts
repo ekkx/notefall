@@ -20,10 +20,10 @@ const _worldUp = new THREE.Vector3(0, 1, 0)
  * The part of the unshifted view the picture shows: centre in its NDC
  * (x right, y up) and size relative to it (1 = all of it, 2 = twice as
  * wide and high). `fall` = how much longer than at scale 1 the notes are in
- * the world (equal to `scale`: the same length on screen). See
- * scene/framing.ts.
+ * the world (equal to `scale`: the same length on screen); `texture` = the
+ * `fall` at which their textures are unstretched. See scene/framing.ts.
  */
-export type LensWindow = { scale: number; x: number; y: number; fall: number }
+export type LensWindow = { scale: number; x: number; y: number; fall: number; texture: number }
 
 export type ViewShiftInput = {
   keyboardScreenY: number
