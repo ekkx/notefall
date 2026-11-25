@@ -27,7 +27,7 @@ const TH_MIN = 0.92, TH_MAX = 1.12
 /** Share of linear-blend skinning's volume loss at a bend (1/cos(theta/2) - 1) that is given back as extra cross-section. */
 const BEND_BULGE = 0.7
 /** The hand turns clear toward the model's cut at the wrist over this much of it (model units, ~mm / 870). */
-const WRIST_FADE = 0.026
+const WRIST_FADE = 0.013
 /** How deep the hollow at the model's wrist end goes (model units). */
 const WRIST_HOLLOW = 0.016
 /** Mesh v2 wrist flare / palm remap (reshape of wrist + metacarpal verts). Off: judged odd without the forearm. */
