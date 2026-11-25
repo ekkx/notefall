@@ -175,7 +175,8 @@ export const NOTE_FRAGMENT_SHADER = /* glsl */ `
   uniform sampler2D uBump;
   uniform float uBumpTile, uBumpDepth, uDetail, uBumpSoft, uMelt, uScatter, uFacetEdges;
   uniform float uFacetMap;       // 1: the bump map's alpha carries baked facet edges (1 − edge; looks/crystalNormal.ts)
-  uniform float uScroll;         // world units fallen so far: world y ± uScroll is fixed on every song note
+  uniform float uScroll;         // scale-1 units fallen so far: fall height ± uScroll is fixed on every song note
+  uniform float uFallUnit;       // scale-1 units per world unit of fall (1 unless the lens is zoomed, see framing.ts)
   uniform float uTime;           // look animation clock (wrapped)
   uniform float uCloud, uCloudTile, uCloudSoft, uCloudClear;
   uniform float uHighlight, uHighlightThr, uHighlightSoft;
@@ -310,14 +311,14 @@ export const NOTE_FRAGMENT_SHADER = /* glsl */ `
   // Frame of the note-carried maps (bump, and with scatter also cloud +
   // frost grain).
   //   scatter off: note-local frame + the note's y seed.
-  //   scatter on: SONG-SPACE frame (x − key centre, world y + scroll): every
+  //   scatter on: SONG-SPACE frame (x − key centre, fall height + scroll): every
   //     song note falls at the same speed, so this frame is attached to all
   //     of them at once and continuous across consecutive notes of one key;
   //     each key gets its own random offset + 90°-step rotation + mirror, so
   //     neighbouring keys / chords never show the same interior.
   // R maps frame → map space; slopes read from the map go back with transpose(R).
   // c = the note's centre, seedY = its bump seed.
-  vec2 songFrame(vec2 c) { return vec2(vWorld.x - c.x, vWorld.y + uScroll); }
+  vec2 songFrame(vec2 c) { return vec2(vWorld.x - c.x, vWorld.y - c.y + uHitY + (c.y - uHitY) * uFallUnit + uScroll); }
   float keyHash(vec2 c) { return hash12(vec2(floor(c.x * 97.0 + 0.5) * 0.731, 4.17)); }
   vec2 noteMapUv(vec2 c, float seedY, float tile, out mat2 R) {
     R = mat2(1.0);

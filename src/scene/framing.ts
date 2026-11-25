@@ -31,7 +31,8 @@ const PATH_KEYS = [
   'transpose',
   'cameraFollowMinKeys',
   'cameraFollowMargin',
-  'cameraFollowSmooth',
+  'cameraFollowPanSpeed',
+  'cameraFollowZoomSpeed',
 ] as const satisfies readonly (keyof Settings)[]
 
 let path: FollowPath | null = null
@@ -61,7 +62,8 @@ function followPath(song: ParsedSong, s: Settings, aspect: number, hold: boolean
   path = buildFollowPath(notes, {
     minKeys,
     margin: s.cameraFollowMargin,
-    smoothSec: s.cameraFollowSmooth,
+    panSpeed: s.cameraFollowPanSpeed,
+    zoomSpeed: s.cameraFollowZoomSpeed,
   })
   ease.restart = true
   return path

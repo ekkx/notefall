@@ -396,7 +396,7 @@ export function EditTools() {
       const dy = w.y - startWorld.y
 
       const live = useStore.getState().settings
-      const fd = fallDistance(live)
+      const fd = fallDistance()
       const dirSign = live.fallDirection === 'down' ? 1 : -1
       const deltaTime = dirSign * (dy / fd) * live.fallDurationSec
 

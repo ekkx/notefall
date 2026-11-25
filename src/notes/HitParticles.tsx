@@ -6,9 +6,6 @@ import { useSettingsSlice } from '../store'
 
 const HIT_PARTICLES_KEYS = [
   'particleColorFollowNote',
-  'cameraFov',
-  'cameraLookAt',
-  'cameraPos',
   'fallDurationSec',
   'noteColor',
   'noteMinLength',
@@ -56,6 +53,7 @@ const HIT_PARTICLES_KEYS = [
 ] as const
 import { audioEngine } from '../audio/engine'
 import { clockEpoch, now } from '../audio/clock'
+import { fallDistance } from './positions'
 import { getResolvedSettings } from '../scene/automatedSettings'
 import { KEYBOARD_LAYOUT, KEY_COUNT, MIDI_MIN, NOTE_HIT_Y } from '../keyboard/layout'
 import { NoteColorResolver } from './noteColor'
@@ -592,11 +590,7 @@ export function HitParticles() {
     // conversion FallingNotes uses. Recomputed per frame so changes to
     // camera / keyboard / fall duration take effect immediately, including
     // for notes already in their min-emit window.
-    const camDistance = Math.abs(rs.cameraPos[2])
-    const halfVisHeight = camDistance * Math.tan((rs.cameraFov * Math.PI) / 360)
-    const visibleTop = rs.cameraLookAt[1] + halfVisHeight
-    const fallDistance = Math.max(0.5, visibleTop - hitY) + 1.0  // SPAWN_BUFFER = 1.0
-    const minEmitPerLength = rs.fallDurationSec / fallDistance
+    const minEmitPerLength = rs.fallDurationSec / fallDistance()
     const minLength = Math.max(0, rs.noteMinLength)
     // labelled notes are drawn at least as long as their label
     const labelSettings = {

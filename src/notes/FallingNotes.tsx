@@ -2,7 +2,7 @@ import { useMemo, useRef, useEffect } from 'react'
 import * as THREE from 'three'
 import { isLinearTarget } from '../scene/linearTarget'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
-import { useStore, useSettingsSlice, defaultSettings } from '../store'
+import { useStore, useSettingsSlice } from '../store'
 import { getLensWindow } from '../scene/framing'
 import { computeLiveVisibleTop } from '../scene/visibleTop'
 import { getResolvedSettings } from '../scene/automatedSettings'
@@ -16,6 +16,8 @@ import {
   clickXToMidi,
   clickYToTime,
   fallDistance,
+  FALL_REFERENCE_DISTANCE,
+  SPAWN_BUFFER,
   noteVisualBounds,
   parallaxX,
   NOTE_PLANE_Z,
@@ -60,26 +62,6 @@ const MAX_INSTANCES = 4096
 // float32-precise range so the flow never freezes. Mirrors HitLine's
 // TIME_WRAP_SECONDS guard for the same precision-collapse failure.
 const PHASE_WRAP = 1024
-// Buffer in world units between the visible top edge of the camera frustum
-// and the note spawn line — keeps notes off-screen when they're created so
-// they can slide in from above instead of popping into view mid-screen.
-const SPAWN_BUFFER = 1.0
-
-
-// Fall trajectory length, frozen against the *default* camera framing so
-// the rendered height of a note for a given duration stays constant when
-// the user orbits / zooms / pans. Without this, the per-frame layout
-// would re-derive FALL_DISTANCE from the live camera and notes would
-// stretch / shrink as the camera moved.
-const FALL_REFERENCE_DISTANCE =
-  Math.max(
-    0.5,
-    defaultSettings.cameraLookAt[1] +
-      Math.abs(defaultSettings.cameraPos[2]) *
-        Math.tan((defaultSettings.cameraFov * Math.PI) / 360) -
-      NOTE_HIT_Y,
-  ) + SPAWN_BUFFER
-
 // Shared in/out object for `computeRisingRect`. Reused across notes so
 // the per-frame layout pass doesn't allocate thousands of objects.
 const _risingRect: { topY: number; bottomY: number } = { topY: 0, bottomY: 0 }
@@ -387,6 +369,7 @@ export function FallingNotes() {
         uFacetEdges: { value: 0 },
         uFacetMap: { value: 0 },
         uScroll: { value: 0 },
+        uFallUnit: { value: 1 },
         uTime: { value: 0 },
         uCloud: { value: 0 },
         uCloudTile: { value: 1 },
@@ -936,14 +919,12 @@ export function FallingNotes() {
       material.uniforms.uMargin.value = 0.01
     }
 
-    // FALL_DISTANCE is locked to the *default* camera framing
-    // (FALL_REFERENCE_DISTANCE) — re-deriving it from the live camera
-    // would resize every note's visual length the moment the user
-    // orbits / zooms, breaking the user's spatial timing reference.
-    const FALL_DISTANCE = FALL_REFERENCE_DISTANCE
-    // World units the song has scrolled: world y ± this is fixed on every
-    // song note (the bump-scatter song-space frame).
-    material.uniforms.uScroll.value = ((isDown ? 1 : -1) * tl * FALL_DISTANCE) / fall
+    const FALL_DISTANCE = fallDistance()
+    // The bump-scatter song-space frame, kept in scale-1 units: world units
+    // the song has scrolled, and what a world unit of fall is worth. The
+    // lens scale then never slides the maps along the notes.
+    material.uniforms.uScroll.value = ((isDown ? 1 : -1) * tl * FALL_REFERENCE_DISTANCE) / fall
+    material.uniforms.uFallUnit.value = FALL_REFERENCE_DISTANCE / FALL_DISTANCE
     // Visible-range bound for spawn / cull — derived from the live
     // camera so song notes (down spawn), 'up' history trails, and live
     // notes all rise / appear up to the user's actual viewport. Capped
@@ -1399,7 +1380,7 @@ export function FallingNotes() {
       const dy = world.y - drag.startWorld.y
 
       const settings = useStore.getState().settings
-      const fd = fallDistance(settings)
+      const fd = fallDistance()
       // Y → time. In 'down', notes higher up are later → +ΔY = +ΔTime.
       // In 'up', notes higher up are older → +ΔY = −ΔTime.
       const dirSign = settings.fallDirection === 'down' ? 1 : -1
@@ -1522,7 +1503,7 @@ export function FallingNotes() {
       if (!w) return
       const dy = w.y - startWorld.y
       const settings = useStore.getState().settings
-      const fd = fallDistance(settings)
+      const fd = fallDistance()
       // For 'down', +Y on screen is later in time; for 'up', +Y is older.
       const dirSign = settings.fallDirection === 'down' ? 1 : -1
       const deltaTimeOnAxis = dirSign * (dy / fd) * settings.fallDurationSec

@@ -1541,7 +1541,8 @@ function LookPanel({ leaving }: { leaving: boolean }) {
                 <p className="text-caption text-ink-faint">{t('cameraFollow.hint')}</p>
                 <BoundSliderRow label={t('cameraFollow.minKeys')} settingKey="cameraFollowMinKeys" min={10} max={52} step={1} />
                 <BoundSliderRow label={t('cameraFollow.margin')} settingKey="cameraFollowMargin" min={0} max={10} step={0.5} />
-                <BoundSliderRow label={t('cameraFollow.smooth')} settingKey="cameraFollowSmooth" min={0.5} max={6} step={0.1} />
+                <BoundSliderRow label={t('cameraFollow.panSpeed')} settingKey="cameraFollowPanSpeed" min={0.3} max={4} step={0.1} />
+                <BoundSliderRow label={t('cameraFollow.zoomSpeed')} settingKey="cameraFollowZoomSpeed" min={0.3} max={4} step={0.1} />
               </Section>
               <Section title={t('section.camera')}>
                 <CameraSection />

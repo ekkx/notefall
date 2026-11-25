@@ -2,6 +2,7 @@ import type { NoteEvent } from '../midi/types'
 import { defaultSettings, type Settings } from '../store'
 import { midiToTimeline, timelineToMidi, type SpeedMap } from '../midi/speedMap'
 import { KEYBOARD_LAYOUT, KEY_COUNT, MIDI_MIN, NOTE_HIT_Y } from '../keyboard/layout'
+import { getLensWindow } from '../scene/framing'
 import { noteLabelMinLengthAt } from './pitchLabels'
 
 // Falling notes render on the z = NOTE_PLANE_Z plane so they sit in front
@@ -62,30 +63,30 @@ function noteFireAudio(note: NoteEvent, ctx: TimeContext): number {
  *   For 'up':
  *     headY = hitY + ((currentTime - note.time) / fall) * FALL_DISTANCE
  *
- * FALL_DISTANCE is derived from the camera so it tracks any FOV / camera
- * distance change automatically.
+ * FALL_DISTANCE = `fallDistance()`.
  */
 
 // Buffer (world units) above the visible top edge where a note's spawn
 // position sits — keeps a note off-screen the moment before it slides in.
-// MUST stay in sync with FallingNotes.tsx's SPAWN_BUFFER.
-const SPAWN_BUFFER = 1.0
+export const SPAWN_BUFFER = 1.0
 
-export function frustumTop(settings: Settings): number {
-  const camDist = Math.abs(settings.cameraPos[2])
-  const halfVis = camDist * Math.tan((settings.cameraFov * Math.PI) / 360)
-  return settings.cameraLookAt[1] + halfVis
-}
+/**
+ * Fall length at scale 1, frozen against the *default* camera framing so
+ * orbiting / dollying never resizes the notes.
+ */
+export const FALL_REFERENCE_DISTANCE =
+  Math.max(
+    0.5,
+    defaultSettings.cameraLookAt[1] + CAM_Z * Math.tan((defaultSettings.cameraFov * Math.PI) / 360) - NOTE_HIT_Y,
+  ) + SPAWN_BUFFER
 
-export function frustumBottom(settings: Settings): number {
-  const camDist = Math.abs(settings.cameraPos[2])
-  const halfVis = camDist * Math.tan((settings.cameraFov * Math.PI) / 360)
-  return settings.cameraLookAt[1] - halfVis
-}
-
-export function fallDistance(settings: Settings): number {
-  const hitY = NOTE_HIT_Y
-  return Math.max(0.5, frustumTop(settings) - hitY) + SPAWN_BUFFER
+/**
+ * World units a note falls in `fallDurationSec` this frame. Grows with the
+ * lens window (video shape, camera follow), so a zoom changes only how wide
+ * the notes look: on screen they keep their length and their speed.
+ */
+export function fallDistance(): number {
+  return FALL_REFERENCE_DISTANCE * getLensWindow().scale
 }
 
 /**
@@ -103,7 +104,7 @@ export function clickYToTime(
   ctx: TimeContext,
 ): number {
   const hitY = NOTE_HIT_Y
-  const headT = ((y - hitY) / fallDistance(settings)) * settings.fallDurationSec
+  const headT = ((y - hitY) / fallDistance()) * settings.fallDurationSec
   const audioAtClick =
     settings.fallDirection === 'down'
       ? currentAudioTime + headT
@@ -147,7 +148,7 @@ export function timeToHeadY(
   ctx: TimeContext,
 ): number {
   const hitY = NOTE_HIT_Y
-  const fd = fallDistance(settings)
+  const fd = fallDistance()
   const fireAudio = ctx.midiOffset + midiToTimeline(ctx.speedMap, time)
   const headT =
     settings.fallDirection === 'down'
@@ -191,7 +192,7 @@ export function noteVisualBounds(
   const halfWidth = width / 2
 
   const hitY = NOTE_HIT_Y
-  const fd = fallDistance(settings)
+  const fd = fallDistance()
   const fall = settings.fallDurationSec
   // the renderer draws labelled notes at least as long as their label
   const minLength = Math.max(
