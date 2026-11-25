@@ -13,7 +13,6 @@ import { TransportPill } from './shell/TransportPill'
 import { HandVideoSetup } from './HandVideoSetup'
 import { LoadingIsland } from './shell/LoadingIsland'
 import { DriftIsland } from './shell/DriftIsland'
-import { StartCard } from './shell/StartCard'
 import { IdleDriver } from './shell/idle'
 import { setFullscreenRoot, useIsFullscreen } from './shell/fullscreen'
 import { useStore } from '../store'
@@ -328,7 +327,6 @@ export function Layout() {
       <Toolbar />
       <Inspector />
       <TimelineEditor />
-      <StartCard />
       <TransportPill />
       <LoadingIsland />
       <DriftIsland />

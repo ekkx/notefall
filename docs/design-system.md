@@ -14,7 +14,7 @@ notefall makes falling-notes piano videos. The picture is the product: falling n
 | The same tokens as Tailwind names | `tailwind.config.js` (`theme.extend`) |
 | Component kit (react-aria + tokens) | `src/ui/kit/` (import from `./kit` / `../kit`) |
 | Icons | `src/ui/kit/icons.tsx` (`Icon.*`, `LogoMark`) |
-| Screen surfaces (islands, pill, start card, sheets) | `src/ui/shell/` |
+| Screen surfaces (islands, pill, sheets) | `src/ui/shell/` |
 | Customize panel and its rows | `src/ui/Inspector.tsx`, `src/ui/controls.tsx`, `src/ui/look/` |
 | Strings | `src/i18n/locales/{en,ja}/<namespace>.json` |
 
@@ -40,7 +40,7 @@ Everything floats over a full-window canvas (the 16:9 video is letterboxed in th
 │ ◆notefall  File  name ●  ↶ ↷│                     │ MIDI input ▾  ● Record ▾ │ Export │
 └───────────────────────────┘   loading island    └─────────────────────────────┘
                      canvas (16:9, letterboxed)           ┌ Customize ─┐
-                     start card when there is no song      │ tabs  🔍    │
+                                                           │ tabs  🔍    │
 ┌ Timeline (floating, optional) ───────────────────┐      │ sections…   │
 └──────────────────────────────────────────────────┘      └─────────────┘
            ( ⏮ ⟲ ▶ ⟳ 🔁  0:20 ──●── 5:24 │ 1.0× 🔈 ⬡ ⛶ │ Customize  Timeline )
@@ -50,13 +50,12 @@ Everything floats over a full-window canvas (the 16:9 video is letterboxed in th
 |---|---|---|
 | Song island | top-left, `EDGE` from the edges, height `BAR` | Wordmark = the app menu (shortcuts, language, report a bug, request a feature, GitHub, analytics switch, build). Then File (New, Open…, Open recent, Demo songs · Save, Save as… · Add audio…, Add hand video…, Save song as MIDI… · Export…), the song name (rename inline, a small dot when unsaved), Undo, Redo. |
 | Input island | top-right | MIDI device menu, Record + ▾ ("Takes" with the count-in switch beside it, the takes, Clear all… after a confirm), divider, Export (the one primary button). During the count-in the island shows the beats as dots (the current one lands with the click), "Count-in" and Cancel (Esc); while a take records it holds only that take: red dot, elapsed time, notes so far · last note, and a red Stop. From the count-in until the take stops every other surface (song island, pill, Customize) steps aside (`shell/takeFocus.ts`). |
-| Transport pill | bottom-centre, `PILL_BOTTOM` from the bottom, height `PILL` | Back to start, −10 s, play (the white disc), +10 s, loop (a playback mode, so it sits with these), time, scrubber, total │ speed, volume, reset camera, fullscreen │ Customize, Timeline. |
+| Transport pill | bottom-centre, `PILL_BOTTOM` from the bottom, height `PILL` | Back to start, −10 s, play (one large icon, no disc), +10 s, loop (a playback mode, so it sits with these), time, scrubber, total │ speed, volume, reset camera, fullscreen │ Customize, Timeline. |
 | Customize panel | right edge, from under the top islands to above the pill (`GAP` between), width `PANEL` | Open when the page loads (every time; closing it lasts for the session only) so the style options are noticed; the pill toggles it. Tabs + search, sections, footer with "Reset to defaults" and close. |
 | Timeline | left edge, above the pill, up to the right edge (or to Customize when it's open) | Floating, never docked full-width. Starts closed; ⌘B or the pill toggles it. |
 | Selection card | beside the selected notes, never over them, above the timeline / pill, left of Customize | See [Editing notes](#editing-notes). |
 | Toast | centred, just above the pill | One at a time. |
 | Loading island | top-centre, under the top islands | What is being prepared + progress: the piano sounds, the hands' motion (downloading / preparing its data, making a song's motion; one row each when both run). The app stays usable. |
-| Start card | centre of the canvas, when there is no song | Open a file, demo songs, record. Closes with its × (top right), any press outside it or Esc. |
 | Dialogs | centred over `scrim` | Export, confirmations, feedback, shortcut sheet. |
 | Hand video setup | over the scene, the rest of the chrome steps aside | A temporary mode, never a separate screen: the 3D view stays visible behind it (finished look to confirm, see-through to fix by hand). One strong-glass bar at the top holds everything: what happened or what to do (one short line, no caption under it), the step's tools (the video's transparency slider in both steps, the octave stepper and Fix by hand in the confirm step, Back to automatic in the by-hand step) and OK / Cancel. When the keys can't be found the bar says so and has one button (Remove video for a new video, Close on re-entry); there is no by-hand placement for that. Four white pins appear over the video only in the by-hand step. A third step, "Adjust visible area", shows a dashed frame over the keys with three drag handles (left, right, front), a key-name tag while a side is dragged, an edge-softness slider, Reset area and Done; the part outside the frame stays visible but dimmed while editing. No side or bottom panels. Esc cancels, Enter = OK. Entered after adding a video and from Customize / the timeline lane (the visible-area step from the same two places), never by hovering the canvas. |
 
@@ -201,7 +200,7 @@ A settings tab is a stack of `Section`s (heading, optional feature switch via `e
 
 ### Screen pieces (`src/ui/shell/`, `src/ui/`)
 
-`SongIsland`, `InputIsland`, `AppMenu`, `TakesPopover` (rendered by `Toolbar.tsx`, which holds their state), `TransportPill`, `LoadingIsland`, `StartCard`, `ShortcutSheet`, `ScreenFrame` (the full-page fallback screens), `SelectionCard.tsx`, `TimelineEditor.tsx` / `Timeline.tsx`, `ExportSettingsDialog.tsx`, `ExportProgressModal.tsx`, `FeedbackDialog.tsx`, `ConfirmModal.tsx` (`showConfirm` / `showAlert` from `confirm.ts`).
+`SongIsland`, `InputIsland`, `AppMenu`, `TakesPopover` (rendered by `Toolbar.tsx`, which holds their state), `TransportPill`, `LoadingIsland`, `ShortcutSheet`, `ScreenFrame` (the full-page fallback screens), `SelectionCard.tsx`, `TimelineEditor.tsx` / `Timeline.tsx`, `ExportSettingsDialog.tsx`, `ExportProgressModal.tsx`, `FeedbackDialog.tsx`, `ConfirmModal.tsx` (`showConfirm` / `showAlert` from `confirm.ts`).
 
 ---
 

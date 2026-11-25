@@ -36,19 +36,6 @@
     "handsLoading": "Loading hand motion",
     "handsWorking": "Generating hand motion"
   },
-  "startCard": {
-    "title": "Start with a song",
-    "text": "Drop a MIDI file or a notefall project anywhere, or pick one below.",
-    "open": "Open a file…",
-    "demo": "Try a demo song",
-    "demoMenu": "Demo songs",
-    "record": "Record from your keyboard",
-    "deviceConnected": "{{name}} connected",
-    "note": "Everything stays on your computer. Nothing is uploaded.",
-    "couldNotOpenTitle": "Could not open file",
-    "dontShowAgain": "Don't show again",
-    "couldNotLoadDemoTitle": "Could not load the demo"
-  },
   "pageLoader": {
     "loading": "Loading notefall"
   }

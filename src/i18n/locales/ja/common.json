@@ -36,19 +36,6 @@
     "handsLoading": "手の動きを読み込み中",
     "handsWorking": "手の動きを生成中"
   },
-  "startCard": {
-    "title": "曲を選んで始めましょう",
-    "text": "MIDI ファイルや notefall のプロジェクトをここにドロップするか、下から選べます。",
-    "open": "ファイルを開く…",
-    "demo": "デモ曲を試す",
-    "demoMenu": "デモ曲",
-    "record": "キーボードから録音",
-    "deviceConnected": "{{name}} 接続中",
-    "note": "すべてお使いのコンピューター内で処理され、アップロードはされません。",
-    "couldNotOpenTitle": "ファイルを開けませんでした",
-    "dontShowAgain": "今後表示しない",
-    "couldNotLoadDemoTitle": "デモを読み込めませんでした"
-  },
   "pageLoader": {
     "loading": "notefall を読み込み中"
   }
