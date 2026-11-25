@@ -778,7 +778,7 @@ export const defaultSettings: Settings = {
   hitLineBarHalo: 2.0,
   hitLineWaveHalo: 0.8,
   bloomEnabled: true,
-  bloomIntensity: 0.5,
+  bloomIntensity: 0.7,
   bloomThreshold: 0.2,
   bloomRadius: 0.7,
   bloomSmoothing: 0.4,
