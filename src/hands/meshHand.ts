@@ -28,8 +28,6 @@ const TH_MIN = 0.92, TH_MAX = 1.12
 const BEND_BULGE = 0.7
 /** The hand turns clear toward the model's cut at the wrist over this much of it (model units, ~mm / 870). */
 const WRIST_FADE = 0.024
-/** The model's wrist narrows toward its end by this share, over this much of it. */
-const WRIST_TAPER = 0.2, WRIST_TAPER_OVER = 0.03
 /** How deep the hollow at the model's wrist end goes (model units). */
 const WRIST_HOLLOW = 0.016
 /** Mesh v2 wrist flare / palm remap (reshape of wrist + metacarpal verts). Off: judged odd without the forearm. */
@@ -231,13 +229,6 @@ class MeshHand {
     const wp = m.geometry.attributes.position as THREE.BufferAttribute, wn = m.geometry.attributes.normal as THREE.BufferAttribute
     m.geometry.computeBoundingBox()
     const rim = m.geometry.boundingBox!.max.z
-    let cx = 0, cy = 0, cn = 0
-    for (let i = 0; i < wp.count; i++) if (rim - wp.getZ(i) < 0.02) { cx += wp.getX(i); cy += wp.getY(i); cn++ }
-    cx /= cn; cy /= cn
-    for (let i = 0; i < wp.count; i++) {
-      const u = Math.max(0, 1 - (rim - wp.getZ(i)) / WRIST_TAPER_OVER), k = 1 - WRIST_TAPER * u * u
-      wp.setXY(i, cx + (wp.getX(i) - cx) * k, cy + (wp.getY(i) - cy) * k)
-    }
     m.geometry.setAttribute('aWrist', new THREE.BufferAttribute(Float32Array.from({ length: wp.count }, (_, i) => {
       const inward = wp.getX(i) * wn.getX(i) + wp.getY(i) * wn.getY(i) < 0
       return rim - wp.getZ(i) < WRIST_HOLLOW && (inward || wn.getZ(i) > 0.7) ? 2 : 1 - (rim - wp.getZ(i)) / WRIST_FADE
