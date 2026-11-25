@@ -10,6 +10,9 @@ import { HandVideoError, HandVideoLoadSuperseded, VIDEO_EXTENSIONS, hasVideoTrac
 import { autoPlaceHandVideo } from '../video/autoplace'
 import { captureHandVideoBaseline, openHandVideoSetup } from '../video/setup'
 import { validKeys } from '../video/geometry'
+import { recorder } from '../audio/recorder'
+import { FIRST_VISIT_DEMO } from '../demos'
+import { firstVisit } from '../firstVisit'
 import { useStore } from '../store'
 import { track } from '../usage'
 import type { SongSource } from '../usage/events'
@@ -208,7 +211,8 @@ async function applyOpenedMidi(
 async function applyOpenedProject(
   buf: ArrayBuffer,
   ref: FileRef | null,
-  source: SongSource,
+  /** null: not the user's doing, so no usage event */
+  source: SongSource | null,
 ): Promise<ActionResult> {
   let project: Project
   try {
@@ -316,7 +320,7 @@ async function applyOpenedProject(
   // shouldn't pollute the recents menu.
   if (ref) void addRecent(ref)
 
-  track('song_opened', { source })
+  if (source) track('song_opened', { source })
   return { kind: 'ok' }
 }
 
@@ -455,6 +459,26 @@ export async function loadDemoProject(label: string, url: string): Promise<Actio
   }
   track('demo_loaded', { demo_label: label })
   return applyOpenedProject(buf, null, 'demo')
+}
+
+/**
+ * On a first visit the app starts with a demo song instead of empty (not playing, clean, nothing downloaded for it but
+ * the project itself). Does nothing if the visitor got to something first; a failure just leaves the app empty.
+ */
+let firstVisitDemoStarted = false
+export async function loadFirstVisitDemo(): Promise<void> {
+  if (!firstVisit || !FIRST_VISIT_DEMO || firstVisitDemoStarted) return
+  firstVisitDemoStarted = true
+  try {
+    const res = await fetch(FIRST_VISIT_DEMO.url)
+    if (!res.ok) return
+    const buf = await res.arrayBuffer()
+    const s = useStore.getState()
+    if (s.song || s.dirty || s.currentFile || s.countInBeat > 0 || recorder.getState() !== 'idle') return
+    await applyOpenedProject(buf, null, null)
+  } catch {
+    /* stays empty */
+  }
 }
 
 // ───────── Save / Save As ─────────

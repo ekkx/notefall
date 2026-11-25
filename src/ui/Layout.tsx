@@ -20,7 +20,7 @@ import { audioEngine } from '../audio/engine'
 import { midiInput } from '../audio/midiInput'
 import { isAudioName, useUserAudio } from '../audio/userAudio'
 import { parseMidi } from '../midi/parse'
-import { importHandVideo, importUserAudio, isHandVideoFile, openProjectFromFile } from '../projects/actions'
+import { loadFirstVisitDemo, importHandVideo, importUserAudio, isHandVideoFile, openProjectFromFile } from '../projects/actions'
 import { isVideoName, useHandVideo } from '../video/handVideo'
 import { handVideoEndOnTimeline } from '../video/time'
 import { PROJECT_FILE_EXTENSION } from '../projects/types'
@@ -84,6 +84,7 @@ export function Layout() {
   // a PortalProvider exists, a nullish container renders nothing).
   const rootRef = useRef<HTMLDivElement>(null)
   const isFullscreen = useIsFullscreen()
+  useEffect(() => void loadFirstVisitDemo(), [])
   useEffect(() => {
     setFullscreenRoot(rootRef.current)
     return () => setFullscreenRoot(null)

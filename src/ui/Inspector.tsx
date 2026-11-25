@@ -1235,18 +1235,8 @@ function KeyframesHeader() {
 
 type InspectorTab = 'notes' | 'effects' | 'keyboard' | 'scene' | 'sound'
 const INSPECTOR_TABS: InspectorTab[] = ['notes', 'effects', 'keyboard', 'scene', 'sound']
-const TAB_STORAGE_KEY = 'inspector.tab'
-
-function readStoredTab(): InspectorTab {
-  try {
-    const v = window.localStorage.getItem(TAB_STORAGE_KEY)
-    if (v && (INSPECTOR_TABS as string[]).includes(v)) return v as InspectorTab
-  } catch {
-    /* storage unavailable — start on the first tab */
-  }
-  return 'notes'
-}
-
+/** The tab Customize reopens on: the last one used, Notes after a page load. */
+let lastTab: InspectorTab = 'notes'
 // One tab's cards. Only the active tab renders; while searching every
 // tab renders its matches under the tab's name (hidden when it has none).
 function TabPanel({ title, active, children }: { title: string; active: boolean; children: ReactNode }) {
@@ -1304,18 +1294,14 @@ function LookPanel({ leaving }: { leaving: boolean }) {
   const setLookOpen = useShell((st) => st.setLookOpen)
   const [query, setQuery] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
-  const [tab, setTabState] = useState<InspectorTab>(readStoredTab)
+  const [tab, setTabState] = useState(lastTab)
   const panelRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const setTab = (next: InspectorTab) => {
     setTabState(next)
+    lastTab = next
     // each tab starts at its top, not at the previous tab's scroll offset
     if (scrollRef.current) scrollRef.current.scrollTop = 0
-    try {
-      window.localStorage.setItem(TAB_STORAGE_KEY, next)
-    } catch {
-      /* storage unavailable — the tab is just not remembered */
-    }
   }
   const searchButtonRef = useRef<HTMLButtonElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)

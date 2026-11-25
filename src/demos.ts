@@ -32,3 +32,6 @@ function labelFromPath(path: string): string {
 export const DEMOS: DemoEntry[] = Object.entries(modules)
   .map(([path, url]) => ({ label: labelFromPath(path), url }))
   .sort((a, b) => a.label.localeCompare(b.label))
+
+/** The demo a first visit starts with. */
+export const FIRST_VISIT_DEMO = DEMOS.find((d) => d.label.startsWith('Schubert: Impromptu No. 3'))

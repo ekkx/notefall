@@ -1,5 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import './firstVisit' // first: reads the storage before i18n writes to it
 import './index.css'
 import './i18n'
 import { App } from './App'
