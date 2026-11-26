@@ -1,5 +1,6 @@
 {
   "section": {
+    "floatLights": "舞い上がる光",
     "noteRays": "光の筋",
     "video": "動画",
     "cameraFollow": "カメラの追従",
@@ -47,6 +48,12 @@
     "hint": "マウスの中ボタンでドラッグして回転、Shift+中ボタンでパン、Ctrl/Cmd+スクロールでズームします。"
   },
   "row": {
+    "floatAmount": "量",
+    "floatBrightness": "明るさ",
+    "floatSpeed": "速さ",
+    "floatHeight": "昇る高さ",
+    "floatSize": "大きさ",
+    "floatTwinkle": "またたき",
     "videoAspect": "縦横比",
     "color": "カラー",
     "enabled": "有効",
@@ -382,7 +389,8 @@
       "gradient": "グラデーション",
       "random": "ランダム",
       "note": "ノートに合わせる",
-      "hand": "手ごと"
+      "hand": "手ごと",
+      "hitLine": "判定ラインに合わせる"
     },
     "stops": "色数",
     "stopColor": "色 {{n}}",
@@ -423,7 +431,9 @@
     "turbulence": "乱流",
     "motion": "動き",
     "rays": "光線",
-    "fog": "霧"
+    "fog": "霧",
+    "floatSpecks": "光の粒",
+    "floatBokeh": "玉ボケ"
   },
   "detail": {
     "show": "詳細設定",

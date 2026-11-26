@@ -1,5 +1,6 @@
 {
   "section": {
+    "floatLights": "Floating lights",
     "noteRays": "Light rays",
     "video": "Video",
     "cameraFollow": "Camera follow",
@@ -47,6 +48,12 @@
     "hint": "Drag with the middle mouse button to orbit, Shift+middle to pan, and Ctrl/Cmd+scroll to zoom."
   },
   "row": {
+    "floatAmount": "Amount",
+    "floatBrightness": "Brightness",
+    "floatSpeed": "Speed",
+    "floatHeight": "Height",
+    "floatSize": "Size",
+    "floatTwinkle": "Twinkle",
     "videoAspect": "Aspect ratio",
     "color": "Color",
     "enabled": "Enabled",
@@ -382,7 +389,8 @@
       "gradient": "Gradient",
       "random": "Random",
       "note": "Follow notes",
-      "hand": "By hand"
+      "hand": "By hand",
+      "hitLine": "Follow the hit line"
     },
     "stops": "Colors",
     "stopColor": "Color {{n}}",
@@ -423,7 +431,9 @@
     "turbulence": "Turbulence",
     "motion": "Motion",
     "rays": "Rays",
-    "fog": "Fog"
+    "fog": "Fog",
+    "floatSpecks": "Light specks",
+    "floatBokeh": "Bokeh"
   },
   "detail": {
     "show": "More settings",

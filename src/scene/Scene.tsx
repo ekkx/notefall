@@ -28,6 +28,7 @@ const SCENE_CONTENTS_KEYS = [
   'handVideoEnabled',
   'keyboardScreenY',
   'noteRaysEnabled',
+  'floatLightsEnabled',
   'notesEnabled',
 ] as const
 import { recorder } from '../audio/recorder'
@@ -35,6 +36,7 @@ import { registerR3FStateGetter } from './exportBridge'
 import { Keyboard } from '../keyboard/Keyboard'
 import { FallingNotes } from '../notes/FallingNotes'
 import { NoteRays } from '../notes/NoteRays'
+import { FloatingLights } from '../notes/FloatingLights'
 import { LandingFlashes } from '../notes/LandingFlashes'
 import { HitParticles } from '../notes/HitParticles'
 import { HitLine } from '../notes/HitLine'
@@ -219,6 +221,7 @@ function SceneContents({ recState }: { recState: 'idle' | 'recording' }) {
       {handVideo && <HandVideoLayer />}
       {s.notesEnabled && <FallingNotes />}
       {s.notesEnabled && s.noteRaysEnabled && <NoteRays />}
+      {s.floatLightsEnabled && <FloatingLights />}
       {s.flashEnabled && <LandingFlashes />}
       <HitParticles />
       <HitLine />

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MenuTrigger, SubmenuTrigger } from 'react-aria-components'
+import { Autocomplete, Input, MenuTrigger, SearchField, SubmenuTrigger } from 'react-aria-components'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../../store'
 import { DEMOS } from '../../demos'
@@ -11,8 +11,10 @@ import {
   Icon,
   IconButton,
   Island,
+  Menu,
   MenuItem,
   MenuPopover,
+  Popover,
   MenuSeparator,
 } from '../kit'
 import { useHandSplit } from '../../hands/splitAction'
@@ -31,6 +33,51 @@ const SHORTCUT_REDO = REDO_LABEL
 // Recent files rely on persisted `FileSystemFileHandle`s: Safari / Firefox can't reopen by
 // handle, so the submenu would be a dead end there. FSA support doesn't change at runtime.
 const RECENT_AVAILABLE = hasFileSystemAccess()
+
+// Lower-case, strip diacritics, and drop spaces and ":" / "_" / "." / "-" so "etude op 25" finds "Étude: Op_25".
+const foldText = (v: string) =>
+  v
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[:_.\-\s]+/g, '')
+
+// Short lists (production) read fine without a field.
+const DEMO_SEARCH_MIN = 8
+
+function DemoList({ onLoad }: { onLoad: (label: string, url: string) => void }) {
+  const { t } = useTranslation('toolbar')
+  const searchable = DEMOS.length > DEMO_SEARCH_MIN
+  const menu = (
+    <Menu
+      aria-label={t('file.demoSongsLabel')}
+      className="box-border min-h-0 w-[280px] flex-1 overflow-auto p-1.5 outline-none"
+      renderEmptyState={() => <div className="px-2.5 py-2 text-body text-ink-faint">{t('file.demoSongsEmpty')}</div>}
+    >
+      {DEMOS.map((demo) => (
+        <MenuItem key={demo.url} id={demo.url} textValue={demo.label} onAction={() => onLoad(demo.label, demo.url)}>
+          {demo.label}
+        </MenuItem>
+      ))}
+    </Menu>
+  )
+  if (!searchable) return menu
+  return (
+    <Autocomplete filter={(text, input) => foldText(text).includes(foldText(input))}>
+      <div className="flex max-h-[inherit] flex-col">
+        <SearchField aria-label={t('file.demoSongsSearch')} autoFocus className="relative m-1.5 mb-0 flex-none">
+          <Icon.SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
+          <Input
+            placeholder={t('file.demoSongsSearch')}
+            spellCheck={false}
+            className="nf-focus h-8 w-full rounded-tab bg-fill-field pl-9 pr-3 text-body text-ink outline-none placeholder:text-ink-faint"
+          />
+        </SearchField>
+        {menu}
+      </div>
+    </Autocomplete>
+  )
+}
 
 export type FileActions = {
   onNew: () => void
@@ -111,13 +158,9 @@ export function SongIsland({
           {DEMOS.length > 0 && (
             <SubmenuTrigger>
               <MenuItem textValue={t('file.demoSongs')}>{t('file.demoSongs')}</MenuItem>
-              <MenuPopover aria-label={t('file.demoSongsLabel')} placement="end top" menuClassName="w-[280px]">
-                {DEMOS.map((demo) => (
-                  <MenuItem key={demo.url} textValue={demo.label} onAction={() => actions.onLoadDemo(demo.label, demo.url)}>
-                    {demo.label}
-                  </MenuItem>
-                ))}
-              </MenuPopover>
+              <Popover placement="end top" className="rounded-[14px]">
+                <DemoList onLoad={actions.onLoadDemo} />
+              </Popover>
             </SubmenuTrigger>
           )}
           <MenuSeparator />

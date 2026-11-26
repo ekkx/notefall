@@ -44,7 +44,9 @@ export function usePcKeyboardInput(ensureAudio: () => Promise<boolean>) {
       if (useHandVideo.getState().editing) return;
       // Shift is reserved for global shortcuts (e.g. Shift+R for record).
       if (e.repeat || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
-      if (isEditable(e.target)) return;
+      // Check the focused element too: a field that keeps focus while it forwards keys to a list (react-aria's
+      // Autocomplete re-dispatches them on the menu) would otherwise play the piano while typing.
+      if (isEditable(e.target) || isEditable(document.activeElement)) return;
       const baseMidi = PC_KEY_NOTES[e.code];
       if (baseMidi === undefined) return;
       e.preventDefault();

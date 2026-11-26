@@ -393,6 +393,21 @@ type SettingsBase = {
   noteRaysLength: number         // 0..1 reach
   noteRaysCenterX: number        // 0..1 across the picture
   noteRaysCenterY: number        // 0..1 from the hit line to the top of the picture
+  floatLightsEnabled: boolean    // rising fireflies + bokeh discs (notes/FloatingLights.tsx)
+  floatLightsFollowLine: boolean // colour follows the hit line (default); off = floatLightsColor / BokehColor
+  floatLightsSpeed: number       // time rate of both kinds (not animatable)
+  // Specks (the fireflies)
+  floatLightsAmount: number      // how many (0 = none)
+  floatLightsBrightness: number
+  floatLightsSize: number
+  floatLightsHeight: number      // how high they reach
+  floatLightsTwinkle: number
+  floatLightsColor: string
+  // Bokeh (out-of-focus balls)
+  floatLightsBokehAmount: number // how many (0 = none)
+  floatLightsBokehBrightness: number
+  floatLightsBokehSize: number
+  floatLightsBokehColor: string
   particleRaysEnabled: boolean
   particleRayLength: number
   particleRayOpacity: number
@@ -847,6 +862,19 @@ export const defaultSettings: Settings = {
   noteRaysLength: 0.5,
   noteRaysCenterX: 0.5,
   noteRaysCenterY: 0.5,
+  floatLightsEnabled: false,
+  floatLightsFollowLine: true,
+  floatLightsSpeed: 1.25,
+  floatLightsAmount: 1,
+  floatLightsBrightness: 1,
+  floatLightsSize: 1,
+  floatLightsHeight: 1,
+  floatLightsTwinkle: 0.5,
+  floatLightsColor: '#e8f6ff',
+  floatLightsBokehAmount: 1,
+  floatLightsBokehBrightness: 1,
+  floatLightsBokehSize: 1,
+  floatLightsBokehColor: '#5aa8b8',
   particleRaysEnabled: true,
   particleRayLength: 1.2,
   particleRayOpacity: 0.1,

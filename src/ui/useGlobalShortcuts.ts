@@ -99,7 +99,7 @@ export function useGlobalShortcuts(): void {
       if (useHandVideo.getState().editing) return
       if (e.code !== 'Space') return
       if (e.repeat || e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return
-      if (isEditable(e.target)) return
+      if (isEditable(e.target) || isEditable(document.activeElement)) return
       e.preventDefault()
       e.stopImmediatePropagation()
       void togglePlayback()
@@ -113,7 +113,7 @@ export function useGlobalShortcuts(): void {
       if (e.code !== 'KeyS') return
       if (e.altKey) return
       if (!(e.metaKey || e.ctrlKey)) return
-      if (isEditable(e.target)) return
+      if (isEditable(e.target) || isEditable(document.activeElement)) return
       e.preventDefault()
       e.stopImmediatePropagation()
       const action = e.shiftKey ? saveProjectAs : saveProject
@@ -139,7 +139,7 @@ export function useGlobalShortcuts(): void {
       if (e.code !== 'KeyB') return
       if (e.altKey || e.shiftKey) return
       if (!(e.metaKey || e.ctrlKey)) return
-      if (isEditable(e.target)) return
+      if (isEditable(e.target) || isEditable(document.activeElement)) return
       e.preventDefault()
       e.stopImmediatePropagation()
       const s = useStore.getState()
@@ -155,7 +155,7 @@ export function useGlobalShortcuts(): void {
       if (e.code !== 'KeyO') return
       if (e.altKey || e.shiftKey) return
       if (!(e.metaKey || e.ctrlKey)) return
-      if (isEditable(e.target)) return
+      if (isEditable(e.target) || isEditable(document.activeElement)) return
       e.preventDefault()
       e.stopImmediatePropagation()
       void openProject().then((result) => {
@@ -188,7 +188,7 @@ export function useGlobalShortcuts(): void {
     const onKey = async (e: KeyboardEvent) => {
       // The hand video setup keeps undo / redo (each of its gestures is an undo entry), nothing else.
       const setupOpen = useHandVideo.getState().editing !== null
-      if (isEditable(e.target)) return
+      if (isEditable(e.target) || isEditable(document.activeElement)) return
       if (setupOpen && !(e.metaKey || e.ctrlKey)) return
 
       // --- always-on record shortcut (Space is handled separately above) ---

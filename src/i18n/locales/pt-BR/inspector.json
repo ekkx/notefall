@@ -1,5 +1,6 @@
 {
   "section": {
+    "floatLights": "Luzes flutuantes",
     "noteRays": "Raios de luz",
     "video": "Vídeo",
     "cameraFollow": "Acompanhamento da câmera",
@@ -47,6 +48,12 @@
     "hint": "Arraste com o botão do meio para orbitar, Shift+botão do meio para deslocar e Ctrl/Cmd+rolagem para dar zoom."
   },
   "row": {
+    "floatAmount": "Quantidade",
+    "floatBrightness": "Brilho",
+    "floatSpeed": "Velocidade",
+    "floatHeight": "Altura",
+    "floatSize": "Tamanho",
+    "floatTwinkle": "Cintilação",
     "videoAspect": "Proporção",
     "color": "Cor",
     "enabled": "Ativado",
@@ -382,7 +389,8 @@
       "gradient": "Gradiente",
       "random": "Aleatória",
       "note": "Seguir notas",
-      "hand": "Por mão"
+      "hand": "Por mão",
+      "hitLine": "Seguir a linha de contato"
     },
     "stops": "Cores",
     "stopColor": "Cor {{n}}",
@@ -423,7 +431,9 @@
     "turbulence": "Turbulência",
     "motion": "Movimento",
     "rays": "Raios",
-    "fog": "Névoa"
+    "fog": "Névoa",
+    "floatSpecks": "Partículas de luz",
+    "floatBokeh": "Bokeh"
   },
   "detail": {
     "show": "Mais configurações",
