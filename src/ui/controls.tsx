@@ -1161,14 +1161,23 @@ export function Section({
  * "More" disclosure inside a section: the section shows its everyday rows, the rest waits behind this toggle (open
  * state persisted per `id`; always open while searching so matches inside are visible).
  */
-export function Detail({ id, label, children }: { id: string; label?: string; children: ReactNode }) {
+export function Detail({
+  id,
+  label,
+  children,
+}: {
+  id: string
+  /** Fixed text, or one per state (open → the 'hide' wording). Default: the generic More / Fewer settings. */
+  label?: string | ((open: boolean) => string)
+  children: ReactNode
+}) {
   const { t } = useTranslation('inspector')
   const q = useSearchQuery()
   const [storedOpen, setStoredOpen] = useStoredBool(`inspector.detail.${id}`, false)
   if (q) return <div className="grid gap-3">{children}</div>
   return (
     <Disclosure
-      label={label ?? (storedOpen ? t('detail.hide') : t('detail.show'))}
+      label={typeof label === 'function' ? label(storedOpen) : (label ?? (storedOpen ? t('detail.hide') : t('detail.show')))}
       isExpanded={storedOpen}
       onExpandedChange={setStoredOpen}
     >

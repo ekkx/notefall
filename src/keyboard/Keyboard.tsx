@@ -49,7 +49,7 @@ import {
 } from "./whiteKeyShader";
 import { usePcKeyboardInput } from "./pcInput";
 import { retriggerDip } from "./retriggerDip";
-import { useStore, useSettingsSlice } from "../store";
+import { useStore, useSettingsSlice, HIT_LINE_DEFAULT_BRIGHTNESS } from "../store";
 import { MAX_LIVE_VISIBLE_ABOVE_HIT } from "../scene/visibleTop";
 import { getResolvedSettings } from "../scene/automatedSettings";
 
@@ -567,7 +567,7 @@ export function Keyboard() {
       hitLightUniforms.uHitColor.value.set(hex);
       hitLightUniforms.uHitReach.value = rs.keyHitLineReach;
       hitLightUniforms.uHitLight.value = rs.hitLineEnabled
-        ? rs.keyHitLineLight * Math.min(rs.hitLineIntensity / 2.5, 2)
+        ? rs.keyHitLineLight * Math.min(rs.hitLineBrightness / HIT_LINE_DEFAULT_BRIGHTNESS, 2)
         : 0;
     }
     const pressK = 1 - Math.exp(-delta / Math.max(0.005, PRESS_TC));

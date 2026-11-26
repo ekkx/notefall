@@ -56,7 +56,7 @@ const FRAGMENT_SHADER = /* glsl */ `
   uniform vec3 uCore;    // core size, aspect, softness
   uniform vec4 uRays;    // strength, length, angular width, softness
   uniform vec3 uHaze;    // strength, width, height
-  uniform vec2 uMisc;    // whiten, ray count
+  uniform vec3 uMisc;    // whiten, ray count, rays below the line (relative)
   // 1 = the composer's linear buffer (Bloom on), 0 = the canvas, which wants sRGB-encoded values (set per draw).
   uniform float uLinearTarget;
   const float TAU = 6.2831853;
@@ -82,8 +82,9 @@ const FRAGMENT_SHADER = /* glsl */ `
     float prof = mix(exp(-0.6931 * q2), 1.0 / (1.0 + q2), uCore.z);
     col += base * pow(1.5 * I * I * prof, 0.4545);
 
-    // Starburst: soft wedges from the flash point, fading toward their tips; the keyboard below stays clean.
-    if (uRays.x > 0.001 && y > -0.3) {
+    // Starburst: soft wedges from the flash point, fading toward their tips; the ones pointing down over the keys
+    // are scaled by uMisc.z (0 = the keyboard stays clean).
+    if (uRays.x > 0.001 && (y > -0.3 || uMisc.z > 0.001)) {
       float cnt = uMisc.y;
       float r = length(vec2(x, y));
       float ang = atan(y, x);
@@ -100,7 +101,7 @@ const FRAGMENT_SHADER = /* glsl */ `
         float fall = pow(1.0 - t, 1.8) * smoothstep(0.0, 0.1, r);
         beams += wedge * fall * (0.6 + 0.4 * hash(fi + 29.0));
       }
-      beams *= smoothstep(-0.3, 0.05, y);
+      beams *= mix(uMisc.z, 1.0, smoothstep(-0.3, 0.05, y));
       col += base * beams * uRays.x * I * 0.55;
     }
 
@@ -117,7 +118,7 @@ const FRAGMENT_SHADER = /* glsl */ `
 
     // Zero at the quad's edge, whatever the tails' height there (no contour for Bloom's threshold to pick out).
     float fx = 1.0 - smoothstep(0.4, 1.0, abs(vUv.x * 2.0 - 1.0));
-    float fy = (1.0 - smoothstep(0.5, 1.0, vUv.y)) * smoothstep(0.0, 1.0, (y + uPlane.z) / uPlane.z);
+    float fy = (1.0 - smoothstep(0.5, 1.0, vUv.y)) * smoothstep(0.0, 0.5, (y + uPlane.z) / uPlane.z);
     col *= fx * fy;
     if (max(col.r, max(col.g, col.b)) < 0.002) discard;
     gl_FragColor = vec4(uLinearTarget > 0.5 ? pow(col, vec3(2.2)) : col, 1.0);
@@ -129,6 +130,18 @@ const FRAGMENT_SHADER = /* glsl */ `
 // reach the GPU and look unlit.
 const MIN_HOLD_SECONDS = 0.08
 const hash01 = (n: number) => Math.abs(Math.sin(n * 12.9898 + 78.233) * 43758.5453) % 1
+// Flicker: a value noise over time per key (FLICKER_HZ new values a second, smoothly joined), 0..1. A pure function
+// of the clock, so the export flickers exactly like the live view.
+const FLICKER_HZ = 18
+function flickerAt(key: number, t: number): number {
+  const p = t * FLICKER_HZ + key * 0.37
+  const i = Math.floor(p)
+  const f = p - i
+  const s = f * f * (3 - 2 * f)
+  const a = hash01(i * 0.71 + key * 13.1)
+  const b = hash01((i + 1) * 0.71 + key * 13.1)
+  return a + (b - a) * s
+}
 
 export function LandingFlashes() {
   const settings = useSettingsSlice(LANDING_FLASHES_KEYS)
@@ -190,7 +203,7 @@ export function LandingFlashes() {
         uCore: { value: new THREE.Vector3(0.37, 1.35, 0) },
         uRays: { value: new THREE.Vector4(1, 2, 0.1, 0.6) },
         uHaze: { value: new THREE.Vector3(0, 6, 1) },
-        uMisc: { value: new THREE.Vector2(0.5, 12) },
+        uMisc: { value: new THREE.Vector3(0.5, 12, 0) },
         uLinearTarget: { value: 0 },
       },
       vertexShader: VERTEX_SHADER,
@@ -308,13 +321,14 @@ export function LandingFlashes() {
     const hazeOn = rs.flashHaze > 0.001
     const wKeys = Math.max(2 * hx * reach, 2 * rayLen + 0.5, hazeOn ? rs.flashHazeWidth * 7 : 0, 1)
     const hKeys = Math.max(hy * reach, rayLen + 0.5, hazeOn ? rs.flashHazeHeight * 7 : 0, 1)
-    const under = Math.max(0.6, hy * 0.35 * reach)
+    const raysBelow = rayLen > 0 ? Math.max(0, rs.flashRaysBelow) : 0
+    const under = Math.max(0.6, hy * 0.35 * reach, raysBelow > 0.001 ? rayLen + 0.5 : 0)
     const u = material.uniforms
     ;(u.uPlane.value as THREE.Vector3).set(wKeys, hKeys + under, under)
     ;(u.uCore.value as THREE.Vector3).set(rs.flashCoreSize, rs.flashCoreAspect, soft)
     ;(u.uRays.value as THREE.Vector4).set(rs.flashRays, rs.flashRaysLength, rs.flashRaysWidth, rs.flashRaysSoftness)
     ;(u.uHaze.value as THREE.Vector3).set(rs.flashHaze, rs.flashHazeWidth, rs.flashHazeHeight)
-    ;(u.uMisc.value as THREE.Vector2).set(rs.flashWhiten, Math.min(MAX_RAYS, Math.max(1, Math.round(rs.flashRaysCount))))
+    ;(u.uMisc.value as THREE.Vector3).set(rs.flashWhiten, Math.min(MAX_RAYS, Math.max(1, Math.round(rs.flashRaysCount))), raysBelow)
     // Rebuild the quads only when their size changed (a steady state builds them once).
     const ls = lastShape.current
     if (mesh && (ls[0] !== wKeys || ls[1] !== hKeys || ls[2] !== under)) {
@@ -328,15 +342,16 @@ export function LandingFlashes() {
     }
 
     let dirty = false
+    const flicker = Math.min(1, Math.max(0, rs.flashFlicker))
     for (let i = 0; i < KEY_COUNT; i++) {
-      if (levels[i] === 0) continue
+      if (levels[i] === 0 && intensities[i] === 0) continue
       // Snap off only when the key has been released AND the minimum hold
       // window has elapsed. Otherwise hold the current level steady.
       if (heldCount[i] === 0 && nowSec >= heldUntil[i]) {
         levels[i] = 0
         sustainLevels[i] = 0
       }
-      const v = levels[i] * retriggerDip[i]
+      const v = levels[i] * retriggerDip[i] * (flicker > 0 ? 1 - flicker * flickerAt(i, nowSec) : 1)
       if (intensities[i] !== v) {
         intensities[i] = v
         dirty = true

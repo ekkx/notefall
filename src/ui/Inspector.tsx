@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode, useLayoutEffect, useSyncExternalStore } from 'react'
+import { useEffect, useRef, useState, type ReactNode, type ComponentProps, useLayoutEffect, useSyncExternalStore } from 'react'
 import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
 import { useStore, defaultSettings, type Settings } from '../store'
@@ -31,7 +31,7 @@ import { importHandVideo, pickAndImportHandVideo, type ActionResult } from '../p
 import { openHandVideoSetup } from '../video/setup'
 import { useBarColors, useEffectiveLook } from './look/useLookState'
 import { VelocityCurveEditor } from './VelocityCurveEditor'
-import { Button, Icon, IconButton, Panel, GEOMETRY, usePresence } from './kit'
+import { Button, Icon, IconButton, Panel, GEOMETRY, SegmentedControl, usePresence } from './kit'
 import { useShell } from './shell/uiState'
 import { useHandVideoSetupOpen, useTakeInProgress } from './shell/takeFocus'
 import { useIdle } from './shell/idle'
@@ -49,6 +49,8 @@ import { showAlert } from './confirm'
 import {
   GRADIENT_COLOR_KEYS,
   GRADIENT_POS_KEYS,
+  hitLineKeysOf,
+  type HitLineId,
   HIT_LINE_GRADIENT_COLOR_KEYS,
   HIT_LINE_GRADIENT_POS_KEYS,
   RANDOM_COLOR_KEYS,
@@ -1010,6 +1012,102 @@ function FollowColorRows({
   )
 }
 
+// ── Hit line section: one feature, two lines (filaments); only the line's own rows differ per line ──
+// The line shown below the switch is view state (kept while the panel stays open), not a setting.
+let hitLineShown: HitLineId = 1
+
+function HitLineSection() {
+  const { t } = useTranslation('inspector')
+  const query = useSearchQuery()
+  const [shown, setShownState] = useState<HitLineId>(hitLineShown)
+  const setShown = (l: HitLineId) => {
+    hitLineShown = l
+    setShownState(l)
+  }
+  // While searching both lines show (each row's label carries its line name), so a search finds both.
+  const lines: HitLineId[] = query ? [1, 2] : [shown]
+  const options = [
+    { value: '1' as const, label: t('hitLine.line1') },
+    { value: '2' as const, label: t('hitLine.line2') },
+  ]
+  // Shared rows first (everyday, then their Detail); the two lines last, under their own heading, switch and Detail,
+  // so nothing shared ever sits under the line switch.
+  return (
+    <Section title={t('section.hitLine')} enabledKey="hitLineEnabled">
+      <HitLineColorControls />
+      <BoundSliderRow label={t('row.hitIntensity')} settingKey="hitLineBrightness" min={0} max={4} step={0.01} />
+      <BoundSliderRow label={t('row.hitGlow')} settingKey="hitLineGlow" min={0} max={2} step={0.01} />
+      <BoundSliderRow label={t('row.hitHaze')} settingKey="hitLineHaze" min={0} max={2} step={0.01} />
+      <BoundSliderRow label={t('row.hitDrift')} settingKey="hitLineDrift" min={-2} max={2} step={0.01} />
+      <BoundSliderRow label={t('row.keyLight')} settingKey="keyHitLineLight" min={0} max={1} step={0.01} />
+      <Detail id="hitLine">
+        <BoundSliderRow label={t('row.hitWhiten')} settingKey="hitLineWhiten" min={0} max={1} step={0.01} />
+        <BoundSliderRow label={t('row.hitY')} settingKey="hitLineY" min={-1} max={1} step={0.01} />
+        <BoundSliderRow label={t('row.keyLightReach')} settingKey="keyHitLineReach" min={0.05} max={1} step={0.01} />
+        <BoundSliderRow label={t('row.hitGlowWidth')} settingKey="hitLineGlowWidth" min={0.01} max={0.6} step={0.005} format={(v) => v.toFixed(3)} />
+        <BoundSliderRow label={t('row.hitHazeHeight')} settingKey="hitLineHazeHeight" min={0.05} max={1.5} step={0.01} />
+        <BoundSliderRow label={t('row.hitHazeContrast')} settingKey="hitLineHazeContrast" min={0} max={1.5} step={0.01} />
+        <BoundSliderRow label={t('row.hitHazeScale')} settingKey="hitLineHazeScale" min={0.1} max={3} step={0.01} />
+        <BoundSliderRow label={t('row.hitChurn')} settingKey="hitLineChurn" min={0} max={3} step={0.01} />
+      </Detail>
+      <SubGroup heading label={t('hitLine.lines')}>
+        {!query && (
+          <SegmentedControl
+            value={String(shown) as '1' | '2'}
+            onChange={(v) => setShown(v === '2' ? 2 : 1)}
+            options={options}
+            aria-label={t('hitLine.lines')}
+          />
+        )}
+        {lines.map((l) => (
+          <HitLineOwnRows key={l} line={l} detail={false} tag={!!query} />
+        ))}
+        <Detail id="hitLineLines" label={(open) => t(open ? 'hitLine.detailHide' : 'hitLine.detailShow')}>
+          {lines.map((l) => (
+            <HitLineOwnRows key={l} line={l} detail tag={!!query} />
+          ))}
+        </Detail>
+      </SubGroup>
+    </Section>
+  )
+}
+
+/**
+ * The rows that belong to one hit line (everyday: shown / strength / wobble; detail: its shape). `tag` adds the
+ * line's name to each label (while searching). A line switched off shows only its switch, like a Section that's off.
+ */
+function HitLineOwnRows({ line, detail, tag }: { line: HitLineId; detail: boolean; tag: boolean }) {
+  const { t } = useTranslation('inspector')
+  const K = hitLineKeysOf(line)
+  const on = useEffectiveSetting(K.enabled)
+  const name = t(line === 1 ? 'hitLine.line1' : 'hitLine.line2')
+  const L = (key: string) => (tag ? `${t(key)} (${name})` : t(key))
+  const open = on || tag
+  if (!detail) {
+    return (
+      <>
+        <BoundSwitchRow label={L('row.hitLineShow')} settingKey={K.enabled} />
+        {open && (
+          <>
+            <BoundSliderRow label={L('row.hitLine')} settingKey={K.line} min={0} max={2} step={0.01} />
+            <BoundSliderRow label={L('row.hitWobble')} settingKey={K.wobble} min={0} max={0.2} step={0.001} format={(v) => v.toFixed(3)} />
+          </>
+        )}
+      </>
+    )
+  }
+  if (!open) return null
+  return (
+    <>
+      <BoundSliderRow label={L('row.hitLineWidth')} settingKey={K.lineWidth} min={0.002} max={0.12} step={0.001} format={(v) => v.toFixed(3)} />
+      <BoundSliderRow label={L('row.hitLineBlur')} settingKey={K.lineBlur} min={0} max={0.15} step={0.001} format={(v) => v.toFixed(3)} />
+      <BoundSliderRow label={L('row.hitLineTangle')} settingKey={K.lineTangle} min={0} max={3} step={0.01} />
+      <BoundSliderRow label={L('row.hitWobbleScale')} settingKey={K.wobbleScale} min={0.05} max={2} step={0.01} />
+      <BoundSliderRow label={L('row.hitWobbleSpeed')} settingKey={K.wobbleSpeed} min={0} max={3} step={0.01} />
+    </>
+  )
+}
+
 // ── Hit line: colouring (solid / own gradient / follow the notes) ──────
 function HitLineColorControls() {
   const { t } = useTranslation('inspector')
@@ -1077,9 +1175,9 @@ function GradientStopRows({
   countKey,
   count,
 }: {
-  colorKeys: readonly (typeof GRADIENT_COLOR_KEYS | typeof HIT_LINE_GRADIENT_COLOR_KEYS)[number][]
-  posKeys: readonly (typeof GRADIENT_POS_KEYS | typeof HIT_LINE_GRADIENT_POS_KEYS)[number][]
-  countKey: 'noteGradientStops' | 'hitLineGradientStops'
+  colorKeys: ComponentProps<typeof ReorderColorRows>['keys']
+  posKeys: readonly (keyof Settings)[]
+  countKey: keyof Settings
   count: number
 }) {
   const { t } = useTranslation('inspector')
@@ -1429,29 +1527,7 @@ function LookPanel({ leaving }: { leaving: boolean }) {
             </TabPanel>
 
             <TabPanel title={t('tab.effects')} active={tab === 'effects'}>
-              <Section title={t('section.hitLine')} enabledKey="hitLineEnabled">
-                <HitLineColorControls />
-                <BoundSliderRow label={t('row.barIntensity')} settingKey="hitLineIntensity" min={0} max={8} step={0.05} />
-                <BoundSliderRow label={t('row.keyLight')} settingKey="keyHitLineLight" min={0} max={1} step={0.01} />
-                <BoundSliderRow label={t('row.keyLightReach')} settingKey="keyHitLineReach" min={0.05} max={1} step={0.01} />
-                <BoundSliderRow label={t('row.barThickness')} settingKey="hitLineThickness" min={0} max={1} step={0.01} />
-                <BoundSliderRow label={t('row.barHalo')} settingKey="hitLineBarHalo" min={0} max={6} step={0.05} />
-                <BoundSwitchRow label={t('row.waveEnabled')} settingKey="hitLineWaveEnabled" />
-                <Detail id="hitLine">
-                  <BoundSliderRow label={t('row.barY')} settingKey="hitLineBarY" min={-1} max={1} step={0.01} />
-                  <SubGroup heading label={t('group.wave')}>
-                    <BoundSliderRow label={t('row.waveIntensity')} settingKey="hitLineWaveIntensity" min={0} max={4} step={0.05} />
-                    <BoundSliderRow label={t('row.waveY')} settingKey="hitLineWaveY" min={-1} max={1} step={0.01} />
-                    <BoundSliderRow label={t('row.waveAmplitude')} settingKey="hitLineWaveAmplitude" min={0} max={1} step={0.01} />
-                    <BoundSliderRow label={t('row.waveScale')} settingKey="hitLineWaveScale" min={0.5} max={200} step={0.5} />
-                    <BoundSliderRow label={t('row.waveScrollSpeed')} settingKey="hitLineWaveScrollSpeed" min={-3} max={3} step={0.05} />
-                    <BoundSliderRow label={t('row.waveMorphSpeed')} settingKey="hitLineWaveMorphSpeed" min={0} max={3} step={0.05} />
-                    <BoundSliderRow label={t('row.waveThickness')} settingKey="hitLineWaveThickness" min={0} max={0.2} step={0.005} />
-                    <BoundSliderRow label={t('row.waveHalo')} settingKey="hitLineWaveHalo" min={0} max={3} step={0.05} />
-                    <BoundSliderRow label={t('row.waveGrain')} settingKey="hitLineWaveGrain" min={0} max={3} step={0.05} />
-                  </SubGroup>
-                </Detail>
-              </Section>
+              <HitLineSection />
 
               <Section title={t('section.noteRays')} enabledKey="noteRaysEnabled">
                 <BoundSliderRow label={t('row.raysIntensity')} settingKey="noteRaysIntensity" min={0} max={0.5} step={0.001} format={(v) => v.toFixed(3)} />
@@ -1533,6 +1609,8 @@ function LookPanel({ leaving }: { leaving: boolean }) {
                   <BoundSliderRow label={t('row.flashRaysCount')} settingKey="flashRaysCount" min={4} max={16} step={1} />
                   <BoundSliderRow label={t('row.flashRaysWidth')} settingKey="flashRaysWidth" min={0.02} max={0.5} step={0.005} />
                   <BoundSliderRow label={t('row.flashRaysSoftness')} settingKey="flashRaysSoftness" min={0} max={1} step={0.01} />
+                  <BoundSliderRow label={t('row.flashRaysBelow')} settingKey="flashRaysBelow" min={0} max={1} step={0.01} />
+                  <BoundSliderRow label={t('row.flashFlicker')} settingKey="flashFlicker" min={0} max={1} step={0.01} />
                   <BoundSliderRow label={t('row.flashHaze')} settingKey="flashHaze" min={0} max={2} step={0.01} />
                   <BoundSliderRow label={t('row.flashHazeWidth')} settingKey="flashHazeWidth" min={1} max={16} step={0.1} />
                   <BoundSliderRow label={t('row.flashHazeHeight')} settingKey="flashHazeHeight" min={0.2} max={4} step={0.05} />

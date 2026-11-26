@@ -59,6 +59,9 @@ export type SettingsKeyframe = {
 // aren't "visual continuous values". A new visual slider that should
 // animate must be added to the matching list here.
 
+/** Hit line's animatable numbers, both lines' own included (drift / churn / wobble speed are rates and stay out). */
+const HIT_LINE_NUMBER_KEYS = ['hitLineBrightness', 'hitLineWhiten', 'hitLineY', 'hitLineLineWidth', 'hitLineLine', 'hitLineLineBlur', 'hitLineWobble', 'hitLineLineTangle', 'hitLineWobbleScale', 'hitLine2LineWidth', 'hitLine2Line', 'hitLine2LineBlur', 'hitLine2Wobble', 'hitLine2LineTangle', 'hitLine2WobbleScale', 'hitLineGlow', 'hitLineGlowWidth', 'hitLineHaze', 'hitLineHazeHeight', 'hitLineHazeContrast', 'hitLineHazeScale'] as const
+
 export const ANIMATABLE_NUMBER_KEYS = [
   'keyboardScreenY',
   'cameraFov',
@@ -191,6 +194,8 @@ export const ANIMATABLE_NUMBER_KEYS = [
   'flashRaysLength',
   'flashRaysWidth',
   'flashRaysSoftness',
+  'flashRaysBelow',
+  'flashFlicker',
   'flashHaze',
   'flashHazeWidth',
   'flashHazeHeight',
@@ -228,19 +233,7 @@ export const ANIMATABLE_NUMBER_KEYS = [
   'particleRaySpread',
   'particleFogCount',
   'particleFogOpacity',
-  'hitLineIntensity',
-  'hitLineThickness',
-  'hitLineWaveIntensity',
-  'hitLineWaveAmplitude',
-  'hitLineWaveScale',
-  'hitLineWaveScrollSpeed',
-  'hitLineWaveMorphSpeed',
-  'hitLineWaveThickness',
-  'hitLineWaveGrain',
-  'hitLineBarY',
-  'hitLineWaveY',
-  'hitLineBarHalo',
-  'hitLineWaveHalo',
+  ...HIT_LINE_NUMBER_KEYS,
   'bloomIntensity',
   'bloomThreshold',
   'bloomRadius',

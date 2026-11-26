@@ -69,7 +69,7 @@ export type HandVideoKey = {
 
 export type VideoAspect = '16:9' | '9:16' | '1:1'
 
-export type Settings = {
+type SettingsBase = {
   // Layout
   // On-screen keyboard position: 0 = its front edge on the bottom of the
   // view, 1 = its back edge on the top. Applied as a lens shift, so the
@@ -349,6 +349,8 @@ export type Settings = {
   flashRaysCount: number         // not animatable
   flashRaysWidth: number         // angular width of a spoke, radians
   flashRaysSoftness: number      // 0 crisp edge .. 1 very blurred
+  flashRaysBelow: number         // the spokes over the keys, relative to above the hit line (0 = none)
+  flashFlicker: number           // 0 steady .. 1 strong: fast brightness wobble while lit
   flashHaze: number              // low haze hugging the hit line (0 = off)
   flashHazeWidth: number         // white-key widths
   flashHazeHeight: number
@@ -417,20 +419,34 @@ export type Settings = {
   hitLineGradientPos3: number
   hitLineGradientPos4: number
   hitLineGradientPos5: number
-  hitLineIntensity: number   // straight-bar brightness
-  hitLineThickness: number   // straight-bar core thickness (fraction of plane height)
-  hitLineWaveEnabled: boolean   // gates JUST the wavy laser overlay (the straight bar is gated by hitLineEnabled)
-  hitLineWaveIntensity: number  // wavy laser brightness
-  hitLineWaveAmplitude: number  // vertical swing of the wave (fraction of plane half-height)
-  hitLineWaveScale: number      // wave spatial frequency along the keyboard
-  hitLineWaveScrollSpeed: number // horizontal scroll rate; signed (positive = rightward, negative = leftward)
-  hitLineWaveMorphSpeed: number  // in-place shape evolution (no horizontal motion)
-  hitLineWaveThickness: number  // wavy laser line thickness (fraction of plane)
-  hitLineWaveGrain: number      // particulate-ness: high-freq curve tremor + brightness modulation along the line
-  hitLineBarY: number           // vertical offset of the straight bar from the hit line (world units)
-  hitLineWaveY: number          // vertical offset of the wave's center from the hit line (world units)
-  hitLineBarHalo: number        // bar halo extent — divides the gaussian falloff so larger = wider
-  hitLineWaveHalo: number       // wave halo extent — same idea, around the wavy laser line
+  hitLineBrightness: number   // overall brightness of the hit line (default HIT_LINE_DEFAULT_BRIGHTNESS)
+  hitLineWhiten: number      // lift toward white, 0..1
+  hitLineY: number           // vertical offset from the hit line (world units)
+  hitLineLineWidth: number   // line: half-width of the filament (world units)
+  hitLineLineEnabled: boolean // line 1 shown
+  hitLineLine: number        // line: strength
+  hitLineLineBlur: number    // line: extra softness, widens it and lowers its peak (world units)
+  hitLineWobble: number      // line: vertical displacement amount (world units)
+  hitLineLineTangle: number  // line: 0 = one clean curve, higher = folds, splits into strands and rejoins
+  hitLineWobbleScale: number // line: feature size along it (world units)
+  hitLineGlow: number        // glow: strength
+  hitLineGlowWidth: number   // glow: width of its long tail (world units)
+  hitLineHaze: number        // haze: strength
+  hitLineHazeHeight: number  // haze: reach above / below the line (world units)
+  hitLineHazeContrast: number // haze: 0 = flat even mist, high = patchy clouds
+  hitLineHazeScale: number   // haze: cloud size (world units)
+  hitLineDrift: number       // sideways speed of both lines and the haze, wu/s, signed (+ = toward +x); not animatable
+  hitLineChurn: number       // how fast the haze changes in place; not animatable
+  hitLineWobbleSpeed: number // how fast the line's wobble changes in place; not animatable
+  // The hit line's second line (filament): the same per-line settings as line 1's above; everything else is shared.
+  hitLine2LineEnabled: boolean // line 2 shown
+  hitLine2Line: number       // strength
+  hitLine2LineWidth: number  // thickness (world units)
+  hitLine2LineBlur: number   // edge softness (world units)
+  hitLine2Wobble: number     // wobble amount (world units)
+  hitLine2WobbleScale: number // wobble feature size (world units)
+  hitLine2LineTangle: number // how tangled the strands are
+  hitLine2WobbleSpeed: number // how fast the wobble changes in place; not animatable
   // Effects (Bloom)
   bloomEnabled: boolean
   bloomIntensity: number
@@ -701,6 +717,47 @@ export type Settings = {
   settingsKeyframes: SettingsKeyframe[]
 }
 
+export type Settings = SettingsBase
+
+// Default overall brightness of the hit line; the keys' hit-line light is scaled by intensity / this (Keyboard.tsx).
+export const HIT_LINE_DEFAULT_BRIGHTNESS = 1
+
+/** The hit line's defaults. Line 1's own keys are `hitLine*`; line 2's are `hitLine2*`. By default line 1 is the plain straight line and line 2 the soft wobbling one. */
+const HIT_LINE_DEFAULTS = {
+  hitLineEnabled: true,
+  hitLineColor: '#87a5ff',
+  ...HIT_LINE_COLOR_DEFAULTS,
+  hitLineBrightness: HIT_LINE_DEFAULT_BRIGHTNESS,
+  hitLineWhiten: 0.25,
+  hitLineY: 0,
+  // Line 1: the plain straight line.
+  hitLineLineEnabled: true,
+  hitLineLine: 1.5,
+  hitLineLineWidth: 0.01,
+  hitLineLineBlur: 0,
+  hitLineWobble: 0,
+  hitLineLineTangle: 0,
+  hitLineWobbleScale: 0.4,
+  hitLineGlow: 0.5,
+  hitLineGlowWidth: 0.1,
+  hitLineHaze: 0.4,
+  hitLineHazeHeight: 0.5,
+  hitLineHazeContrast: 0.6,
+  hitLineHazeScale: 0.8,
+  hitLineDrift: 0.2,
+  hitLineChurn: 0.5,
+  hitLineWobbleSpeed: 0,
+  // Line 2: the soft wobbling one.
+  hitLine2LineEnabled: true,
+  hitLine2Line: 0.5,
+  hitLine2LineWidth: 0.02,
+  hitLine2LineBlur: 0.06,
+  hitLine2Wobble: 0.1,
+  hitLine2WobbleScale: 0.4,
+  hitLine2LineTangle: 1,
+  hitLine2WobbleSpeed: 0.5,
+}
+
 export const defaultSettings: Settings = {
   keyboardScreenY: 0.27,
   cameraFov: 32,
@@ -745,12 +802,14 @@ export const defaultSettings: Settings = {
   flashWhiten: 0.5,
   flashCoreSize: 0.3,
   flashCoreAspect: 1.35,
-  flashCoreSoftness: 0,
+  flashCoreSoftness: 0.3,
   flashRays: 0.2,
   flashRaysLength: 5,
   flashRaysCount: 12,
   flashRaysWidth: 0.14,
   flashRaysSoftness: 0.6,
+  flashRaysBelow: 0.5,
+  flashFlicker: 0.2,
   flashHaze: 0,
   flashHazeWidth: 6,
   flashHazeHeight: 1,
@@ -796,23 +855,7 @@ export const defaultSettings: Settings = {
   particleFogEnabled: true,
   particleFogCount: 1.6,
   particleFogOpacity: 0.1,
-  hitLineEnabled: true,
-  hitLineColor: '#87a5ff',
-  ...HIT_LINE_COLOR_DEFAULTS,
-  hitLineIntensity: 2.5,
-  hitLineThickness: 0.3,
-  hitLineWaveEnabled: true,
-  hitLineWaveIntensity: 1.0,
-  hitLineWaveAmplitude: 0.2,
-  hitLineWaveScale: 60.0,
-  hitLineWaveScrollSpeed: -0.5,
-  hitLineWaveMorphSpeed: 0.7,
-  hitLineWaveThickness: 0.04,
-  hitLineWaveGrain: 0.8,
-  hitLineBarY: 0,
-  hitLineWaveY: 0,
-  hitLineBarHalo: 2.0,
-  hitLineWaveHalo: 0.8,
+  ...HIT_LINE_DEFAULTS,
   bloomEnabled: true,
   bloomIntensity: 0.7,
   bloomThreshold: 0.2,

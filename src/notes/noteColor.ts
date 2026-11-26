@@ -50,6 +50,34 @@ export const HIT_LINE_GRADIENT_POS_KEYS = [
   'hitLineGradientPos4',
   'hitLineGradientPos5',
 ] as const
+
+/** The hit line's two lines (filaments): everything else of the hit line is shared. */
+export type HitLineId = 1 | 2
+/** The setting keys of one line's own settings (line 1: `hitLineX`, line 2: `hitLine2X`). */
+const HIT_LINE_KEYS_BY_LINE = {
+  1: {
+    enabled: 'hitLineLineEnabled',
+    line: 'hitLineLine',
+    lineWidth: 'hitLineLineWidth',
+    lineBlur: 'hitLineLineBlur',
+    wobble: 'hitLineWobble',
+    wobbleScale: 'hitLineWobbleScale',
+    lineTangle: 'hitLineLineTangle',
+    wobbleSpeed: 'hitLineWobbleSpeed',
+  },
+  2: {
+    enabled: 'hitLine2LineEnabled',
+    line: 'hitLine2Line',
+    lineWidth: 'hitLine2LineWidth',
+    lineBlur: 'hitLine2LineBlur',
+    wobble: 'hitLine2Wobble',
+    wobbleScale: 'hitLine2WobbleScale',
+    lineTangle: 'hitLine2LineTangle',
+    wobbleSpeed: 'hitLine2WobbleSpeed',
+  },
+} as const
+/** Memoised per-line key table (no allocation per call). */
+export const hitLineKeysOf = <L extends HitLineId>(line: L) => HIT_LINE_KEYS_BY_LINE[line]
 export const RANDOM_COLOR_KEYS = [
   'noteRandomColor1',
   'noteRandomColor2',
@@ -119,14 +147,6 @@ export const HIT_LINE_COLOR_DEFAULTS = {
   hitLineGradientPos4: 0.75,
   hitLineGradientPos5: 0.25,
 }
-type HitLineGradientSettings = Pick<
-  Settings,
-  | 'hitLineGradientStops'
-  | 'hitLineGradientSoftness'
-  | (typeof HIT_LINE_GRADIENT_COLOR_KEYS)[number]
-  | (typeof HIT_LINE_GRADIENT_POS_KEYS)[number]
->
-
 type Rgb = [number, number, number]
 
 /**
@@ -168,8 +188,8 @@ export function noteGradient(s: NoteColorSettings): GradientSpec {
     softness: s.noteGradientSoftness,
   }
 }
-/** The hit line's own gradient, left (0) → right (1) along the keyboard. */
-export function hitLineGradient(s: HitLineGradientSettings): GradientSpec {
+/** A hit line's own gradient, left (0) → right (1) along the keyboard. */
+export function hitLineGradient(s: Settings): GradientSpec {
   return {
     stops: stopsFrom(
       s.hitLineGradientStops,
@@ -182,8 +202,8 @@ export function hitLineGradient(s: HitLineGradientSettings): GradientSpec {
 }
 
 /**
- * What the hit line shows (the line itself and its light on the keys): its own gradient, the notes' (their
- * gradient along the line, noteColor for solid notes), or the plain hitLineColor (random / by-hand notes have no
+ * What a hit line shows (the line itself and, for line 1, its light on the keys): its own gradient, the notes'
+ * (their gradient along the line, noteColor for solid notes), or the plain colour (random / by-hand notes have no
  * single colour). `gradient` null = the solid `hex`.
  */
 export function hitLineColoring(s: Settings): { gradient: GradientSpec | null; hex: string } {
