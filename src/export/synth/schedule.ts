@@ -1,5 +1,5 @@
 import type { ParsedSong } from '../../midi/types'
-import { midiToTimeline } from '../../midi/speedMap'
+import { midiToTimeline, timelineToMidi } from '../../midi/speedMap'
 import type { Settings } from '../../store'
 import { evaluateVelocityCurve } from '../../audio/velocityCurve'
 import { LOOKAHEAD, STOP_BUFFER } from './consts'
@@ -54,7 +54,12 @@ export function scheduleSongNotes(
   // ignore the song's pedal track entirely (notes release at their
   // natural offTime). Pedal events are stored in MIDI-time, so the
   // pedal walk runs in MIDI-time and each step is mapped to timeline-time.
-  const pedalEnd = Math.min(totalDuration - midiOffset, midiTrimEnd)
+  // The walk stops at the end of the rendered window, converted to MIDI-time
+  // through the speed map (the window end is timeline-time: comparing it to
+  // MIDI-time directly lifted the pedal seconds early when the song was sped
+  // up). Like the engine, the pedal is NOT cut at the song's / trim's end:
+  // its events keep sustaining the last notes through the tail.
+  const pedalEnd = timelineToMidi(speedMap, totalDuration - midiOffset)
   const tl = (midiT: number) => midiOffset + midiToTimeline(speedMap, midiT) + STOP_BUFFER
   const releaseTime = settings.releaseTime
   const releaseTc = releaseTime / 5
