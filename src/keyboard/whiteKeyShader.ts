@@ -1,5 +1,101 @@
 import * as THREE from "three";
-import { KEYBOARD_LAYOUT } from "./layout";
+import { createGradientUniforms, NOTE_GRADIENT_GLSL } from "../notes/noteColor";
+import { KEYBOARD_LAYOUT, KEYBOARD_Y, NOTE_HIT_Y, WHITE_KEY_LENGTH, WHITE_KEY_WIDTH } from "./layout";
+
+// The flash reflection adds `albedo * KEY_FLASH_GAIN * light` (calibrated so the lit back
+// half of a key is about as bright as the former raw additive light).
+const KEY_FLASH_GAIN = 2.2;
+
+// Static white-key shading (see the color_fragment patch below).
+// On-screen (sRGB) brightness of a white key from the back (index 0) to the
+// front (last), relative to the back: a steady falloff to ~0.36 over the whole
+// length, taken from a reference. The scene light is a little brighter toward
+// the front, so this is applied as albedo and compensated by the exponent.
+const KEY_PROFILE = [1.0, 0.92, 0.84, 0.77, 0.69, 0.61, 0.51, 0.41, 0.36];
+const KEY_PROFILE_GAMMA = 1.3; // sRGB ratio -> albedo ratio (empirical, tone mapping included)
+const KEY_SIDE_AO = 0.05; // side darkening over the front part of the key
+const KEY_SIDE_AO_BACK = 0.09; // ... and next to the black keys
+
+// Front-shade amount (0 = none, 1 = the full profile): shared by the white-key
+// caps and the wood / body materials seen through the gaps, so a gap keeps its
+// ratio to the key at every point along it.
+export const frontShadeUniform = { value: 1 };
+const FRONT_SHADE_GLSL = /* glsl */ `
+  uniform float uFrontShade;
+  const float KEY_PROFILE[${KEY_PROFILE.length}] = float[](${KEY_PROFILE.map((v) => v.toFixed(3)).join(", ")});
+  // ky: 0 at the key's front edge, 1 at its back.
+  float frontShadeAt(float ky) {
+    float pu = clamp(1.0 - ky, 0.0, 1.0) * ${(KEY_PROFILE.length - 1).toFixed(1)};
+    float shade = 1.0;
+    for (int pi = 0; pi < ${KEY_PROFILE.length - 1}; pi++) {
+      shade += clamp(pu - float(pi), 0.0, 1.0) * (KEY_PROFILE[pi + 1] - KEY_PROFILE[pi]);
+    }
+    return mix(1.0, pow(shade, ${KEY_PROFILE_GAMMA.toFixed(2)}), uFrontShade);
+  }
+`;
+
+// Same front darkening for the materials under the caps (wood walls seen
+// through the gaps, the dark top, the white front face): by world position
+// along the keyboard, no per-key data.
+// `darken` < 1 also darkens the material's own colour: used on the wood walls,
+// which are only ever seen through the thin gaps between white keys, so they
+// read as near-black lines.
+export function patchBodyFrontShade(material: THREE.MeshStandardMaterial, darken = 1) {
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uFrontShade = frontShadeUniform;
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        "#include <common>",
+        "#include <common>\nvarying float vKeyY;",
+      )
+      .replace(
+        "#include <begin_vertex>",
+        `#include <begin_vertex>\nvKeyY = (modelMatrix * vec4(transformed, 1.0)).y - ${KEYBOARD_Y.toFixed(4)};`,
+      );
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        "#include <common>",
+        `#include <common>\nvarying float vKeyY;\n${FRONT_SHADE_GLSL}`,
+      )
+      .replace(
+        "#include <color_fragment>",
+        `#include <color_fragment>\ndiffuseColor.rgb *= frontShadeAt(vKeyY / ${WHITE_KEY_LENGTH.toFixed(4)}) * ${darken.toFixed(3)};`,
+      );
+  };
+  material.customProgramCacheKey = () => `white-body-front-shade-${darken}`;
+}
+
+// Light of the hit line on the back end of the keys: an additive, steady
+// glow in the line's own colour at that x (uses the line shaders' gradient
+// GLSL and the uniforms Keyboard.tsx fills from the same resolved settings).
+// uHitLight = overall strength (0 = off); the colour is `uHitColor`, or the
+// gradient when `uGradient` is on.
+// The light acts on the surface: it adds `albedo * tint * strength * GAIN`, so white keys
+// brighten toward white and the (near-black) black keys stay black.
+const HIT_LIGHT_GAIN = 2.2;
+// Share of the line's hue in the light's tint (0 = pure white light, 1 = the raw line colour).
+const HIT_LIGHT_HUE = 0.35;
+export const hitLightUniforms = {
+  uHitLight: { value: 0 },
+  uHitReach: { value: 1 }, // distance from the back edge, in white-key lengths
+  uHitColor: { value: new THREE.Color() },
+  ...createGradientUniforms(NOTE_HIT_Y),
+};
+const HIT_LIGHT_GLSL = /* glsl */ `
+  uniform float uHitLight;
+  uniform float uHitReach;
+  uniform vec3 uHitColor;
+  ${NOTE_GRADIENT_GLSL}
+  vec3 hitLightAt(float x, float ky, vec3 albedo) {
+    // Smooth fall from the back edge to 0 at the reach.
+    float d = clamp((1.0 - ky) / uHitReach, 0.0, 1.0);
+    float f = 1.0 - d * d * (3.0 - 2.0 * d);
+    f *= f;
+    vec3 c = uGradient < 0.5 ? uHitColor : gradientAt(vec2(x, uGradArea.y));
+    vec3 tint = mix(vec3(1.0), c / max(max(max(c.r, c.g), c.b), 1e-3), ${HIT_LIGHT_HUE.toFixed(2)});
+    return albedo * tint * (uHitLight * ${HIT_LIGHT_GAIN.toFixed(3)} * f);
+  }
+`;
 
 // Flash → keyboard illumination. The shader treats each active flash as a
 // point light at (key.x, WHITE_KEY_LENGTH, LIGHT_Z) projecting every black
@@ -9,24 +105,12 @@ import { KEYBOARD_LAYOUT } from "./layout";
 export const LIGHT_Z = 0.4;
 // `exp(-(dx²·X + dy²·Y))`. X dominates so a fragment off to the side dims
 // visibly even though the back-edge light is always ≥1 wu in front of it.
-// These are *base* values mapped to user-facing flash settings:
-//   uFalloffX = LIGHT_FALLOFF_X_BASE / (flashWidth / DEFAULT_FLASH_WIDTH)
-//   uFalloffY = LIGHT_FALLOFF_Y_BASE / (flashSize  / DEFAULT_FLASH_SIZE)
-//   uLightBoost = LIGHT_BOOST_BASE * (flashIntensity / DEFAULT_FLASH_INT)
-//   uShadowHalo = SHADOW_HALO_BASE * (flashHaloWidth / DEFAULT_FLASH_HALO)
-// At default settings the values reproduce the prior hardcoded look.
+// These are the base values the hit lights' settings scale (`hitLightWidth` / `hitLightReach` divide the falloffs by
+// their square, `hitLight` scales the strength).
 export const LIGHT_FALLOFF_X_BASE = 1.5;
 export const LIGHT_FALLOFF_Y_BASE = 1.0;
 export const LIGHT_BOOST_BASE = 2.0;
 export const SHADOW_HALO_BASE = 0.01;
-// Power applied to (flashHaloWidth / DEFAULT) before scaling SHADOW_HALO_BASE.
-// 1 = linear; >1 makes the slider more sensitive away from its default
-// without shifting the default value itself.
-export const SHADOW_HALO_RESPONSE = 3;
-export const DEFAULT_FLASH_INTENSITY = 1.1;
-export const DEFAULT_FLASH_SIZE = 2.5;
-export const DEFAULT_FLASH_WIDTH = 2.5;
-export const DEFAULT_FLASH_HALO = 0.5;
 const SHADOW_FEATHER = 0.005;
 // Stretch applied on top of the physical magnification (equivalent to
 // lowering the light): at default LIGHT_Z the cast shadow reaches
@@ -142,6 +226,9 @@ export function patchWhiteKeyMaterial(
 ) {
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, perMesh, shared);
+    shader.uniforms.uFrontShade = frontShadeUniform;
+    Object.assign(shader.uniforms, hitLightUniforms);
+    Object.assign(shader.uniforms, hitLightUniforms);
 
     shader.vertexShader = shader.vertexShader
       .replace(
@@ -150,6 +237,7 @@ export function patchWhiteKeyMaterial(
         #include <common>
         uniform vec2 uMeshOriginXY;
         varying vec2 vGroupXY;
+        varying float vLocalX;
         `,
       )
       .replace(
@@ -157,6 +245,7 @@ export function patchWhiteKeyMaterial(
         /* glsl */ `
         #include <begin_vertex>
         vGroupXY = uMeshOriginXY + position.xy;
+        vLocalX = position.x;
         `,
       );
 
@@ -165,6 +254,8 @@ export function patchWhiteKeyMaterial(
         "#include <common>",
         /* glsl */ `
         #include <common>
+        ${FRONT_SHADE_GLSL}
+        ${HIT_LIGHT_GLSL}
         #define BLACK_KEY_COUNT ${BLACK_KEY_COUNT}
         #define MAX_LIGHTS ${MAX_LIGHTS}
         uniform vec4 uBlackBounds[BLACK_KEY_COUNT];
@@ -181,6 +272,7 @@ export function patchWhiteKeyMaterial(
         uniform float uShadowHalo;
         uniform vec3 uLightColors[MAX_LIGHTS];
         varying vec2 vGroupXY;
+        varying float vLocalX;
 
         // Per-key shadow as horizontal slices of the occlusion cone.
         // The light's y coincides with the key ROOTS, so the
@@ -298,11 +390,31 @@ export function patchWhiteKeyMaterial(
         `,
       )
       .replace(
+        // Static key shading, applied to the albedo so the emissive press
+        // glow and the additive flash light below stay untouched.
+        "#include <color_fragment>",
+        /* glsl */ `
+        #include <color_fragment>
+        {
+          float ky = clamp(vGroupXY.y / ${WHITE_KEY_LENGTH.toFixed(4)}, 0.0, 1.0);
+          float shade = frontShadeAt(ky);
+          // Broad ambient-occlusion-like falloff toward the key sides, a
+          // touch stronger in the span the black keys overhang.
+          float ex = abs(vLocalX) / ${(WHITE_KEY_WIDTH * 0.49).toFixed(4)};
+          float side = smoothstep(0.3, 1.0, ex);
+          float aoAmt = uFrontShade * mix(${KEY_SIDE_AO.toFixed(3)}, ${KEY_SIDE_AO_BACK.toFixed(3)}, smoothstep(0.3, 0.45, ky));
+          shade *= 1.0 - aoAmt * side * side;
+          diffuseColor.rgb *= shade;
+        }
+        `,
+      )
+      .replace(
         // r157 renamed <output_fragment> → <opaque_fragment>; using the
         // wrong name silently no-ops the patch (compiles but never runs).
         "#include <opaque_fragment>",
         /* glsl */ `
         #include <opaque_fragment>
+        gl_FragColor.rgb += hitLightAt(vGroupXY.x, vGroupXY.y / ${WHITE_KEY_LENGTH.toFixed(4)}, diffuseColor.rgb);
         if (uLightStrength > 0.001) {
           vec3 totalContribution = vec3(0.0);
           for (int li = 0; li < MAX_LIGHTS; li++) {
@@ -331,7 +443,8 @@ export function patchWhiteKeyMaterial(
           }
           // Clamp: protects against stacked shadows crushing to black /
           // dense chords saturating to white.
-          gl_FragColor.rgb += clamp(totalContribution, vec3(-0.6), vec3(2.5));
+          // Like the hit-line light, the reflection lights the surface: proportional to the (front-shaded) albedo.
+          gl_FragColor.rgb += clamp(totalContribution, vec3(-0.6), vec3(2.5)) * diffuseColor.rgb * ${KEY_FLASH_GAIN.toFixed(2)};
         }
         `,
       );

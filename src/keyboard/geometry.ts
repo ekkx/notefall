@@ -945,7 +945,7 @@ export function whiteBodyGeometryFor(midi: number): THREE.BufferGeometry {
 // front), all other side quads → index 1 (wood). Top cap is what's
 // visible through the cap's 4% inter-key gap.
 const WHITE_BODY_TOP_COLOR = "#0a0a0a";
-// Exported so Keyboard.tsx can drive `color` from `settings.woodColor`
+// Exported so Keyboard.tsx can scale `color` by the keyboard brightness
 // per frame without needing per-key materials.
 export const WHITE_BODY_WOOD_MATERIAL = new THREE.MeshStandardMaterial({
   color: WOOD_COLOR,

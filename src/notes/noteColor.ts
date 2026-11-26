@@ -182,6 +182,19 @@ export function hitLineGradient(s: HitLineGradientSettings): GradientSpec {
 }
 
 /**
+ * What the hit line shows (the line itself and its light on the keys): its own gradient, the notes' (their
+ * gradient along the line, noteColor for solid notes), or the plain hitLineColor (random / by-hand notes have no
+ * single colour). `gradient` null = the solid `hex`.
+ */
+export function hitLineColoring(s: Settings): { gradient: GradientSpec | null; hex: string } {
+  const mode = s.hitLineColorMode
+  const gradient =
+    mode === 'gradient' ? hitLineGradient(s) : mode === 'note' && s.noteColorMode === 'gradient' ? noteGradient(s) : null
+  const hex = mode === 'note' && s.noteColorMode === 'solid' ? s.noteColor : s.hitLineColor
+  return { gradient, hex }
+}
+
+/**
  * Direction of the gradient for an angle in degrees measured on screen, clockwise from +x (0° = first stop on the
  * left, 90° = first stop at the top), expressed in the area's normalised coords p ∈ [−1, 1]² and scaled so the
  * parameter `dot(p, dir) · 0.5 + 0.5` runs exactly 0 → 1 from one corner (or edge) of the area to the opposite one.

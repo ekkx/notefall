@@ -1,7 +1,7 @@
 import { useMemo, useRef, useEffect, useCallback } from "react";
 import * as THREE from "three";
 import * as Tone from "tone";
-import { NoteColorResolver } from "../notes/noteColor";
+import { hitLineColoring, NoteColorResolver, writeGradientUniforms } from "../notes/noteColor";
 import { markLivePlay } from "../usage";
 import { useFrame, useThree } from "@react-three/fiber";
 import type { ThreeEvent } from "@react-three/fiber";
@@ -22,6 +22,7 @@ import {
   WHITE_BODY_FRONT_MATERIAL,
   WHITE_BODY_MATERIALS,
   WHITE_BODY_WOOD_MATERIAL,
+  WOOD_COLOR,
   WHITE_CAP_THICKNESS,
   whiteBodyGeometryFor,
   whiteKeyGeometryFor,
@@ -33,18 +34,16 @@ import {
   BLACK_KEY_BOUNDS,
   BLACK_KEY_COUNT,
   BLACK_KEY_INDICES,
-  DEFAULT_FLASH_HALO,
-  DEFAULT_FLASH_INTENSITY,
-  DEFAULT_FLASH_SIZE,
-  DEFAULT_FLASH_WIDTH,
   LIGHT_BOOST_BASE,
   LIGHT_FALLOFF_X_BASE,
   LIGHT_FALLOFF_Y_BASE,
   LIGHT_Z,
   MAX_LIGHTS,
   SHADOW_HALO_BASE,
-  SHADOW_HALO_RESPONSE,
   patchWhiteKeyMaterial,
+  patchBodyFrontShade,
+  hitLightUniforms,
+  frontShadeUniform,
   type SharedLightUniforms,
   type WhiteKeyUniforms,
 } from "./whiteKeyShader";
@@ -69,15 +68,17 @@ const KEYBOARD_KEYS = [
   "cameraFov",
   "cameraLookAt",
   "cameraPos",
-  "flashBrightness",
-  "flashColor",
-  "flashEnabled",
-  "flashFollowNote",
-  "flashHaloWidth",
-  "flashIntensity",
-  "flashSize",
-  "flashWidth",
+  "hitLight",
+  "hitLightEnabled",
+  "hitLightFollowNote",
+  "hitLightWidth",
+  "hitLightReach",
+  "hitLightWhiten",
+  "hitLightColor",
   "keyboardBrightness",
+  "whiteKeyFrontShade",
+  "keyHitLineLight",
+  "keyHitLineReach",
   "keyboardScreenY",
   "keyGlowColor",
   "keyGlowDecay",
@@ -92,7 +93,6 @@ const KEYBOARD_KEYS = [
   "octaveLinesEnabled",
   "trackColors",
   "whiteKeyColor",
-  "woodColor",
 ] as const;
 import { audioEngine } from "../audio/engine";
 import { clockEpoch, now } from "../audio/clock";
@@ -125,7 +125,12 @@ const BLACK_PRESS_ANGLE =
 const WHITE_REAR_CLIP = 0.001;
 const WHITE_KEY_CLIP = new THREE.Plane();
 const WHITE_KEY_CLIP_PLANES = [WHITE_KEY_CLIP];
-for (const m of WHITE_BODY_MATERIALS) m.clippingPlanes = WHITE_KEY_CLIP_PLANES;
+// The wood walls are only seen through the thin gaps between white keys; darken them toward the near-black lines of a real keyboard.
+const GAP_WOOD_DARKEN = 0.2;
+for (const m of WHITE_BODY_MATERIALS) {
+  m.clippingPlanes = WHITE_KEY_CLIP_PLANES;
+  patchBodyFrontShade(m as THREE.MeshStandardMaterial, m === WHITE_BODY_WOOD_MATERIAL ? GAP_WOOD_DARKEN : 1);
+}
 const CLIP_EDGE_POINT = new THREE.Vector3(0, NOTE_HIT_Y - WHITE_REAR_CLIP, 0);
 const CLIP_NORMAL_SCRATCH = new THREE.Vector3();
 
@@ -165,10 +170,18 @@ const BLACK_PRESS_TINT_STRENGTH = 0.85;
 // Reusable scratch instance — lerping the press tint allocates nothing.
 const PRESS_TINT_SCRATCH = new THREE.Color();
 
-// Target the shader light color is lerped toward by flashBrightness, so
-// the keyboard glow's "spark" core matches the LandingFlashes plane's
-// brightness-lifted look.
+// Target the hit lights' colour is lerped toward (hitLightWhiten).
 const WHITE_LIGHT_TARGET = new THREE.Color(1, 1, 1);
+
+// The hit lights (the piano's own light at a hit) light the keys AND the hands, independent of the flash sprite's
+// settings: `hitLight` (1 = default) scales the strength, `hitLightWidth` / `hitLightReach` (1 = default) the
+// sideways / front falloff.
+const KEY_LIGHT_STRENGTH_BASE = 0.5; // uLightStrength at hitLight = 1
+// The hands' light is lifted this much further toward white than the keys' (hitLightWhiten default 0.3 + this =
+// the 0.5 lift the hands had when they followed the flash's brightness).
+const HANDS_WHITEN_OFFSET = 0.2;
+// Per-slot colour of the key lights (the hands have their own, `flashLights.colors`).
+const KEY_LIGHT_COLORS = new Float32Array(MAX_LIGHTS * 3);
 // Scratch reused in the per-frame per-slot colour resolver so the lerp
 // + hex parse don't allocate on every frame.
 const LIGHT_COLOR_SCRATCH = new THREE.Color();
@@ -278,7 +291,7 @@ export function Keyboard() {
       // Per-slot tint, packed as [r,g,b] × MAX_LIGHTS. Each slot can
       // carry its own (per-track) colour so simultaneously-active keys
       // from different tracks light the keyboard in different hues.
-      uLightColors: { value: flashLights.colors },
+      uLightColors: { value: KEY_LIGHT_COLORS },
     }),
     [],
   );
@@ -546,6 +559,17 @@ export function Keyboard() {
     }
     const nowSec = now();
     const brightness = rs.keyboardBrightness;
+    frontShadeUniform.value = rs.whiteKeyFrontShade;
+    {
+      // Hit-line light on the keys: the line's own colour.
+      const { gradient, hex } = hitLineColoring(rs);
+      writeGradientUniforms(hitLightUniforms as unknown as Parameters<typeof writeGradientUniforms>[0], gradient);
+      hitLightUniforms.uHitColor.value.set(hex);
+      hitLightUniforms.uHitReach.value = rs.keyHitLineReach;
+      hitLightUniforms.uHitLight.value = rs.hitLineEnabled
+        ? rs.keyHitLineLight * Math.min(rs.hitLineIntensity / 2.5, 2)
+        : 0;
+    }
     const pressK = 1 - Math.exp(-delta / Math.max(0.005, PRESS_TC));
     const dipK = 1 - Math.exp(-delta / RETRIGGER_GLOW_TC);
     for (let i = 0; i < KEY_COUNT; i++) {
@@ -639,9 +663,7 @@ export function Keyboard() {
 
     // Wood chassis tint — single shared material, single color.set per
     // frame. Brightness multiplied so it dims with the rest of the keys.
-    WHITE_BODY_WOOD_MATERIAL.color
-      .set(rs.woodColor)
-      .multiplyScalar(brightness);
+    WHITE_BODY_WOOD_MATERIAL.color.set(WOOD_COLOR).multiplyScalar(brightness);
     // White-coated front face follows whiteKeyColor. Front-face normals
     // are forced to +Z (see tagWhiteBodyFrontFace) so the surface gets
     // the same N·L diffuse contribution as the cap top. We dim by 0.85
@@ -653,44 +675,42 @@ export function Keyboard() {
     const lightXYs = sharedLightUniforms.uLightXYs.value;
     const lightIntensities = sharedLightUniforms.uLightIntensities.value;
     const blackGlow = sharedLightUniforms.uBlackGlow.value;
-    sharedLightUniforms.uLightStrength.value = settings.flashEnabled
-      ? rs.flashBrightness
+    const keyLightOn = settings.hitLightEnabled;
+    const widthS = Math.max(0.05, rs.hitLightWidth);
+    const reachS = Math.max(0.05, rs.hitLightReach);
+    sharedLightUniforms.uLightStrength.value = keyLightOn
+      ? rs.hitLight * KEY_LIGHT_STRENGTH_BASE
       : 0;
-    // Mirror flash UI sliders into the white-key shadow shader so the
-    // glow on the white surface matches the LandingFlashes plane visually.
-    // Mapping is calibrated so each slider's *default* reproduces the
-    // pre-uniform hardcoded look.
-    sharedLightUniforms.uLightBoost.value =
-      LIGHT_BOOST_BASE * (rs.flashIntensity / DEFAULT_FLASH_INTENSITY);
-    sharedLightUniforms.uFalloffX.value =
-      LIGHT_FALLOFF_X_BASE * (DEFAULT_FLASH_WIDTH / Math.max(0.01, rs.flashWidth));
-    sharedLightUniforms.uFalloffY.value =
-      LIGHT_FALLOFF_Y_BASE * (DEFAULT_FLASH_SIZE / Math.max(0.01, rs.flashSize));
-    sharedLightUniforms.uShadowHalo.value =
-      SHADOW_HALO_BASE *
-      Math.pow(rs.flashHaloWidth / DEFAULT_FLASH_HALO, SHADOW_HALO_RESPONSE);
-    // Per-slot light colour follows the same source as the
-    // LandingFlashes plane: per-track override when "Follows Note" is
-    // on, otherwise the explicit flashColor — then lifted toward white
-    // by flashBrightness so a saturated colour still keeps a bright
-    // "spark" core. The lerp is done before pack-into-Float32Array, in
-    // a scratch THREE.Color reused across slots.
+    sharedLightUniforms.uLightBoost.value = LIGHT_BOOST_BASE;
+    sharedLightUniforms.uFalloffX.value = LIGHT_FALLOFF_X_BASE / (widthS * widthS);
+    sharedLightUniforms.uFalloffY.value = LIGHT_FALLOFF_Y_BASE / (reachS * reachS);
+    sharedLightUniforms.uShadowHalo.value = SHADOW_HALO_BASE;
+    // The hands are lit by the same hit lights as the keys (hitLight* settings): same strength, falloff and colour
+    // source; the flash sprite's settings no longer reach them. Off with the hit lights.
+    flashLights.strength = keyLightOn ? rs.hitLight * KEY_LIGHT_STRENGTH_BASE : 0;
+    flashLights.boost = LIGHT_BOOST_BASE;
+    flashLights.falloffX = LIGHT_FALLOFF_X_BASE / (widthS * widthS);
+    flashLights.falloffY = LIGHT_FALLOFF_Y_BASE / (reachS * reachS);
+    // Per-slot light colour: the colour of the key's most recent note-on when following the note, else the
+    // explicit hitLightColor, lifted toward white (keys: hitLightWhiten; hands: HANDS_WHITEN_OFFSET more, which keeps
+    // the hands' look from before the hands moved to these settings). Lerps run in scratch colours, no allocation.
     const lightColors = sharedLightUniforms.uLightColors.value;
-    const fallbackHex = settings.flashFollowNote
-      ? rs.noteColor
-      : rs.flashColor;
-    const flashBrightness = rs.flashBrightness;
-    const followNote = settings.flashFollowNote;
-    // Pre-compute the fallback in linear RGB, post-brightness-lerp,
-    // so per-track keys that hit the fallback don't recompute it.
-    LIGHT_COLOR_SCRATCH.set(fallbackHex).lerp(WHITE_LIGHT_TARGET, flashBrightness);
+    const followNote = settings.hitLightFollowNote;
+    const handWhiten = Math.min(1, rs.hitLightWhiten + HANDS_WHITEN_OFFSET);
+    const keyFollow = followNote;
+    const keyWhiten = rs.hitLightWhiten;
+    LIGHT_COLOR_SCRATCH.set(keyFollow ? rs.noteColor : rs.hitLightColor).lerp(WHITE_LIGHT_TARGET, keyWhiten);
+    const keyFallbackR = LIGHT_COLOR_SCRATCH.r;
+    const keyFallbackG = LIGHT_COLOR_SCRATCH.g;
+    const keyFallbackB = LIGHT_COLOR_SCRATCH.b;
+    LIGHT_COLOR_SCRATCH.set(keyFollow ? rs.noteColor : rs.hitLightColor).lerp(WHITE_LIGHT_TARGET, handWhiten);
     const fallbackR = LIGHT_COLOR_SCRATCH.r;
     const fallbackG = LIGHT_COLOR_SCRATCH.g;
     const fallbackB = LIGHT_COLOR_SCRATCH.b;
     for (let bk = 0; bk < BLACK_KEY_COUNT; bk++) {
       blackGlow[bk] = Math.min(1, shownGlow[BLACK_KEY_INDICES[bk]]);
     }
-    if (settings.flashEnabled) {
+    if (keyLightOn) {
       claimed.fill(0);
       // Top-K selection sort: 6 × 88 = 528 comparisons per frame.
       for (let slot = 0; slot < MAX_LIGHTS; slot++) {
@@ -714,18 +734,30 @@ export function Keyboard() {
         lightXYs[slot * 2] = KEYBOARD_LAYOUT.keys[bestI].x;
         lightXYs[slot * 2 + 1] = WHITE_KEY_LENGTH;
         // Per-slot colour: the colour of this key's most recent note-on
-        // when following the note; else the brightness-lifted fallback.
-        const override = followNote ? noteHexAt(bestI) : undefined;
+        // when following the note; else the lifted fallback (the hands a bit whiter, see HANDS_WHITEN_OFFSET).
         const c3 = slot * 3;
-        if (override) {
-          LIGHT_COLOR_SCRATCH.set(override).lerp(WHITE_LIGHT_TARGET, flashBrightness);
+        const handOverride = followNote ? noteHexAt(bestI) : undefined;
+        const handColors = flashLights.colors;
+        if (handOverride) {
+          LIGHT_COLOR_SCRATCH.set(handOverride).lerp(WHITE_LIGHT_TARGET, handWhiten);
+          handColors[c3] = LIGHT_COLOR_SCRATCH.r;
+          handColors[c3 + 1] = LIGHT_COLOR_SCRATCH.g;
+          handColors[c3 + 2] = LIGHT_COLOR_SCRATCH.b;
+        } else {
+          handColors[c3] = fallbackR;
+          handColors[c3 + 1] = fallbackG;
+          handColors[c3 + 2] = fallbackB;
+        }
+        const keyOverride = keyFollow ? noteHexAt(bestI) : undefined;
+        if (keyOverride) {
+          LIGHT_COLOR_SCRATCH.set(keyOverride).lerp(WHITE_LIGHT_TARGET, keyWhiten);
           lightColors[c3] = LIGHT_COLOR_SCRATCH.r;
           lightColors[c3 + 1] = LIGHT_COLOR_SCRATCH.g;
           lightColors[c3 + 2] = LIGHT_COLOR_SCRATCH.b;
         } else {
-          lightColors[c3] = fallbackR;
-          lightColors[c3 + 1] = fallbackG;
-          lightColors[c3 + 2] = fallbackB;
+          lightColors[c3] = keyFallbackR;
+          lightColors[c3 + 1] = keyFallbackG;
+          lightColors[c3 + 2] = keyFallbackB;
         }
       }
     } else {
@@ -734,10 +766,6 @@ export function Keyboard() {
       }
     }
 
-    flashLights.strength = sharedLightUniforms.uLightStrength.value;
-    flashLights.boost = sharedLightUniforms.uLightBoost.value;
-    flashLights.falloffX = sharedLightUniforms.uFalloffX.value;
-    flashLights.falloffY = sharedLightUniforms.uFalloffY.value;
 
     const keyLabels = keyLabelsRef.current;
     if (keyLabels) {

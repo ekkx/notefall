@@ -339,12 +339,19 @@ export type Settings = {
   particleColor: string
   // Lift the flash colour toward white. 0 = pure flashColor, 1 = pure white.
   // Lets a coloured flash keep a bright white core for that "spark" feel.
-  flashBrightness: number
-  flashIntensity: number
-  flashSize: number
-  flashWidth: number
-  // Softness of the core falloff — larger = wider halo edge around the bright spot
-  flashHaloWidth: number
+  flashIntensity: number         // overall strength of the flash
+  flashWhiten: number            // 0 flash colour .. 1 white (core, rays and haze)
+  flashCoreSize: number          // white-key widths: half-brightness radius (up)
+  flashCoreAspect: number        // horizontal elongation of the core, 1 = round
+  flashCoreSoftness: number      // 0 tight gaussian .. 1 long soft tail
+  flashRays: number              // starburst of soft spokes (0 = off)
+  flashRaysLength: number        // white-key widths
+  flashRaysCount: number         // not animatable
+  flashRaysWidth: number         // angular width of a spoke, radians
+  flashRaysSoftness: number      // 0 crisp edge .. 1 very blurred
+  flashHaze: number              // low haze hugging the hit line (0 = off)
+  flashHazeWidth: number         // white-key widths
+  flashHazeHeight: number
   flashColor: string
   // Particles rising from held keys: soft dots (a share of them drawn
   // as thin tilted rays) carried by a curl-noise flow, plus faint fog
@@ -379,6 +386,11 @@ export type Settings = {
   particleTwirl: number          // orbit around the key's vertical axis
   particleTwirlVariance: number
   particleMotionTrail: boolean   // stretch dots along their travel
+  noteRaysEnabled: boolean       // light rays smeared away from the notes (notes/NoteRays.tsx)
+  noteRaysIntensity: number
+  noteRaysLength: number         // 0..1 reach
+  noteRaysCenterX: number        // 0..1 across the picture
+  noteRaysCenterY: number        // 0..1 from the hit line to the top of the picture
   particleRaysEnabled: boolean
   particleRayLength: number
   particleRayOpacity: number
@@ -508,10 +520,21 @@ export type Settings = {
   // Keyboard
   whiteKeyColor: string
   blackKeyColor: string
-  // Wood chassis tint (the strip below each white-key cap, visible
-  // through the 4% inter-key gap and any black-key notches).
-  woodColor: string
   keyboardBrightness: number
+  // Darkening of the white keys toward the player (0 = none, 1 = full profile); also darkens the wood seen in the gaps.
+  whiteKeyFrontShade: number
+  // Light the hit line casts on the back end of the keys, in the line's own colour (0 = none).
+  keyHitLineLight: number
+  // Reflection of the landing flashes on the keys, independent of the flash sprite's own settings.
+  hitLightEnabled: boolean
+  hitLight: number
+  hitLightFollowNote: boolean
+  hitLightColor: string
+  hitLightWhiten: number // lift toward white, 0..1
+  hitLightWidth: number // sideways falloff scale
+  hitLightReach: number // falloff scale toward the front
+  // How far the light reaches from the keys' back edge (white-key lengths); it fades smoothly over the whole reach.
+  keyHitLineReach: number
   keyGlowEnabled: boolean
   // When true, keyboard press-glow uses noteColor. When false, the user's
   // explicit keyGlowColor is used instead.
@@ -692,7 +715,7 @@ export const defaultSettings: Settings = {
   notesEnabled: true,
   fallDirection: 'down',
   fallDurationSec: 2.5,
-  noteColor: '#5ad7ff',
+  noteColor: '#87a5ff',
   trackColors: {},
   ...NOTE_COLOR_DEFAULTS,
   noteEmissive: 1.0,
@@ -717,12 +740,20 @@ export const defaultSettings: Settings = {
   flashEnabled: true,
   flashFollowNote: true,
   particleColorFollowNote: true,
-  particleColor: '#5ad7ff',
-  flashBrightness: 0.5,
-  flashIntensity: 1.1,
-  flashSize: 2.5,
-  flashWidth: 2.5,
-  flashHaloWidth: 0.5,
+  particleColor: '#87a5ff',
+  flashIntensity: 1,
+  flashWhiten: 0.5,
+  flashCoreSize: 0.3,
+  flashCoreAspect: 1.35,
+  flashCoreSoftness: 0,
+  flashRays: 0.2,
+  flashRaysLength: 5,
+  flashRaysCount: 12,
+  flashRaysWidth: 0.14,
+  flashRaysSoftness: 0.6,
+  flashHaze: 0,
+  flashHazeWidth: 6,
+  flashHazeHeight: 1,
   flashColor: '#ffffff',
   particlesEnabled: true,
   particleBlending: 'alpha',
@@ -752,6 +783,11 @@ export const defaultSettings: Settings = {
   particleTwirl: 0,
   particleTwirlVariance: 0,
   particleMotionTrail: false,
+  noteRaysEnabled: false,
+  noteRaysIntensity: 0.03,
+  noteRaysLength: 0.5,
+  noteRaysCenterX: 0.5,
+  noteRaysCenterY: 0.5,
   particleRaysEnabled: true,
   particleRayLength: 1.2,
   particleRayOpacity: 0.1,
@@ -761,7 +797,7 @@ export const defaultSettings: Settings = {
   particleFogCount: 1.6,
   particleFogOpacity: 0.1,
   hitLineEnabled: true,
-  hitLineColor: '#5ad7ff',
+  hitLineColor: '#87a5ff',
   ...HIT_LINE_COLOR_DEFAULTS,
   hitLineIntensity: 2.5,
   hitLineThickness: 0.3,
@@ -796,7 +832,7 @@ export const defaultSettings: Settings = {
   noteLabelPosition: 'keyboard',
   noteLabelOffset: 0,
   handsEnabled: false,
-  handsBrightness: 1.2,
+  handsBrightness: 1.0,
   handsFlashLight: 1,
   handsMotionBlur: false,
   handsBlurSamples: 8,
@@ -833,11 +869,20 @@ export const defaultSettings: Settings = {
   backgroundImageRotation: 0,
   whiteKeyColor: '#f5f5f5',
   blackKeyColor: '#161616',
-  woodColor: '#a87d38',
-  keyboardBrightness: 0.5,
+  keyboardBrightness: 0.6,
+  whiteKeyFrontShade: 0.8,
+  hitLightEnabled: true,
+  hitLight: 1,
+  hitLightFollowNote: true,
+  hitLightColor: '#ffffff',
+  hitLightWhiten: 0.3,
+  hitLightWidth: 1,
+  hitLightReach: 1,
+  keyHitLineLight: 0.15,
+  keyHitLineReach: 0.8,
   keyGlowEnabled: true,
   keyGlowFollowNote: true,
-  keyGlowColor: '#5ad7ff',
+  keyGlowColor: '#87a5ff',
   keyGlowIntensity: 1.5,
   keyGlowDecay: 0.05,
   volume: 0.8,

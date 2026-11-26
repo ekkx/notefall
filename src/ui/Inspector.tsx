@@ -983,8 +983,8 @@ function FollowColorRows({
   followKey,
   colorKey,
 }: {
-  followKey: 'flashFollowNote' | 'particleColorFollowNote' | 'keyGlowFollowNote'
-  colorKey: 'flashColor' | 'particleColor' | 'keyGlowColor'
+  followKey: 'flashFollowNote' | 'particleColorFollowNote' | 'keyGlowFollowNote' | 'hitLightFollowNote'
+  colorKey: 'flashColor' | 'particleColor' | 'keyGlowColor' | 'hitLightColor'
 }) {
   const { t } = useTranslation('inspector')
   const follow = useStore((st) => st.settings[followKey])
@@ -1432,6 +1432,8 @@ function LookPanel({ leaving }: { leaving: boolean }) {
               <Section title={t('section.hitLine')} enabledKey="hitLineEnabled">
                 <HitLineColorControls />
                 <BoundSliderRow label={t('row.barIntensity')} settingKey="hitLineIntensity" min={0} max={8} step={0.05} />
+                <BoundSliderRow label={t('row.keyLight')} settingKey="keyHitLineLight" min={0} max={1} step={0.01} />
+                <BoundSliderRow label={t('row.keyLightReach')} settingKey="keyHitLineReach" min={0.05} max={1} step={0.01} />
                 <BoundSliderRow label={t('row.barThickness')} settingKey="hitLineThickness" min={0} max={1} step={0.01} />
                 <BoundSliderRow label={t('row.barHalo')} settingKey="hitLineBarHalo" min={0} max={6} step={0.05} />
                 <BoundSwitchRow label={t('row.waveEnabled')} settingKey="hitLineWaveEnabled" />
@@ -1448,6 +1450,15 @@ function LookPanel({ leaving }: { leaving: boolean }) {
                     <BoundSliderRow label={t('row.waveHalo')} settingKey="hitLineWaveHalo" min={0} max={3} step={0.05} />
                     <BoundSliderRow label={t('row.waveGrain')} settingKey="hitLineWaveGrain" min={0} max={3} step={0.05} />
                   </SubGroup>
+                </Detail>
+              </Section>
+
+              <Section title={t('section.noteRays')} enabledKey="noteRaysEnabled">
+                <BoundSliderRow label={t('row.raysIntensity')} settingKey="noteRaysIntensity" min={0} max={0.5} step={0.001} format={(v) => v.toFixed(3)} />
+                <BoundSliderRow label={t('row.raysReach')} settingKey="noteRaysLength" min={0} max={1} step={0.01} />
+                <Detail id="noteRays">
+                  <BoundSliderRow label={t('row.raysCenterX')} settingKey="noteRaysCenterX" min={0} max={1} step={0.01} />
+                  <BoundSliderRow label={t('row.raysCenterY')} settingKey="noteRaysCenterY" min={0} max={1} step={0.01} />
                 </Detail>
               </Section>
 
@@ -1511,12 +1522,20 @@ function LookPanel({ leaving }: { leaving: boolean }) {
 
               <Section title={t('section.flash')} enabledKey="flashEnabled">
                 <FollowColorRows followKey="flashFollowNote" colorKey="flashColor" />
-                <BoundSliderRow label={t('row.flashBrightness')} settingKey="flashBrightness" min={0} max={1} step={0.01} />
                 <BoundSliderRow label={t('row.flashIntensity')} settingKey="flashIntensity" min={0} max={2} step={0.05} />
-                <BoundSliderRow label={t('row.flashSize')} settingKey="flashSize" min={0.3} max={5} step={0.05} />
+                <BoundSliderRow label={t('row.flashCoreSize')} settingKey="flashCoreSize" min={0.05} max={3} step={0.01} />
+                <BoundSliderRow label={t('row.flashRays')} settingKey="flashRays" min={0} max={2} step={0.01} />
                 <Detail id="flash">
-                  <BoundSliderRow label={t('row.flashWidth')} settingKey="flashWidth" min={0.3} max={5} step={0.05} />
-                  <BoundSliderRow label={t('row.flashHalo')} settingKey="flashHaloWidth" min={0} max={2} step={0.05} />
+                  <BoundSliderRow label={t('row.flashWhiten')} settingKey="flashWhiten" min={0} max={1} step={0.01} />
+                  <BoundSliderRow label={t('row.flashCoreAspect')} settingKey="flashCoreAspect" min={1} max={4} step={0.05} />
+                  <BoundSliderRow label={t('row.flashCoreSoftness')} settingKey="flashCoreSoftness" min={0} max={1} step={0.01} />
+                  <BoundSliderRow label={t('row.flashRaysLength')} settingKey="flashRaysLength" min={0.5} max={12} step={0.1} />
+                  <BoundSliderRow label={t('row.flashRaysCount')} settingKey="flashRaysCount" min={4} max={16} step={1} />
+                  <BoundSliderRow label={t('row.flashRaysWidth')} settingKey="flashRaysWidth" min={0.02} max={0.5} step={0.005} />
+                  <BoundSliderRow label={t('row.flashRaysSoftness')} settingKey="flashRaysSoftness" min={0} max={1} step={0.01} />
+                  <BoundSliderRow label={t('row.flashHaze')} settingKey="flashHaze" min={0} max={2} step={0.01} />
+                  <BoundSliderRow label={t('row.flashHazeWidth')} settingKey="flashHazeWidth" min={1} max={16} step={0.1} />
+                  <BoundSliderRow label={t('row.flashHazeHeight')} settingKey="flashHazeHeight" min={0.2} max={4} step={0.05} />
                 </Detail>
               </Section>
             </TabPanel>
@@ -1558,9 +1577,9 @@ function LookPanel({ leaving }: { leaving: boolean }) {
               <Section title={t('section.keyboard')}>
                 <BoundSliderRow label={t('row.keyboardY')} settingKey="keyboardScreenY" min={0} max={1} step={0.01} />
                 <BoundSliderRow label={t('row.brightness')} settingKey="keyboardBrightness" min={0} max={2} step={0.01} />
+                <BoundSliderRow label={t('row.frontShade')} settingKey="whiteKeyFrontShade" min={0} max={1} step={0.01} />
                 <BoundColorRow label={t('row.whiteKeys')} settingKey="whiteKeyColor" />
                 <BoundColorRow label={t('row.blackKeys')} settingKey="blackKeyColor" />
-                <BoundColorRow label={t('row.wood')} settingKey="woodColor" />
               </Section>
               <Section title={t('section.handVideo')} enabledKey="handVideoEnabled">
                 <HandVideoControls />
@@ -1578,6 +1597,13 @@ function LookPanel({ leaving }: { leaving: boolean }) {
                 <FollowColorRows followKey="keyGlowFollowNote" colorKey="keyGlowColor" />
                 <BoundSliderRow label={t('row.glowIntensity')} settingKey="keyGlowIntensity" min={0} max={5} step={0.05} />
                 <BoundSliderRow label={t('row.glowDecay')} settingKey="keyGlowDecay" min={0.05} max={2} step={0.01} />
+              </Section>
+              <Section title={t('section.hitLight')} enabledKey="hitLightEnabled">
+                <FollowColorRows followKey="hitLightFollowNote" colorKey="hitLightColor" />
+                <BoundSliderRow label={t('row.keyFlashWhiten')} settingKey="hitLightWhiten" min={0} max={1} step={0.01} />
+                <BoundSliderRow label={t('row.hitLight')} settingKey="hitLight" min={0} max={2} step={0.01} />
+                <BoundSliderRow label={t('row.keyFlashWidth')} settingKey="hitLightWidth" min={0.25} max={3} step={0.01} />
+                <BoundSliderRow label={t('row.keyFlashReach')} settingKey="hitLightReach" min={0.25} max={3} step={0.01} />
               </Section>
               <Section title={t('section.hands')} enabledKey="handsEnabled">
                 <p className="text-caption text-ink-faint">{t('hands.hint')}</p>

@@ -28,8 +28,7 @@ import { now } from '../audio/clock'
 import {
   NOTE_GRADIENT_GLSL,
   createGradientUniforms,
-  hitLineGradient,
-  noteGradient,
+  hitLineColoring,
   writeGradientUniforms,
 } from './noteColor'
 
@@ -266,18 +265,7 @@ export function HitLine() {
   useFrame(() => {
     const r = getResolvedSettings()
     waveMaterial.uniforms.uTime.value = now() % TIME_WRAP_SECONDS
-    // line colouring: its own gradient, the notes' (their gradient along
-    // the line, noteColor for solid notes; random notes have no single
-    // colour, so the line keeps hitLineColor), or the plain hitLineColor
-    const mode = settings.hitLineColorMode
-    const gradient =
-      mode === 'gradient'
-        ? hitLineGradient(r)
-        : mode === 'note' && r.noteColorMode === 'gradient'
-          ? noteGradient(r)
-          : null
-    // random / by-hand notes have no single colour: the line keeps hitLineColor
-    const lineHex = mode === 'note' && r.noteColorMode === 'solid' ? r.noteColor : r.hitLineColor
+    const { gradient, hex: lineHex } = hitLineColoring(r)
     writeGradientUniforms(barMaterial.uniforms as unknown as GradientUniforms, gradient)
     writeGradientUniforms(waveMaterial.uniforms as unknown as GradientUniforms, gradient)
     barMaterial.uniforms.uColor.value.set(lineHex)

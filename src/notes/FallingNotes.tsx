@@ -10,6 +10,7 @@ import { getResolvedSettings } from '../scene/automatedSettings'
 import { audioEngine } from '../audio/engine'
 import { now } from '../audio/clock'
 import { KEYBOARD_LAYOUT, MIDI_MIN, KEY_COUNT, NOTE_HIT_Y, WHITE_KEY_WIDTH, isBlackKey } from '../keyboard/layout'
+import { NOTE_RAYS_LAYER } from './NoteRays'
 import { useCustomTexture } from './customTexture'
 import { computeDuration, deleteNotes, moveNotes, splitNote } from '../midi/edit'
 import { ensureSamplerLoaded, previewNote } from '../audio/preview'
@@ -479,6 +480,8 @@ export function FallingNotes() {
     // realistic camera frame keeps every instance in scope; the per-
     // instance triangle test is what actually decides hits.
     mesh.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), 1000)
+    // The light rays draw the notes alone through this layer.
+    mesh.layers.enable(NOTE_RAYS_LAYER)
     // Bloom on = the composer's linear target, off = the canvas (sRGB).
     mesh.onBeforeRender = (renderer, _scene, cam) => {
       const target = renderer.getRenderTarget()
